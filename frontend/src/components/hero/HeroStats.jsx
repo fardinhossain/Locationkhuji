@@ -45,11 +45,11 @@ const HeroStats = () => {
 };
 
 const StatItem = ({ icon, count, label }) => (
-  <div className="flex items-center gap-3 sm:gap-4 justify-center sm:justify-start lg:justify-center xl:justify-start lg:pl-6 xl:pl-8 first:pl-0">
+  <div className="flex items-center gap-3 sm:gap-4 justify-center sm:justify-start lg:justify-center xl:justify-start lg:pl-3 xl:pl-8 first:pl-0">
     <div className="flex-shrink-0">{icon}</div>
     <div>
       <div className="text-lg sm:text-xl font-bold text-white leading-tight">{count}</div>
-      <div className="text-[11px] sm:text-xs text-gray-400 mt-0.5 whitespace-nowrap">{label}</div>
+      <div className="text-[11px] sm:text-xs text-gray-400 mt-0.5">{label}</div>
     </div>
   </div>
 );

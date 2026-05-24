@@ -14,6 +14,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "../components/
 import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 function distKm(a, b, c, d) {
   const R = 6371, toRad = (v) => (v * Math.PI) / 180;
@@ -63,6 +64,10 @@ export default function MapPage() {
         },
       });
       setListings(r.data.listings || []);
+    } catch (error) {
+      console.error("Failed to load listings:", error);
+      setListings([]);
+      toast.error("Could not load map listings. Please make sure the backend is running.");
     } finally { setLoading(false); }
   };
 
@@ -88,7 +93,7 @@ export default function MapPage() {
   }, [manualAddress]);
 
   useEffect(() => {
-    const socketUrl = process.env.REACT_APP_API_URL || "http://localhost:8001";
+    const socketUrl = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || "http://localhost:8001";
     const baseSocketUrl = socketUrl.endsWith('/api') ? socketUrl.slice(0, -4) : socketUrl;
     const socket = io(baseSocketUrl, { withCredentials: true });
 
@@ -169,8 +174,7 @@ export default function MapPage() {
                   value={manualAddress}
                   onChange={(e) => setManualAddress(e.target.value)}
                   onFocus={() => setShowSuggestions(suggestions.length > 0)}
-                  className="flex-1 bg-transparent text-[15px] outline-none w-full text-foreground placeholder:text-muted-foreground/50"
-                />
+                  className="flex-1 bg-transparent text-[15px] outline-none w-full text-foreground placeholder:text-muted-foreground/50"                  style={{ minWidth: 0 }}                />
                 {manualAddress && (
                    <button type="button" onClick={clearSearch} className="p-1 hover:bg-muted rounded-full ml-1 transition-colors">
                       <FiX className="text-muted-foreground" size={18} />
@@ -371,11 +375,11 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
         <div className="p-7 border-b border-border bg-card relative z-10 shadow-sm">
-          <h2 className="font-black text-2xl mb-6 flex items-center gap-4 tracking-tighter text-foreground uppercase">
+          <h2 className={cn("font-black text-2xl mb-6 flex items-center gap-4 tracking-tighter text-foreground uppercase", lang === 'bn' ? 'font-bengali' : '')}>
             <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
               <FiMapPin className="text-primary" size={22} />
             </div>
-            <span className="font-bengali">{t('searchNearBy')}</span>
+            <span>{t('searchNearBy')}</span>
           </h2>
 
           <div className="relative mb-6 group">
@@ -388,7 +392,8 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
                 placeholder={lang === "bn" ? "এলাকা খুঁজুন..." : "Search area..."}
                 value={manualAddress}
                 onChange={(e) => setManualAddress(e.target.value)}
-                className="w-full pl-12 pr-12 py-4 rounded-[20px] border-2 border-border/40 bg-background text-[15px] font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all shadow-sm text-foreground"
+                className="w-full pl-12 pr-12 py-4 rounded-[20px] border-2 border-border/40 bg-background text-[15px] font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all shadow-sm text-foreground placeholder:text-muted-foreground/50"
+                style={{ minWidth: 0 }}
               />
               {manualAddress && (
                  <button type="button" onClick={clearSearch} className="absolute right-4 p-1.5 hover:bg-muted rounded-full transition-colors">
@@ -423,14 +428,14 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
             </AnimatePresence>
           </div>
 
-          <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-primary/5 text-primary text-xs font-black mb-8 border border-primary/10 uppercase tracking-widest">
-            <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
-            <span className="truncate max-w-[240px]">{loc.selectedName}</span>
+          <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-primary/5 text-primary text-xs font-black mb-8 border border-primary/10 uppercase tracking-widest overflow-hidden">
+            <div className="w-2 h-2 rounded-full bg-primary animate-ping shrink-0" />
+            <span className="truncate min-w-0">{loc.selectedName}</span>
           </div>
 
           <div className="mb-10 px-1">
             <div className="flex items-center justify-between text-[14px] font-black text-foreground mb-6 uppercase tracking-wider">
-              <span>{t('radius')} / ব্যাসার্ধ</span>
+              <span>{t('radius')}</span>
               <span className="text-primary bg-primary/10 px-3 py-1 rounded-lg">{loc.radius} km</span>
             </div>
             <Slider value={[loc.radius]} min={1} max={20} step={1}
@@ -448,7 +453,7 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
                     key={c.key}
                     onClick={() => loc.setCategory(c.key)}
                     className={cn(
-                      "px-5 py-4 rounded-[20px] text-[13px] font-black transition-all border-2 flex flex-col items-start gap-3 group relative overflow-hidden uppercase tracking-tight",
+                      "px-4 py-4 rounded-[20px] text-[13px] font-black transition-all border-2 flex flex-col items-start gap-3 group relative overflow-hidden",
                       active 
                         ? "bg-primary text-primary-foreground border-primary shadow-xl scale-[1.03] -translate-y-1" 
                         : "bg-background text-foreground border-border/60 hover:border-primary/40 hover:bg-muted/40"
@@ -457,7 +462,7 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
                     <div className="w-10 h-10 rounded-[14px] flex items-center justify-center transition-all duration-300" style={{ backgroundColor: active ? 'rgba(255,255,255,0.2)' : `${c.color}20` }}>
                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: active ? "white" : c.color }} />
                     </div>
-                    {labels[c.key]}
+                    <span className={cn("text-left w-full", lang === 'bn' ? 'font-bengali' : 'uppercase tracking-tight')}>{labels[c.key]}</span>
                   </button>
                 );
               })}
@@ -472,7 +477,7 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
             {POPULAR_AREAS.map((p) => (
               <button key={p.name} onClick={() => loc.setSelected(p.lat, p.lng, p.name)}
                 className="px-4 py-2.5 rounded-xl text-[12px] font-black uppercase tracking-tighter bg-muted/40 hover:bg-primary hover:text-primary-foreground transition-all border border-border/40 shadow-sm active:scale-95 text-foreground">
-                {p.name}
+                {t(`popularAreas.${p.name.toLowerCase()}`)}
               </button>
             ))}
           </div>

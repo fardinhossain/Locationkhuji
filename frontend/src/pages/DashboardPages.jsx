@@ -22,6 +22,70 @@ function ListingForm({ initial, onSubmit, submitLabel }) {
   });
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+  const [geoError, setGeoError] = useState("");
+
+  // Ref to track last geocoded address to prevent infinite loops / redundant calls
+  const lastGeocoded = React.useRef(initial?.address || "");
+
+  // Use browser geolocation to capture live coordinates
+  const useLiveLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setForm((f) => ({ ...f, lat, lng }));
+        toast.success("Live location captured!");
+      },
+      () => {
+        toast.error("Location permission denied or unavailable");
+      }
+    );
+  };
+
+  // Geocode address to coordinates using Nominatim
+  const geocodeAddress = async (address) => {
+    if (!address || address.trim().length < 5) {
+      setGeoError("Please enter a more detailed address");
+      return;
+    }
+    setGeocoding(true);
+    setGeoError("");
+    try {
+      const query = encodeURIComponent(`${address}, Bangladesh`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&countrycodes=bd&limit=1&addressdetails=1`);
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const result = data[0];
+        const lat = parseFloat(result.lat);
+        const lng = parseFloat(result.lon);
+        lastGeocoded.current = address; // Update the ref
+        setForm((f) => ({ ...f, lat, lng, address: address }));
+        toast.success(`Location found: ${result.display_name.split(",").slice(0, 3).join(", ")}`);
+      } else {
+        setGeoError("Address not found. Try adding more details like area/thana name.");
+      }
+    } catch (err) {
+      setGeoError("Failed to find location. Please click on map manually.");
+    } finally {
+      setGeocoding(false);
+    }
+  };
+
+  // Automatically geocode when the user stops typing (1.5s debounce)
+  useEffect(() => {
+    if (!form.address || form.address === lastGeocoded.current) return;
+    const timer = setTimeout(() => {
+      if (form.address.trim().length >= 8) {
+        geocodeAddress(form.address);
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [form.address]);
 
   const setDetail = (k, v) => setForm((f) => ({ ...f, details: { ...f.details, [k]: v } }));
 
@@ -66,13 +130,50 @@ function ListingForm({ initial, onSubmit, submitLabel }) {
       <Input data-testid="form-title" placeholder="Title" value={form.title} onChange={(e) => setForm({...form, title: e.target.value})} required />
       <Textarea data-testid="form-desc" placeholder="Description" value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} required rows={3}/>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Input placeholder="Address" value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} required />
+      <div className="grid grid-cols-1 gap-3">
+        <div>
+          <label className="text-sm font-semibold mb-1 block">Address</label>
+          <div className="flex gap-2">
+            <Input 
+              placeholder="Full Address (e.g., House 12, Road 5, Dhanmondi, Dhaka)" 
+              value={form.address} 
+              onChange={(e) => setForm({...form, address: e.target.value})} 
+              onBlur={() => {
+                if (form.address && form.address.trim().length >= 8 && form.address !== lastGeocoded.current) {
+                  geocodeAddress(form.address);
+                }
+              }}
+              className="flex-1"
+              required 
+            />
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => geocodeAddress(form.address)}
+              disabled={geocoding || !form.address.trim()}
+              className="shrink-0"
+            >
+              {geocoding ? "..." : "📍 Find on Map"}
+            </Button>
+          </div>
+          {geoError && <p className="text-xs text-amber-500 mt-1">{geoError}</p>}
+        </div>
         <Input placeholder="Area / Thana" value={form.area} onChange={(e) => setForm({...form, area: e.target.value})} required />
       </div>
 
       <div>
-        <div className="text-sm font-semibold mb-2">Click on map to set location</div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-sm font-semibold">Click on map to set location</div>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm"
+            onClick={useLiveLocation}
+            className="text-xs gap-1.5 h-8 px-3 rounded-lg border-primary/30 text-primary hover:bg-primary hover:text-white"
+          >
+            📍 Use Live Location
+          </Button>
+        </div>
         <div className="h-64 rounded-xl overflow-hidden border border-[var(--border-light)]">
           <MapView center={[form.lat, form.lng]} listings={[]} userLocation={[form.lat, form.lng]}
             onClickMap={(lat, lng) => setForm({...form, lat, lng})} radius={0.001} />

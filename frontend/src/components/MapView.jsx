@@ -7,7 +7,8 @@ import { FaHome, FaPills, FaHospital, FaShoppingBag } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { CategoryBadge, StarRating } from "./ListingCard";
 import BangladeshMask from "./BangladeshMask";
-import { useThemeStore } from "../store";
+import { useThemeStore, useLangStore } from "../store";
+import { useTranslation } from "react-i18next";
 
 const ICON_MAP = { flat: FaHome, pharmacy: FaPills, hospital: FaHospital, fashion: FaShoppingBag };
 
@@ -90,6 +91,8 @@ export default function MapView({ center, listings = [], userLocation, radius = 
   // Filter valid listings
   const validListings = (listings || []).filter(l => l && isValidCoords([l.lat, l.lng]));
   const { theme } = useThemeStore();
+  const { lang } = useLangStore();
+  const { t } = useTranslation();
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${theme === 'dark' ? 'map-dark' : ''}`} style={{ height }}>
@@ -160,7 +163,7 @@ export default function MapView({ center, listings = [], userLocation, radius = 
                       to={`/listing/${l.id}`}
                       className="text-[11px] font-bold text-primary uppercase tracking-wider hover:underline"
                     >
-                      View →
+                      {t('viewDetails')} →
                     </Link>
                   </div>
                 </div>

@@ -190,7 +190,7 @@ export default function ListingDetailPage() {
               <form onSubmit={submit} className="mb-8 p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-light)]" data-testid="review-form">
                 <div className="font-bold text-sm mb-4 uppercase tracking-wider text-[var(--text-tertiary)]">{t('writeReview')}</div>
                 <StarPicker value={rating} onChange={setRating} />
-                <Textarea data-testid="review-comment" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="How was your experience?" className="mt-4 bg-white" maxLength={500} required />
+                <Textarea data-testid="review-comment" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="How was your experience?" className="mt-4 bg-white text-black font-semibold" maxLength={500} required />
                 <div className="flex items-center justify-between mt-4">
                   <div className="text-xs text-[var(--text-tertiary)] font-medium">{comment.length}/500</div>
                   <Button data-testid="review-submit" type="submit" disabled={submitting} className="bg-primary text-white h-10 px-6 rounded-pill shadow-teal">
