@@ -1,0 +1,253 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import 'leaflet/dist/leaflet.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=Sora:wght@400;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;700&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Hind Siliguri', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+@layer components {
+  .font-bengali {
+    font-family: 'Hind Siliguri', 'Noto Sans Bengali', sans-serif;
+  }
+  .font-sora {
+    font-family: 'Sora', sans-serif;
+  }
+  .font-space {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+  
+  .glass-dark {
+    @apply bg-black/20 backdrop-blur-xl border border-white/10;
+  }
+
+  .neon-glow-teal {
+    box-shadow: 0 0 15px rgba(0, 201, 167, 0.3), 0 0 30px rgba(0, 201, 167, 0.1);
+  }
+  
+  .neon-border-teal {
+    @apply border-primary/50 shadow-[0_0_10px_rgba(0,201,167,0.2)];
+  }
+
+  .premium-gradient {
+    background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%);
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes draw {
+    to { stroke-dashoffset: 0; }
+  }
+  .animate-draw {
+    stroke-dashoffset: 1000;
+    stroke-dasharray: 1000;
+    animation: draw 3s ease-in forwards;
+  }
+
+  @keyframes trail {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateX(200%) translateY(200%) rotate(45deg); opacity: 0; }
+  }
+  .light-trail {
+    position: absolute;
+    width: 2px;
+    height: 100px;
+    background: linear-gradient(to bottom, transparent, #00C9A7, transparent);
+    animation: trail 4s linear infinite;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 171 100% 39%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --radius: 0.75rem;
+
+    --bg-base: #0B0E11;
+    --bg-surface: #141A21;
+    --bg-elevated: #1C242D;
+    --text-primary: #F8FAFC;
+    --text-secondary: #CBD5E1;
+    --text-tertiary: #64748B;
+    --border-light: rgba(255, 255, 255, 0.05);
+    --border-medium: #475569;
+    --color-primary: #00C9A7;
+    --color-primary-glow: rgba(0, 201, 167, 0.1);
+  }
+}
+
+@layer base {
+  * { @apply border-border; box-sizing: border-box; }
+
+  /* Prevent horizontal overflow */
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+}
+
+/* Mobile safe areas */
+@supports (padding-top: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Prevent zoom on input focus */
+input, select, textarea {
+  font-size: 16px !important;
+}
+
+/* Mobile touch improvements */
+.leaflet-container {
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.leaflet-interactive {
+  -webkit-tap-highlight-color: transparent;
+}
+.leaflet-touch .leaflet-bar a {
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+}
+
+/* Leaflet overrides */
+.leaflet-container {
+  background: var(--bg-base);
+  font-family: 'DM Sans', sans-serif;
+  width: 100%;
+  height: 100%;
+}
+.leaflet-pane {
+  z-index: 1;
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+  padding: 0;
+  border: 1px solid var(--border-light);
+}
+.leaflet-popup-content { margin: 0; }
+.leaflet-popup-tip { background: var(--bg-surface) !important; border: 1px solid var(--border-light); }
+.leaflet-popup-close-button { color: var(--text-secondary) !important; padding: 10px 10px 0 0 !important; }
+
+.map-dark .leaflet-tile {
+  filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.1) saturate(0.5) !important;
+}
+
+.leaflet-container .leaflet-tile {
+  mix-blend-mode: normal !important;
+}
+
+/* Custom marker */
+.lk-marker {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  border: 2.5px solid white;
+}
+.lk-marker > svg { transform: rotate(45deg); color: white; }
+.lk-marker.flat { background: #6366F1; }
+.lk-marker.pharmacy { background: #10B981; }
+.lk-marker.hospital { background: #EF4444; }
+.lk-marker.fashion { background: #F59E0B; }
+.lk-marker.user-pin { background: #00C9A7; }
+
+.lk-cluster {
+  background: rgba(0,201,167,0.95);
+  color: white; font-weight: 700; font-family: 'Sora', sans-serif;
+  border: 3px solid white;
+  border-radius: 9999px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,201,167,0.4);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-primary); }
+
+/* Skeleton */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-elevated) 0%, var(--border-light) 50%, var(--bg-elevated) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease infinite;
+}
+
+  .gradient-text {
+  background: linear-gradient(120deg, #00C9A7, #00E5C8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Hero Redesign Styles */
+.glow-teal {
+  box-shadow: 0 0 20px rgba(0, 209, 178, 0.4);
+}
+.glow-teal-strong {
+  box-shadow: 0 0 30px rgba(0, 209, 178, 0.6);
+}
+.glow-text-teal {
+  text-shadow: 0 0 15px rgba(0, 209, 178, 0.5);
+}
+
+.cyber-panel {
+  background: linear-gradient(135deg, rgba(20, 26, 33, 0.7) 0%, rgba(11, 14, 17, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+}

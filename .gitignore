@@ -3,6 +3,8 @@
 # IDE and editors
 .idea/
 .vscode/
+.puku/
+.puku*
 
 # Dependencies
 node_modules/

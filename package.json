@@ -1,0 +1,35 @@
+{
+  "name": "locationkhuji-ecosystem",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:hub": "npm run start --workspace=apps/frontend-search-hub",
+    "dev:api": "npm run dev --workspace=apps/backend-api-gateway",
+    "build:hub": "npm run build --workspace=apps/frontend-search-hub",
+    "build:all": "npm run build --workspaces",
+    "test:all": "npm run test --workspaces"
+  },
+  "overrides": {
+    "react-scripts": {
+      "ajv": "^8.20.0",
+      "ajv-keywords": "^5.1.0"
+    },
+    "ajv-keywords": {
+      "ajv": "^8.20.0"
+    },
+    "nth-check": "^3.0.1",
+    "serialize-javascript": "^7.0.5",
+    "underscore": "^1.13.8",
+    "postcss": "^8.5.14",
+    "@tootallnate/once": "^3.0.1",
+    "@eslint/plugin-kit": "^0.4.0"
+  },
+  "devDependencies": {
+    "ajv": "^8.20.0",
+    "ajv-keywords": "^5.1.0"
+  }
+}
