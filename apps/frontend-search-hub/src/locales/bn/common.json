@@ -6,7 +6,7 @@
   "heroLine1": "খুঁজে নিন সব কিছু",
   "heroLine2": "আপনার কাছেই",
   "heroLine3": "বাংলাদেশে",
-  "heroSubtitle": "ফ্ল্যাট, ফার্মেসি, হাসপাতাল ও ফ্যাশন শপ — সব এক ম্যাপে, ৫ কিলোমিটারের মধ্যে।",
+  "heroSubtitle": "ফ্ল্যাট, ফার্মেসি, হাসপাতাল ও ফ্যাশন শপ — সব এক ম্যাপে, ১-২০ কিলোমিটারের মধ্যে।",
   "hero": {
     "badge": "বাংলাদেশের জন্য সেরা লোকেশন খোঁজার প্ল্যাটফর্ম",
     "titleLine1": "আপনার আশেপাশে",
@@ -15,7 +15,13 @@
     "searchPlaceholder": "এলাকা, থানা বা ল্যান্ডমার্ক লিখুন...",
     "searchBtn": "খুঁজুন",
     "popularPrefix": "জনপ্রিয় এলাকা:",
-    "popularAreas": ["ধানমন্ডি", "গুলশান", "বনানী", "মিরপুর", "উত্তরা"],
+    "popularAreas": [
+      "ধানমন্ডি",
+      "গুলশান",
+      "বনানী",
+      "মিরপুর",
+      "উত্তরা"
+    ],
     "openMap": "ম্যাপ খুলুন",
     "viewList": "তালিকা দেখুন"
   },
@@ -104,13 +110,13 @@
   "stats": {
     "listingsCount": "৫,০০০+",
     "categoriesCount": "৪",
-    "radiusDistance": "৫ কিমি",
+    "radiusDistance": "২০কিমি",
     "realtime": "রিয়েল-টাইম",
-    "listingCount": "500+",
+    "listingCount": "5000+",
     "listingLabel": "লিস্টিং",
     "categoryCount": "4",
     "categoryLabel": "ক্যাটাগরি",
-    "radiusCount": "5km",
+    "radiusCount": "20km",
     "radiusLabel": "সার্চ রেডিয়াস",
     "focusCount": "100%",
     "focusLabel": "বাংলাদেশ ফোকাসড"
@@ -121,7 +127,7 @@
       "flat": "250+",
       "pharmacy": "300+",
       "hospital": "120+",
-      "fashion": "80+"
+      "fashion": "200+"
     }
   }
 }

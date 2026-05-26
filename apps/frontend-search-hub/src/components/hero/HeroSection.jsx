@@ -12,8 +12,8 @@ const HeroSection = () => {
   const { t } = useTranslation();
 
   return (
-    <section className="relative w-full min-h-[calc(100vh-80px)] lg:h-[calc(100vh-80px)] lg:max-h-[860px] flex flex-col lg:flex-row px-6 lg:px-12 pb-8 pt-20 lg:pt-24 overflow-hidden">
-      
+    <section className="relative w-full min-h-[calc(100vh-80px)] lg:h-[calc(100vh-80px)] lg:max-h-[860px] flex flex-col lg:flex-row px-6 lg:px-12 pb-8 pt-4 sm:pt-6 lg:pt-8 overflow-hidden">
+
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-teal-500/5 blur-[120px]" />

@@ -6,7 +6,7 @@
   "heroLine1": "Find Everything",
   "heroLine2": "Near You in",
   "heroLine3": "Bangladesh",
-  "heroSubtitle": "Flats, Pharmacies, Hospitals & Fashion Shops — all on one map, within 5km of you.",
+  "heroSubtitle": "Flats, Pharmacies, Hospitals & Fashion Shops — all on one map, within 1-20km of you.",
   "hero": {
     "badge": "Best platform for finding locations in Bangladesh",
     "titleLine1": "Find Everything",
@@ -15,7 +15,13 @@
     "searchPlaceholder": "Search area, thana or landmark...",
     "searchBtn": "Search",
     "popularPrefix": "Popular areas:",
-    "popularAreas": ["Dhanmondi", "Gulshan", "Banani", "Mirpur", "Uttara"],
+    "popularAreas": [
+      "Dhanmondi",
+      "Gulshan",
+      "Banani",
+      "Mirpur",
+      "Uttara"
+    ],
     "openMap": "Open Map",
     "viewList": "View List"
   },
@@ -102,15 +108,15 @@
     "uttara": "Uttara"
   },
   "stats": {
-    "listingsCount": "5,000+",
+    "listingsCount": "5000+",
     "categoriesCount": "4",
-    "radiusDistance": "5km",
+    "radiusDistance": "20km",
     "realtime": "Real-time",
-    "listingCount": "500+",
+    "listingCount": "5000+",
     "listingLabel": "Listings",
     "categoryCount": "4",
     "categoryLabel": "Categories",
-    "radiusCount": "5km",
+    "radiusCount": "20km",
     "radiusLabel": "Search Radius",
     "focusCount": "100%",
     "focusLabel": "Bangladesh Focused"
@@ -121,7 +127,7 @@
       "flat": "250+",
       "pharmacy": "300+",
       "hospital": "120+",
-      "fashion": "80+"
+      "fashion": "200+"
     }
   }
 }

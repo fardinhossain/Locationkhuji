@@ -10,7 +10,7 @@ const HeroMap = () => {
      * image's transparent north-east corner naturally accommodates
      * the MapCard that is now positioned at the section level.
      */
-    <div className="relative w-[90%] sm:w-[85%] md:w-[80%] lg:w-full xl:w-full max-w-[640px] aspect-square flex items-center justify-center">
+    <div className="relative w-[85%] sm:w-[90%] md:w-[80%] lg:w-full xl:w-full max-w-[550px] aspect-square flex items-center justify-center">
 
       {/* Radial glow behind the map */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-teal-500/10 via-transparent to-transparent opacity-60 pointer-events-none" />

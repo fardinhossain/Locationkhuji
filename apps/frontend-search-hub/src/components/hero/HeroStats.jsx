@@ -7,33 +7,33 @@ const HeroStats = () => {
   const { t } = useTranslation();
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.6 }}
       className="mt-6 sm:mt-8 lg:mt-4 w-full"
     >
-      <div className="cyber-panel rounded-2xl grid grid-cols-2 lg:grid-cols-4 items-center py-5 px-4 sm:px-6 gap-y-6 gap-x-4 lg:gap-0 lg:divide-x divide-transparent lg:divide-white/10">
-        
-        <StatItem 
+      <div className="cyber-panel rounded-2xl grid grid-cols-2 lg:grid-cols-4 items-center py-5 px-4 sm:px-6 gap-y-6 gap-x-4 lg:gap-1 lg:divide-x divide-transparent lg:divide-white/10">
+
+        <StatItem
           icon={<BookOpen className="text-teal-500 w-6 h-6" />}
           count={t('stats.listingCount')}
           label={t('stats.listingLabel')}
         />
-        
-        <StatItem 
+
+        <StatItem
           icon={<LayoutGrid className="text-teal-500 w-6 h-6" />}
           count={t('stats.categoryCount')}
           label={t('stats.categoryLabel')}
         />
-        
-        <StatItem 
+
+        <StatItem
           icon={<MapPin className="text-[#A855F7] w-6 h-6" />}
           count={t('stats.radiusCount')}
           label={t('stats.radiusLabel')}
         />
-        
-        <StatItem 
+
+        <StatItem
           icon={<ShieldCheck className="text-[#3B82F6] w-6 h-6" />}
           count={t('stats.focusCount')}
           label={t('stats.focusLabel')}
