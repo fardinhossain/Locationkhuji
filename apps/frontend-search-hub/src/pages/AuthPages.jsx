@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { FaUser, FaStore } from "react-icons/fa";
+import { FaUser, FaStore, FaEye, FaEyeSlash } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useAuthStore, useLangStore } from "../store";
@@ -18,6 +18,8 @@ export function RegisterPage() {
   const [role, setRole] = useState(null);
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -44,9 +46,9 @@ export function RegisterPage() {
           <p className="font-bengali text-white/60 mt-2">আপনার কাছের সব কিছু</p>
           <h2 className="font-sora font-bold text-4xl mt-12 leading-tight">Join the largest discovery platform in Bangladesh.</h2>
           <ul className="mt-8 space-y-3 text-white/80 font-medium">
-            <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-teal-500"/> 5km radius discovery</li>
-            <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-teal-500"/> Real verified listings</li>
-            <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-teal-500"/> Bengali + English support</li>
+            <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-teal-500" /> 20km radius discovery</li>
+            <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-teal-500" /> Real verified listings</li>
+            <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-teal-500" /> Bengali + English support</li>
           </ul>
         </div>
       </div>
@@ -62,22 +64,22 @@ export function RegisterPage() {
                 <button data-testid="role-user" onClick={() => setRole("user")}
                   className={`w-full p-5 rounded-2xl border-2 text-left transition ${role === "user" ? "border-cat-flat bg-cat-flat-light" : "border-[var(--border-medium)] hover:border-cat-flat"}`}>
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-cat-flat-light text-cat-flat flex items-center justify-center"><FaUser size={20}/></div>
+                    <div className="w-12 h-12 rounded-xl bg-cat-flat-light text-cat-flat flex items-center justify-center"><FaUser size={20} /></div>
                     <div className="flex-1">
-                      <div className="font-sora font-semibold">{t('iAmUser')}</div>
-                      <div className="font-bengali text-xs text-[var(--text-secondary)] mt-0.5">আমি স্থান খুঁজছি</div>
-                      <div className="text-xs text-[var(--text-tertiary)] mt-1">{t('userSub')}</div>
+                      <div className={`font-sora font-semibold ${role === "user" ? "text-slate-900" : "text-white"}`}>{t('iAmUser')}</div>
+                      <div className={`font-bengali text-xs mt-0.5 ${role === "user" ? "text-slate-700" : "text-[var(--text-secondary)]"}`}>আমি স্থান খুঁজছি</div>
+                      <div className={`text-xs mt-1 ${role === "user" ? "text-slate-600" : "text-[var(--text-tertiary)]"}`}>{t('userSub')}</div>
                     </div>
                   </div>
                 </button>
                 <button data-testid="role-owner" onClick={() => setRole("owner")}
                   className={`w-full p-5 rounded-2xl border-2 text-left transition ${role === "owner" ? "border-primary bg-primary-light" : "border-[var(--border-medium)] hover:border-primary"}`}>
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary-light text-primary flex items-center justify-center"><FaStore size={20}/></div>
+                    <div className="w-12 h-12 rounded-xl bg-primary-light text-primary flex items-center justify-center"><FaStore size={20} /></div>
                     <div className="flex-1">
-                      <div className="font-sora font-semibold">{t('iAmOwner')}</div>
-                      <div className="font-bengali text-xs text-[var(--text-secondary)] mt-0.5">আমি একজন মালিক / ব্যবসায়ী</div>
-                      <div className="text-xs text-[var(--text-tertiary)] mt-1">{t('ownerSub')}</div>
+                      <div className={`font-sora font-semibold ${role === "owner" ? "text-slate-900" : "text-white"}`}>{t('iAmOwner')}</div>
+                      <div className={`font-bengali text-xs mt-0.5 ${role === "owner" ? "text-slate-700" : "text-[var(--text-secondary)]"}`}>আমি একজন মালিক / ব্যবসায়ী</div>
+                      <div className={`text-xs mt-1 ${role === "owner" ? "text-slate-600" : "text-[var(--text-tertiary)]"}`}>{t('ownerSub')}</div>
                     </div>
                   </div>
                 </button>
@@ -96,10 +98,45 @@ export function RegisterPage() {
               <h1 className="font-sora font-bold text-2xl">Create account</h1>
               <span className="inline-block mt-2 px-3 py-1 rounded-pill text-xs font-bold uppercase tracking-wider bg-primary-light text-primary">{role}</span>
               <div className="mt-6 space-y-3">
-                <Input data-testid="register-name" placeholder={t('fullName')} value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} required minLength={2} />
-                <Input data-testid="register-email" type="email" placeholder={t('email')} value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} required />
-                <Input data-testid="register-password" type="password" placeholder={t('password')} value={form.password} onChange={(e) => setForm({...form, password: e.target.value})} required minLength={6} />
-                <Input data-testid="register-confirm" type="password" placeholder={t('confirmPassword')} value={form.confirm} onChange={(e) => setForm({...form, confirm: e.target.value})} required />
+                <Input data-testid="register-name" placeholder={t('fullName')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required minLength={2} />
+                <Input data-testid="register-email" type="email" placeholder={t('email')} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+                <div className="relative">
+                  <Input
+                    data-testid="register-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder={t('password')}
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    required
+                    minLength={6}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-white transition cursor-pointer"
+                  >
+                    {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                  </button>
+                </div>
+                <div className="relative">
+                  <Input
+                    data-testid="register-confirm"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder={t('confirmPassword')}
+                    value={form.confirm}
+                    onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+                    required
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-white transition cursor-pointer"
+                  >
+                    {showConfirmPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                  </button>
+                </div>
               </div>
               <Button data-testid="register-submit" type="submit" disabled={loading} className="mt-5 w-full h-12 rounded-pill bg-primary text-white">
                 {loading ? "..." : t('register')}
@@ -124,6 +161,16 @@ export function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [forgotStep, setForgotStep] = useState(0); // 0 = login, 1 = request code, 2 = reset password
+
+  // Forgot password form states
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotCode, setForgotCode] = useState("");
+  const [forgotNewPassword, setForgotNewPassword] = useState("");
+  const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
+
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -141,6 +188,51 @@ export function LoginPage() {
     } finally { setLoading(false); }
   };
 
+  const requestResetCode = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail) return toast.error("Please enter your email");
+    setForgotLoading(true);
+    try {
+      const r = await api.post("/auth/forgot-password", { email: forgotEmail });
+      toast.success(r.data.message || "Verification code sent!");
+      setForgotStep(2); // Go to verification and reset form
+    } catch (err) {
+      const msg = err.response?.data?.detail || "Failed to send reset code";
+      toast.error(typeof msg === "string" ? msg : "Failed to send reset code");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const executeResetPassword = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail || !forgotCode || !forgotNewPassword) {
+      return toast.error("Please fill in all fields");
+    }
+    if (forgotNewPassword.length < 6) {
+      return toast.error("New password must be at least 6 characters");
+    }
+    setForgotLoading(true);
+    try {
+      const r = await api.post("/auth/reset-password", {
+        email: forgotEmail,
+        code: forgotCode,
+        newPassword: forgotNewPassword
+      });
+      toast.success(r.data.message || "Password reset successful!");
+      // Reset state and return to login
+      setForgotStep(0);
+      setForm({ ...form, email: forgotEmail, password: "" }); // Pre-populate login email
+      setForgotCode("");
+      setForgotNewPassword("");
+    } catch (err) {
+      const msg = err.response?.data?.detail || "Failed to reset password";
+      toast.error(typeof msg === "string" ? msg : "Failed to reset password");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
       <div className="hidden lg:flex flex-1 relative items-center justify-center text-white p-12" style={{ background: "linear-gradient(135deg, #0D1B2A, #1A3A5C)" }}>
@@ -154,50 +246,146 @@ export function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-6 bg-[var(--bg-base)]">
         <div className="w-full max-w-md">
           <div className="bg-[var(--bg-surface)] p-8 rounded-2xl shadow-xl border border-[var(--border-light)]">
-            <h1 className="font-sora font-bold text-2xl">{t('welcome')}! 👋</h1>
-            <p className="text-[var(--text-secondary)] text-sm mb-8">Login to your LocationKhuji account</p>
             
-            <form onSubmit={submit} className="space-y-4" data-testid="login-form">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{t('email')}</label>
-                <Input data-testid="login-email" type="email" placeholder="example@mail.com" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} required />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{t('password')}</label>
-                <Input data-testid="login-password" type="password" placeholder="••••••••" value={form.password} onChange={(e) => setForm({...form, password: e.target.value})} required />
-              </div>
-              
-              <Button data-testid="login-submit" type="submit" disabled={loading} className="w-full h-12 rounded-pill bg-primary text-white font-bold mt-4 shadow-teal">
-                {loading ? "..." : t('login')}
-              </Button>
-            </form>
+            {forgotStep === 0 && (
+              <>
+                <h1 className="font-sora font-bold text-2xl">{t('welcome')}! 👋</h1>
+                <p className="text-[var(--text-secondary)] text-sm mb-8">Login to your LocationKhuji account</p>
 
-            <div className="text-center mt-6 text-sm text-[var(--text-secondary)]">
-              {t('noAccount')} <Link to="/register" className="text-primary font-bold hover:underline">{t('register')}</Link>
-            </div>
+                <form onSubmit={submit} className="space-y-4" data-testid="login-form">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{t('email')}</label>
+                    <Input data-testid="login-email" type="email" placeholder="example@mail.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{t('password')}</label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotEmail(form.email); // Pre-fill with current email
+                          setForgotStep(1);
+                        }}
+                        className="text-xs text-primary hover:underline font-bold"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        data-testid="login-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={form.password}
+                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        required
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-white transition cursor-pointer"
+                      >
+                        {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <Button data-testid="login-submit" type="submit" disabled={loading} className="w-full h-12 rounded-pill bg-primary text-white font-bold mt-4 shadow-teal">
+                    {loading ? "..." : t('login')}
+                  </Button>
+                </form>
+
+                <div className="text-center mt-6 text-sm text-[var(--text-secondary)]">
+                  {t('noAccount')} <Link to="/register" className="text-primary font-bold hover:underline">{t('register')}</Link>
+                </div>
+              </>
+            )}
+
+            {forgotStep === 1 && (
+              <>
+                <button type="button" onClick={() => setForgotStep(0)} className="text-sm text-[var(--text-secondary)] mb-4">← Back to Login</button>
+                <h1 className="font-sora font-bold text-2xl">Reset password</h1>
+                <p className="text-[var(--text-secondary)] text-sm mb-6 mt-1">Enter your email and we'll send you a 6-digit verification code to reset your password.</p>
+
+                <form onSubmit={requestResetCode} className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Email address</label>
+                    <Input type="email" placeholder="example@mail.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required />
+                  </div>
+
+                  <Button type="submit" disabled={forgotLoading} className="w-full h-12 rounded-pill bg-primary text-white font-bold mt-4 shadow-teal">
+                    {forgotLoading ? "..." : "Send Verification Code"}
+                  </Button>
+                </form>
+              </>
+            )}
+
+            {forgotStep === 2 && (
+              <>
+                <button type="button" onClick={() => setForgotStep(1)} className="text-sm text-[var(--text-secondary)] mb-4">← Back</button>
+                <h1 className="font-sora font-bold text-2xl">Verify code & Reset</h1>
+                <p className="text-[var(--text-secondary)] text-sm mb-6 mt-1">We sent a 6-digit code to <strong>{forgotEmail}</strong>. Enter the code and your new password below.</p>
+
+                <form onSubmit={executeResetPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Verification Code</label>
+                    <Input type="text" placeholder="123456" maxLength={6} value={forgotCode} onChange={(e) => setForgotCode(e.target.value)} required />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">New Password</label>
+                    <div className="relative">
+                      <Input
+                        type={showForgotNewPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={forgotNewPassword}
+                        onChange={(e) => setForgotNewPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotNewPassword(!showForgotNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-white transition cursor-pointer"
+                      >
+                        {showForgotNewPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <Button type="submit" disabled={forgotLoading} className="w-full h-12 rounded-pill bg-primary text-white font-bold mt-4 shadow-teal">
+                    {forgotLoading ? "..." : "Reset Password"}
+                  </Button>
+                </form>
+              </>
+            )}
+
           </div>
 
-          <div className="mt-8 text-center text-xs text-[var(--text-tertiary)]" data-testid="demo-credentials">
-            <div className="font-bold uppercase tracking-widest mb-4 opacity-50">Quick Demo Access</div>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: "Admin", email: "admin@locationkhuji.com", password: "Admin@123", color: "#EF4444" },
-                { label: "Owner", email: "owner@locationkhuji.com", password: "Owner@123", color: "#00C9A7" },
-                { label: "User",  email: "user@locationkhuji.com",  password: "User@123",  color: "#6366F1" },
-              ].map((d) => (
-                <button
-                  key={d.label}
-                  type="button"
-                  data-testid={`demo-${d.label.toLowerCase()}`}
-                  onClick={() => setForm({ email: d.email, password: d.password })}
-                  className="flex flex-col items-center p-2 rounded-lg border border-[var(--border-light)] hover:border-primary hover:bg-[var(--bg-elevated)] transition"
-                >
-                  <span className="w-2 h-2 rounded-full mb-1" style={{ background: d.color }} />
-                  <span className="font-bold text-[10px]">{d.label}</span>
-                </button>
-              ))}
+          {forgotStep === 0 && (
+            <div className="mt-8 text-center text-xs text-[var(--text-tertiary)]" data-testid="demo-credentials">
+              <div className="font-bold uppercase tracking-widest mb-4 opacity-50">Quick Demo Access</div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: "Admin", email: "admin@locationkhuji.com", password: "Admin@123", color: "#EF4444" },
+                  { label: "Owner", email: "owner@locationkhuji.com", password: "Owner@123", color: "#00C9A7" },
+                  { label: "User", email: "user@locationkhuji.com", password: "User@123", color: "#6366F1" },
+                ].map((d) => (
+                  <button
+                    key={d.label}
+                    type="button"
+                    data-testid={`demo-${d.label.toLowerCase()}`}
+                    onClick={() => setForm({ email: d.email, password: d.password })}
+                    className="flex flex-col items-center p-2 rounded-lg border border-[var(--border-light)] hover:border-primary hover:bg-[var(--bg-elevated)] transition"
+                  >
+                    <span className="w-2 h-2 rounded-full mb-1" style={{ background: d.color }} />
+                    <span className="font-bold text-[10px]">{d.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

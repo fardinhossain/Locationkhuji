@@ -34,14 +34,70 @@ function ListingForm({ initial, onSubmit, submitLabel }) {
       toast.error("Geolocation is not supported by your browser");
       return;
     }
+    setGeocoding(true);
+    setGeoError("");
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
+        
+        // Update lat/lng in form immediately
         setForm((f) => ({ ...f, lat, lng }));
-        toast.success("Live location captured!");
+        toast.success("Live location captured! Finding address...");
+
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+          const data = await res.json();
+          if (data && data.address) {
+            const addr = data.address;
+            
+            // Extract area / thana
+            const areaVal = addr.suburb || addr.neighbourhood || addr.quarter || addr.city_district || addr.thana || addr.county || addr.town || addr.village || "";
+            
+            // Extract city
+            const cityVal = addr.city || addr.town || addr.municipality || "Dhaka";
+
+            // Extract street / road / full address
+            const road = addr.road || addr.pedestrian || addr.path || "";
+            const house = addr.house_number || addr.building || addr.office || "";
+            const streetAddr = [house, road].filter(Boolean).join(", ");
+            
+            let fullAddr = "";
+            if (streetAddr) {
+              fullAddr = [streetAddr, areaVal, cityVal].filter(Boolean).join(", ");
+            } else {
+              // Fallback to display_name short representation (first 4 segments)
+              fullAddr = data.display_name ? data.display_name.split(",").slice(0, 4).join(", ").trim() : "";
+            }
+
+            // Update form state with address, area, and city if found
+            setForm((f) => ({
+              ...f,
+              lat,
+              lng,
+              address: fullAddr || f.address,
+              area: areaVal || f.area,
+              city: cityVal || f.city,
+            }));
+            
+            // Sync last geocoded address ref to prevent redundant auto-geocoding trigger
+            if (fullAddr) {
+              lastGeocoded.current = fullAddr;
+            }
+            
+            toast.success("Address and Area automatically filled!");
+          } else {
+            toast.error("Could not resolve address details. Please fill manually.");
+          }
+        } catch (err) {
+          console.error("Reverse geocoding failed", err);
+          toast.error("Failed to fetch address. Please fill address and area manually.");
+        } finally {
+          setGeocoding(false);
+        }
       },
       () => {
+        setGeocoding(false);
         toast.error("Location permission denied or unavailable");
       }
     );

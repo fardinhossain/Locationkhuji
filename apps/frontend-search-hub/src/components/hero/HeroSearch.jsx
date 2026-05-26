@@ -24,13 +24,8 @@ const HeroSearch = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
-      className="w-full max-w-2xl mt-12"
+      className="w-full max-w-2xl mt-6"
     >
-      {/* Sparkles AI indicator badge */}
-      <div className="flex items-center gap-1.5 text-xs text-teal-400 font-bold uppercase tracking-widest mb-3 pl-2">
-        <Sparkles size={13} className="animate-pulse text-teal-300" />
-        <span>Location AI Assistant Search</span>
-      </div>
 
       {/* Search Input Container */}
       <form onSubmit={handleSearch} className="relative flex items-center w-full bg-[#11161C] border border-gray-700/60 rounded-full p-2 pl-4 sm:pl-6 shadow-2xl hover:border-teal-500/30 transition-colors focus-within:border-teal-500/50 focus-within:ring-1 focus-within:ring-teal-500/20">

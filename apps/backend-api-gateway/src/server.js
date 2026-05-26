@@ -25,6 +25,7 @@ const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
 const APP_NAME = "locationkhuji";
 const FIREBASE_SA = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || "";
 const DEV_MODE = process.env.NODE_ENV === "development" && (!FIREBASE_SA || FIREBASE_SA.includes("your-project-id") || FIREBASE_SA.includes("MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSj"));
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 let aiClient = null;
@@ -69,6 +70,8 @@ function serializeUser(user) {
     avatar: user.avatar || null,
     phone: user.phone || null,
     saved_listings: user.saved_listings || [],
+    is_active: user.is_active !== false,
+    is_verified: !!user.is_verified,
     created_at: user.created_at || null,
   };
 }
@@ -135,6 +138,226 @@ async function firebaseSignIn(email, password) {
   return response.data;
 }
 
+async function firebaseSendVerificationEmail(idToken) {
+  if (!FIREBASE_WEB_API_KEY) throw apiError(503, "Firebase auth is not configured");
+  const response = await axios.post(
+    `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${FIREBASE_WEB_API_KEY}`,
+    { requestType: "VERIFY_EMAIL", idToken },
+    { timeout: 30000 }
+  );
+  return response.data;
+}
+
+async function sendResendEmail(to, subject, html) {
+  if (!RESEND_API_KEY) {
+    throw new Error("Resend API key is not configured");
+  }
+  const response = await axios.post(
+    "https://api.resend.com/emails",
+    {
+      from: "LocationKhuji <no-reply@novosoftai.dev>",
+      to,
+      subject,
+      html
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      timeout: 30000
+    }
+  );
+  return response.data;
+}
+
+function buildVerificationHtml(name, link) {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Verify your LocationKhuji Account</title>
+      <style>
+        body {
+          background-color: #0B0E11;
+          color: #CBD5E1;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+          margin: 0;
+          padding: 40px 20px;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          background-color: #141A21;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 12px;
+          padding: 40px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .logo {
+          font-size: 28px;
+          font-weight: 800;
+          text-align: center;
+          color: #F8FAFC;
+          letter-spacing: -0.05em;
+          margin-bottom: 30px;
+        }
+        .logo span {
+          color: #00C9A7;
+        }
+        h1 {
+          font-size: 22px;
+          font-weight: 700;
+          color: #F8FAFC;
+          margin-top: 0;
+          margin-bottom: 20px;
+        }
+        p {
+          font-size: 16px;
+          line-height: 1.6;
+          margin-bottom: 30px;
+        }
+        .btn-container {
+          text-align: center;
+          margin-bottom: 35px;
+        }
+        .btn {
+          display: inline-block;
+          background-color: #00C9A7;
+          color: #0B0E11;
+          font-weight: 700;
+          font-size: 16px;
+          text-decoration: none;
+          padding: 14px 32px;
+          border-radius: 30px;
+          box-shadow: 0 0 15px rgba(0, 201, 167, 0.3);
+          transition: all 0.3s ease;
+        }
+        .footer {
+          font-size: 12px;
+          color: #64748B;
+          text-align: center;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          padding-top: 20px;
+          margin-top: 20px;
+        }
+        .link-text {
+          word-break: break-all;
+          color: #00C9A7;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="logo">Location<span>Khuji</span></div>
+        <h1>Hello ${name},</h1>
+        <p>Thank you for registering on LocationKhuji, Bangladesh's premium location discovery platform. Please verify your email address to unlock your owner account, enable listing creation, and get your premium verification badge.</p>
+        <div class="btn-container">
+          <a href="${link}" class="btn" target="_blank">Verify My Account</a>
+        </div>
+        <p>If the button doesn't work, copy and paste this URL into your browser:</p>
+        <p class="link-text">${link}</p>
+        <div class="footer">
+          This email was sent by LocationKhuji. If you did not register for this account, you can safely ignore this email.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function buildPasswordResetHtml(name, code) {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Reset your LocationKhuji Password</title>
+      <style>
+        body {
+          background-color: #0B0E11;
+          color: #CBD5E1;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+          margin: 0;
+          padding: 40px 20px;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          background-color: #141A21;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 12px;
+          padding: 40px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .logo {
+          font-size: 28px;
+          font-weight: 800;
+          text-align: center;
+          color: #F8FAFC;
+          letter-spacing: -0.05em;
+          margin-bottom: 30px;
+        }
+        .logo span {
+          color: #00C9A7;
+        }
+        h1 {
+          font-size: 22px;
+          font-weight: 700;
+          color: #F8FAFC;
+          margin-top: 0;
+          margin-bottom: 20px;
+        }
+        p {
+          font-size: 16px;
+          line-height: 1.6;
+          margin-bottom: 30px;
+        }
+        .code-container {
+          text-align: center;
+          margin-bottom: 35px;
+          background-color: #1C242D;
+          border: 1px dashed rgba(0, 201, 167, 0.3);
+          border-radius: 8px;
+          padding: 20px;
+        }
+        .code {
+          font-family: monospace;
+          font-size: 36px;
+          font-weight: 800;
+          letter-spacing: 0.15em;
+          color: #00C9A7;
+        }
+        .footer {
+          font-size: 12px;
+          color: #64748B;
+          text-align: center;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          padding-top: 20px;
+          margin-top: 20px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="logo">Location<span>Khuji</span></div>
+        <h1>Hello ${name},</h1>
+        <p>We received a request to reset the password for your LocationKhuji account. Please use the following 6-digit verification code to proceed. This code is valid for 10 minutes:</p>
+        <div class="code-container">
+          <div class="code">${code}</div>
+        </div>
+        <p>If you did not request a password reset, please secure your account or ignore this email.</p>
+        <div class="footer">
+          This email was sent by LocationKhuji.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+
 async function firebaseSignUp(email, password) {
   if (!FIREBASE_WEB_API_KEY) throw apiError(503, "Firebase auth is not configured");
   const response = await axios.post(
@@ -186,7 +409,14 @@ async function uploadBufferToCloudinary(buffer, filename) {
 
 async function ensureMongoUser(firebaseUser, fallback = {}) {
   let user = await User.findOne({ id: firebaseUser.uid });
-  if (user) return user;
+  if (user) {
+    // Sync verification status from Firebase User
+    if (!user.is_verified && firebaseUser.emailVerified) {
+      user.is_verified = true;
+      await User.updateOne({ _id: user._id }, { is_verified: true });
+    }
+    return user;
+  }
 
   try {
     const created = await User.create({
@@ -455,6 +685,17 @@ const Listing = mongoose.model("Listing", listingSchema);
 const Review = mongoose.model("Review", reviewSchema);
 const FileRecord = mongoose.model("FileRecord", fileSchema);
 
+const passwordResetSchema = new mongoose.Schema(
+  {
+    email: { type: String, required: true },
+    code: { type: String, required: true },
+    expires_at: { type: Date, required: true },
+  },
+  { versionKey: false }
+);
+passwordResetSchema.index({ email: 1 });
+const PasswordReset = mongoose.model("PasswordReset", passwordResetSchema);
+
 function createFirebaseAdminApp() {
   if (admin.apps.length) return;
 
@@ -705,9 +946,48 @@ api.post("/auth/register", async (req, res, next) => {
       created_at: new Date().toISOString(),
     });
 
+    // Generate email verification link
+    let verificationLink = "";
+    try {
+      verificationLink = await admin.auth().generateEmailVerificationLink(normalizedEmail);
+      console.log("\n=======================================================");
+      console.log(`📧 [Email Verification Link] Sent to: ${normalizedEmail}`);
+      console.log(`🔗 Link: ${verificationLink}`);
+      console.log("=======================================================\n");
+    } catch (linkErr) {
+      console.warn(`⚠️ [Firebase Warning] Could not generate email verification link: ${linkErr.message}`);
+    }
+
     const authResponse = await firebaseSignIn(normalizedEmail, password);
+
+    // Send real verification email via Resend or fallback to Firebase REST API
+    let mailDispatched = false;
+    if (RESEND_API_KEY) {
+      try {
+        const html = buildVerificationHtml(name, verificationLink);
+        await sendResendEmail(normalizedEmail, "Verify your LocationKhuji Account 🪐", html);
+        console.log(`📧 [Resend Email] Custom HTML verification email dispatched successfully to: ${normalizedEmail}`);
+        mailDispatched = true;
+      } catch (resendErr) {
+        console.warn(`⚠️ [Resend Email Error] Could not dispatch custom verification email: ${resendErr.message}. Falling back to Firebase...`);
+      }
+    }
+
+    if (!mailDispatched) {
+      try {
+        await firebaseSendVerificationEmail(authResponse.idToken);
+        console.log(`📧 [Firebase Email] Real verification email dispatched successfully to: ${normalizedEmail}`);
+      } catch (mailErr) {
+        console.warn(`⚠️ [Firebase Email Warning] Could not dispatch fallback verification email: ${mailErr.message}`);
+      }
+    }
+
     sendAuthCookies(res, authResponse.idToken, authResponse.refreshToken);
-    res.json({ access_token: authResponse.idToken, user: serializeUser(user) });
+    res.json({ 
+      access_token: authResponse.idToken, 
+      user: serializeUser(user),
+      dev_verification_link: (process.env.NODE_ENV === "development" || DEV_MODE) ? verificationLink : undefined
+    });
   } catch (error) {
     const firebaseMessage = error.response?.data?.error?.message || error.code;
     if (firebaseMessage === "EMAIL_EXISTS" || firebaseMessage === "auth/email-already-exists") {
@@ -783,9 +1063,213 @@ api.post("/auth/refresh", async (req, res, next) => {
   }
 });
 
-api.get("/auth/me", requireAuth, (req, res) => {
+api.get("/auth/me", requireAuth, async (req, res) => {
+  try {
+    // If not verified in MongoDB yet, check Firebase's live emailVerified status
+    if (!req.user.is_verified) {
+      const firebaseUser = await admin.auth().getUser(req.user.id);
+      if (firebaseUser.emailVerified) {
+        await User.updateOne({ id: req.user.id }, { is_verified: true });
+        req.user.is_verified = true;
+      }
+    }
+  } catch (err) {
+    console.warn(`⚠️ [Firebase Sync] Could not sync emailVerified status in auth/me: ${err.message}`);
+  }
   res.json(serializeUser(req.user));
 });
+
+api.post("/auth/verify-me-dev", requireAuth, async (req, res, next) => {
+  try {
+    // Enforce that direct bypass is only allowed in local development/testing mode
+    if (process.env.NODE_ENV !== "development" && !DEV_MODE) {
+      throw apiError(403, "Direct verification bypass is only allowed in development/testing mode");
+    }
+
+    console.log(`🔒 [Dev Bypass] Manually verifying email in Firebase and MongoDB for user: ${req.user.email}`);
+
+    // Update Firebase user directly
+    try {
+      await admin.auth().updateUser(req.user.id, { emailVerified: true });
+      console.log(`   Firebase emailVerified status updated to true`);
+    } catch (fbErr) {
+      console.warn(`   Could not update Firebase emailVerified status: ${fbErr.message}`);
+    }
+
+    // Update MongoDB user directly
+    await User.updateOne({ id: req.user.id }, { is_verified: true });
+    console.log(`   MongoDB is_verified updated to true`);
+
+    req.user.is_verified = true;
+    res.json({ success: true, user: serializeUser(req.user) });
+  } catch (err) {
+    next(apiError(400, err.message));
+  }
+});
+
+api.post("/auth/resend-verification", requireAuth, async (req, res, next) => {
+  try {
+    if (req.user.is_verified) {
+      throw apiError(400, "Email is already verified");
+    }
+
+    const name = req.user.name || "User";
+    const email = req.user.email;
+
+    console.log(`📧 [Resend Verification Request] Generating link for: ${email}`);
+
+    // Generate link
+    let verificationLink = "";
+    try {
+      verificationLink = await admin.auth().generateEmailVerificationLink(email);
+      console.log(`🔗 Fresh Link: ${verificationLink}`);
+    } catch (linkErr) {
+      throw apiError(400, `Could not generate email verification link: ${linkErr.message}`);
+    }
+
+    // Try sending with Resend first
+    let mailDispatched = false;
+    if (RESEND_API_KEY) {
+      try {
+        const html = buildVerificationHtml(name, verificationLink);
+        await sendResendEmail(email, "Verify your LocationKhuji Account 🪐", html);
+        console.log(`📧 [Resend Email] Custom HTML verification email resent successfully to: ${email}`);
+        mailDispatched = true;
+      } catch (resendErr) {
+        console.warn(`⚠️ [Resend Email Error] Could not resend custom verification email: ${resendErr.message}. Falling back to Firebase...`);
+      }
+    }
+
+    // Fallback to Firebase REST API
+    if (!mailDispatched) {
+      try {
+        const idToken = extractToken(req);
+        if (idToken && idToken !== "dev-test-token") {
+          await firebaseSendVerificationEmail(idToken);
+          console.log(`📧 [Firebase Email] Verification email resent successfully to: ${email}`);
+          mailDispatched = true;
+        } else {
+          console.warn("⚠️ No valid Firebase ID token found in request headers/cookies to trigger Firebase REST mailer fallback.");
+        }
+      } catch (mailErr) {
+        console.warn(`⚠️ [Firebase Email Warning] Could not resend verification email fallback: ${mailErr.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "Verification email resent successfully.",
+      dev_verification_link: (process.env.NODE_ENV === "development" || DEV_MODE) ? verificationLink : undefined
+    });
+  } catch (error) {
+    next(error.status ? error : apiError(400, error.message || "Failed to resend verification email"));
+  }
+});
+
+
+
+api.post("/auth/forgot-password", async (req, res, next) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) throw apiError(400, "Email is required");
+
+    const normalizedEmail = String(email).toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) throw apiError(404, "No account found with this email");
+
+    // Generate random 6-digit code
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+    // Save token to DB (upsert for same email to avoid clutter)
+    await PasswordReset.findOneAndUpdate(
+      { email: normalizedEmail },
+      { code, expires_at: expiresAt },
+      { upsert: true, new: true }
+    );
+
+    // Print to console logs clearly so developer can see it
+    console.log("\n=======================================================");
+    console.log(`📧 [Verification Code] Send to: ${normalizedEmail}`);
+    console.log(`🔑 Verification Code: ${code}`);
+    console.log(`⏰ Expires at: ${expiresAt.toLocaleTimeString()}`);
+    console.log("=======================================================\n");
+
+    // Send real custom HTML email via Resend if configured
+    let mailDispatched = false;
+    if (RESEND_API_KEY) {
+      try {
+        const html = buildPasswordResetHtml(user.name || "User", code);
+        await sendResendEmail(normalizedEmail, "Reset your LocationKhuji Password 🔑", html);
+        console.log(`📧 [Resend Email] Custom HTML password reset email dispatched successfully to: ${normalizedEmail}`);
+        mailDispatched = true;
+      } catch (resendErr) {
+        console.warn(`⚠️ [Resend Email Error] Could not dispatch custom password reset email: ${resendErr.message}`);
+      }
+    }
+
+    if (!mailDispatched) {
+      console.log(`ℹ️ [Forgot Password Fallback] Resend email was not dispatched. Reset code is printed to the server console.`);
+    }
+
+    res.json({
+      message: "Verification code sent to your email. Check server console logs in dev mode.",
+      email: normalizedEmail,
+      dev_code: (process.env.NODE_ENV === "development" || DEV_MODE) ? code : undefined
+    });
+  } catch (error) {
+    next(error.status ? error : apiError(400, error.message || "Failed to send reset code"));
+  }
+});
+
+api.post("/auth/reset-password", async (req, res, next) => {
+  try {
+    const { email, code, newPassword } = req.body || {};
+    if (!email || !code || !newPassword) {
+      throw apiError(400, "Email, verification code, and new password are required");
+    }
+
+    const normalizedEmail = String(email).toLowerCase();
+    
+    // Find active reset code
+    const resetEntry = await PasswordReset.findOne({ email: normalizedEmail });
+    if (!resetEntry) throw apiError(400, "Verification code not requested or expired");
+
+    // Verify code match
+    if (resetEntry.code !== String(code).trim()) {
+      throw apiError(400, "Invalid verification code");
+    }
+
+    // Verify code expiration
+    if (new Date() > resetEntry.expires_at) {
+      await PasswordReset.deleteOne({ _id: resetEntry._id });
+      throw apiError(400, "Verification code has expired");
+    }
+
+    // Find MongoDB User to get their Firebase UID
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) throw apiError(404, "User account not found");
+
+    // Update password in Firebase Auth
+    try {
+      await admin.auth().updateUser(user.id, { password: newPassword });
+    } catch (fbErr) {
+      if (DEV_MODE) {
+        console.warn(`⚠️ [Firebase Bypass] Could not update password in Firebase Auth for dev user (they might only exist in seeded MongoDB): ${fbErr.message}`);
+      } else {
+        throw fbErr;
+      }
+    }
+
+    // Clean up reset entry
+    await PasswordReset.deleteOne({ _id: resetEntry._id });
+
+    res.json({ message: "Password has been reset successfully" });
+  } catch (error) {
+    next(error.status ? error : apiError(400, error.message || "Failed to reset password"));
+  }
+});
+
 
 api.post("/listings", requireAuth, requireRoles("owner", "admin"), async (req, res, next) => {
   try {
@@ -842,6 +1326,172 @@ api.get("/listings/nearby", async (req, res, next) => {
   }
 });
 
+const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
+
+async function fetchFromGooglePlaces(searchQuery, parsedLat, parsedLng) {
+  if (!GOOGLE_PLACES_API_KEY || GOOGLE_PLACES_API_KEY === "your_gemini_api_key_here" || GOOGLE_PLACES_API_KEY === "your_google_places_api_key_here") {
+    console.log("Google Places API Key is not configured. Skipping live Places fetch.");
+    return [];
+  }
+
+  try {
+    console.log(`Live Google Places search triggered for: "${searchQuery}"`);
+    const placesUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json";
+    
+    // Call Google Places Text Search. We pass location bias around Dhaka city
+    const response = await axios.get(placesUrl, {
+      params: {
+        query: searchQuery,
+        location: `${parsedLat},${parsedLng}`,
+        radius: 20000, // 20km bias
+        key: GOOGLE_PLACES_API_KEY
+      }
+    });
+
+    const results = response.data?.results || [];
+    console.log(`Google Places API returned ${results.length} results.`);
+
+    const newlySeededListings = [];
+    
+    for (const place of results.slice(0, 10)) { // take top 10 matches
+      const name = place.name;
+      const lat = place.geometry?.location?.lat;
+      const lng = place.geometry?.location?.lng;
+      if (!name || !lat || !lng) continue;
+
+      // Map Google Place types to LocationKhuji categories
+      const types = place.types || [];
+      let category = "fashion";
+      let details = {};
+      let description = `${name} is a popular spot in Dhaka. Information fetched live via Google Places.`;
+
+      if (types.includes("hospital") || types.includes("doctor") || types.includes("health") || types.includes("medical_class") || types.includes("dentist") || types.includes("physiotherapist") || types.includes("veterinary_care")) {
+        category = "hospital";
+        details = { specialty: ["General Medical"], beds: 150, open_hours: "24/7", emergency: true };
+      } else if (types.includes("pharmacy") || types.includes("drugstore")) {
+        category = "pharmacy";
+        details = { open_hours: "9 AM - 11 PM", emergency: true, delivery: true };
+      } else if (types.includes("shopping_mall") || types.includes("clothing_store") || types.includes("store") || types.includes("department_store") || types.includes("convenience_store") || types.includes("supermarket") || types.includes("electronics_store") || types.includes("furniture_store") || types.includes("beauty_salon")) {
+        category = "fashion";
+        details = { brands: ["Global Brands"], open_hours: "10 AM - 9 PM", price_range: "Mid to High" };
+      } else if (types.includes("restaurant") || types.includes("cafe") || types.includes("food") || types.includes("bakery") || types.includes("meal_takeaway")) {
+        category = "fashion"; // catch-all for local businesses
+        details = { brands: [], open_hours: "10 AM - 10 PM", price_range: "Mid" };
+      } else {
+        continue;
+      }
+
+      // Check if this listing already exists in our MongoDB database by title and coordinate proximity
+      const existing = await Listing.findOne({
+        title: name,
+        location: {
+          $nearSphere: {
+            $geometry: { type: "Point", coordinates: [lng, lat] },
+            $maxDistance: 100 // within 100 meters
+          }
+        }
+      }).lean();
+
+      if (existing) {
+        newlySeededListings.push(existing);
+        continue;
+      }
+
+      // Create a new MERN listing document
+      const doc = await Listing.create({
+        id: new mongoose.Types.ObjectId().toString(),
+        title: name,
+        description: description,
+        category: category,
+        owner_id: "dev-admin-001", // seeded under Admin
+        images: [],
+        address: place.formatted_address || `${name}, Dhaka`,
+        area: place.formatted_address?.split(",")?.[1]?.trim() || "Dhaka",
+        city: "Dhaka",
+        location: {
+          type: "Point",
+          coordinates: [lng, lat]
+        },
+        contact: {
+          phone: "+8801700000000",
+          whatsapp: "+8801700000000",
+          email: null
+        },
+        details: details,
+        tags: ["google-places", "live-search"],
+        is_approved: true,
+        is_active: true,
+        is_featured: false,
+        average_rating: place.rating || 0,
+        total_reviews: place.user_ratings_total || 0,
+        created_at: new Date().toISOString()
+      });
+
+      newlySeededListings.push(doc.toObject());
+    }
+
+    return newlySeededListings;
+  } catch (err) {
+    console.error("Failed to query Google Places API:", err.message);
+    return [];
+  }
+}
+
+function cleanQueryKeywords(q, category) {
+  if (!q) return "";
+  let cleanQ = q.toLowerCase();
+
+  // Remove common category-specific keywords
+  const categoryKeywords = {
+    flat: /\b(flat|rent|apartment|room|sublet|mess|basa|bari|flatRental)\b/gi,
+    pharmacy: /\b(pharmacy|medicine|drug|osudh|pharmacist|osud|pharmacies|drugstore)\b/gi,
+    hospital: /\b(hospital|clinic|doctor|mbbs|medical|ambulance|icu|ccu|hospitals)\b/gi,
+    fashion: /\b(fashion|clothing|shirt|pants|shop|mall|brand|dress|aarong|yellow|cats eye|panjabi|boutique|market|supermarket|store|convenience)\b/gi
+  };
+
+  // Remove radius/range/km suffixes
+  cleanQ = cleanQ.replace(/\d+\s*(?:km|k\.m\.|kilometer|kilometers|কিলোমিটার|কিমি|\bmeters?\b|\brange\b)/gi, "");
+
+  // Remove prepositions and search noise
+  cleanQ = cleanQ.replace(/\b(in|near|around|inside|at|under|find|search|me|show|for)\b/gi, "");
+
+  // Also remove category keywords for all categories if a specific category is requested
+  if (category) {
+    for (const [cat, regex] of Object.entries(categoryKeywords)) {
+      cleanQ = cleanQ.replace(regex, "");
+    }
+  }
+
+  // Clean extra spaces
+  cleanQ = cleanQ.replace(/\s+/g, " ").trim();
+  return cleanQ;
+}
+
+async function geocodeLocation(query) {
+  try {
+    const q = encodeURIComponent(`${query}, Bangladesh`);
+    console.log(`🌐 [Geocoding Request] Nominatim searching for: "${query}, Bangladesh"`);
+    const response = await axios.get(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${q}&countrycodes=bd&limit=1`,
+      {
+        headers: { "User-Agent": "LocationKhuji/1.0" },
+        timeout: 5000
+      }
+    );
+    if (response.data && response.data.length > 0) {
+      const first = response.data[0];
+      return {
+        lat: parseFloat(first.lat),
+        lng: parseFloat(first.lon),
+        displayName: first.display_name
+      };
+    }
+  } catch (err) {
+    console.warn(`⚠️ [Geocoding Warning] Nominatim failed: ${err.message}`);
+  }
+  return null;
+}
+
 api.post("/listings/ai-search", async (req, res, next) => {
   try {
     const { query: searchQuery, userLat, userLng, radiusKm = 30 } = req.body || {};
@@ -849,9 +1499,19 @@ api.post("/listings/ai-search", async (req, res, next) => {
 
     let parsedLat = Number(userLat) || 23.8103;
     let parsedLng = Number(userLng) || 90.4125;
+    
+    // Extract search radius in KM if specified in the query (e.g., "2km range", "5 km")
+    let parsedRadius = Number(radiusKm) || 10;
+    const radiusMatch = searchQuery.match(/(\d+)\s*(?:km|k.m.|kilometer|kilometers|কিলোমিটার|কিমি)/i);
+    if (radiusMatch) {
+      parsedRadius = Number(radiusMatch[1]);
+      console.log(`🎯 [Radius Extraction] Found custom radius in query: ${parsedRadius} km`);
+    }
 
     // Smart location centering based on popular area names in the query
     const AREA_COORDS = {
+      savar: [90.2667, 23.8583],
+      সাভার: [90.2667, 23.8583],
       dhanmondi: [90.3742, 23.7461],
       ধানমন্ডি: [90.3742, 23.7461],
       gulshan: [90.4078, 23.7925],
@@ -863,17 +1523,57 @@ api.post("/listings/ai-search", async (req, res, next) => {
       panthapath: [90.3817, 23.7519],
       পান্থপথ: [90.3817, 23.7519],
       kuril: [90.4248, 23.8134],
-      কুড়িল: [90.4248, 23.8134]
+      কুড়িল: [90.4248, 23.8134],
+      uttara: [90.3907, 23.8759],
+      উত্তরা: [90.3907, 23.8759],
+      bashundhara: [90.4497, 23.8193],
+      বসুন্ধরা: [90.4497, 23.8193],
+      badda: [90.4258, 23.7805],
+      বাড্ডা: [90.4258, 23.7805],
+      mohammadpur: [90.3625, 23.7542],
+      মোহাম্মদপুর: [90.3625, 23.7542],
+      motijheel: [90.4194, 23.7330],
+      মতিঝিল: [90.4194, 23.7330],
+      khilgaon: [90.4203, 23.7507],
+      খিলগাঁও: [90.4203, 23.7507],
+      chittagong: [91.7832, 22.3569],
+      চট্টগ্রাম: [91.7832, 22.3569],
+      sylhet: [91.8687, 24.8949],
+      সিলেট: [91.8687, 24.8949]
     };
 
     const lowerQuery = searchQuery.toLowerCase();
     let overriddenLocation = false;
+
+    // A. Hardcoded popular areas dictionary check (Highest Priority & 100% Precision)
     for (const [areaName, coords] of Object.entries(AREA_COORDS)) {
       if (lowerQuery.includes(areaName)) {
         parsedLng = coords[0];
         parsedLat = coords[1];
         overriddenLocation = true;
+        console.log(`🎯 [Location Override] Resolved hardcoded popular area "${areaName}" to: [${parsedLat}, ${parsedLng}]`);
         break;
+      }
+    }
+
+    // B. If not a popular area, fall back to dynamic geocoding via Nominatim
+    if (!overriddenLocation) {
+      const locMatch = searchQuery.match(/\b(?:in|near|around|inside|at|সাভার|গুলশান|ধানমন্ডি|মিরপুর|বনানী)\s+([a-zA-Z\u0980-\u09FF\s'-]+)/i);
+      if (locMatch && locMatch[1]) {
+        let areaToGeocode = locMatch[1].trim();
+        // Remove radius/range/km suffixes from the area string (e.g. "2km range", "1km", "5 km")
+        areaToGeocode = areaToGeocode.replace(/\d+\s*(?:km|k\.m\.|kilometer|kilometers|কিলোমিটার|কিমি|\bmeters?\b|\brange\b)/i, "").trim();
+        
+        if (areaToGeocode) {
+          console.log(`🔍 [Location Extraction] Found potential area to geocode: "${areaToGeocode}"`);
+          const geocoded = await geocodeLocation(areaToGeocode);
+          if (geocoded) {
+            parsedLng = geocoded.lng;
+            parsedLat = geocoded.lat;
+            overriddenLocation = true;
+            console.log(`🎯 [Location Geocoded] Nominatim resolved "${areaToGeocode}" to: [${parsedLat}, ${parsedLng}]`);
+          }
+        }
       }
     }
 
@@ -990,7 +1690,7 @@ api.post("/listings/ai-search", async (req, res, next) => {
       location: {
         $nearSphere: {
           $geometry: { type: "Point", coordinates: [parsedLng, parsedLat] },
-          $maxDistance: radiusKm * 1000,
+          $maxDistance: parsedRadius * 1000,
         },
       },
     };
@@ -1042,13 +1742,47 @@ api.post("/listings/ai-search", async (req, res, next) => {
       }
     }
 
-    const listings = await Listing.find(mongoQuery).limit(50).lean();
+    let listings = await Listing.find(mongoQuery).limit(50).lean();
+    
+    // Clean and reconstruct Google Places search query to target category and location correctly
+    let googleSearchQuery = searchQuery;
+    try {
+      const locationPart = cleanQueryKeywords(searchQuery, intent.category);
+      if (intent.category !== "all" && locationPart) {
+        googleSearchQuery = `${intent.category} in ${locationPart}`;
+      } else if (locationPart) {
+        googleSearchQuery = locationPart;
+      }
+    } catch (cleanErr) {
+      console.warn("Failed to clean AI search query:", cleanErr.message);
+    }
+
+    // Always trigger Google Places fetch alongside local listings to overlay any missing items!
+    try {
+      const livePlaces = await fetchFromGooglePlaces(googleSearchQuery, parsedLat, parsedLng);
+      if (livePlaces && livePlaces.length > 0) {
+        const existingIds = new Set(listings.map(l => l.id));
+        let newResults = livePlaces.filter(l => !existingIds.has(l.id));
+        
+        // Filter Google Places results by the requested category if specified
+        if (intent.category !== "all") {
+          newResults = newResults.filter(l => l.category === intent.category);
+        }
+        
+        listings = [...listings, ...newResults];
+      }
+    } catch (gErr) {
+      console.warn("⚠️ [Google Places Fallback Warning] Could not fetch live places:", gErr.message);
+    }
+
     const withOwners = await populateListingOwners(listings.map(listingToOut));
 
     res.json({
       intent,
       listings: withOwners,
       processedByAI,
+      searchCenter: { lat: parsedLat, lng: parsedLng },
+      radius: parsedRadius
     });
   } catch (error) {
     next(error.status ? error : apiError(500, error.message || "AI Search failed"));
@@ -1057,48 +1791,163 @@ api.post("/listings/ai-search", async (req, res, next) => {
 
 api.get("/listings/search", async (req, res, next) => {
   try {
-    const q = req.query.q ? String(req.query.q) : null;
+    const q = req.query.q ? String(req.query.q).trim() : null;
     const category = req.query.category && req.query.category !== 'all' ? String(req.query.category) : null;
     const lat = req.query.lat !== undefined && req.query.lat !== "" ? Number(req.query.lat) : null;
     const lng = req.query.lng !== undefined && req.query.lng !== "" ? Number(req.query.lng) : null;
-    const radius = Number(req.query.radius || 10);
+    const radius = Number(req.query.radius || 50);
     const page = Number(req.query.page || 1);
-    const limit = Math.min(Number(req.query.limit || 24), 100);
+    const limit = Math.min(Number(req.query.limit || 50), 200);
 
-    const query = { is_active: true };
-    if (category) query.category = category;
-
-    if (Number.isFinite(lat) && Number.isFinite(lng)) {
-      query.location = {
-        $nearSphere: {
-          $geometry: { type: "Point", coordinates: [lng, lat] },
-          $maxDistance: radius * 1000,
-        },
-      };
-    }
+    let results = [];
+    const baseFilter = { is_active: true };
+    if (category) baseFilter.category = category;
 
     if (q) {
-      const regexQuery = { $regex: q, $options: "i" };
-      const textFilters = [
-        { title: regexQuery },
-        { description: regexQuery },
-        { area: regexQuery },
-        { address: regexQuery },
-        { thana: regexQuery },
-        { district: regexQuery }
-      ];
-      
-      if (query.location) {
-        // If we have location AND text query, we must use $and
-        query.$or = textFilters;
-      } else {
-        query.$or = textFilters;
+      // 1. Clean and reconstruct keywords for robust partial/unordered word matching
+      const locationPart = cleanQueryKeywords(q, category);
+      let searchKeywords = q;
+      if (category && locationPart) {
+        searchKeywords = `${category} ${locationPart}`;
+      } else if (locationPart) {
+        searchKeywords = locationPart;
+      }
+
+      const escapedKeywords = searchKeywords.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const simpleRegex = { $regex: escapedKeywords, $options: "i" };
+
+      // Split into words to match in any order (e.g. "flat banani" matches "3-bed Family Flat in Banani")
+      const words = searchKeywords.split(/\s+/).filter(w => w.length > 1);
+      let wordRegex = simpleRegex;
+      if (words.length > 0) {
+        const regexParts = words.map(w => `(?=.*${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`);
+        wordRegex = { $regex: regexParts.join(''), $options: "i" };
+      }
+
+      // Priority 1: Title matches
+      const titleMatches = await Listing.find({
+        ...baseFilter,
+        title: wordRegex
+      }).limit(limit).lean();
+
+      // Priority 2: Area/address/thana/district matches
+      const areaMatches = await Listing.find({
+        ...baseFilter,
+        title: { $not: wordRegex },
+        $or: [
+          { area: wordRegex },
+          { address: wordRegex },
+          { thana: wordRegex },
+          { district: wordRegex },
+        ]
+      }).limit(limit).lean();
+
+      // Priority 3: Description/tags matches
+      const descMatches = await Listing.find({
+        ...baseFilter,
+        title: { $not: wordRegex },
+        area: { $not: wordRegex },
+        address: { $not: wordRegex },
+        $or: [
+          { description: wordRegex },
+          { tags: wordRegex },
+        ]
+      }).limit(Math.max(limit - titleMatches.length - areaMatches.length, 10)).lean();
+
+      // Combine with title matches first (most relevant)
+      const seen = new Set();
+      for (const batch of [titleMatches, areaMatches, descMatches]) {
+        for (const item of batch) {
+          if (!seen.has(item.id)) {
+            seen.add(item.id);
+            results.push(item);
+          }
+        }
+      }
+
+      // If location is also provided, sort nearby results higher
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        // Also fetch nearby results that match keywords within radius
+        const nearbyQuery = {
+          ...baseFilter,
+          location: {
+            $nearSphere: {
+              $geometry: { type: "Point", coordinates: [lng, lat] },
+              $maxDistance: radius * 1000,
+            }
+          },
+          $or: [
+            { title: wordRegex },
+            { area: wordRegex },
+            { address: wordRegex },
+            { description: wordRegex },
+          ]
+        };
+
+        const nearbyResults = await Listing.find(nearbyQuery).limit(limit).lean();
+
+        // Merge: put nearby keyword matches at the top
+        const nearbyIds = new Set(nearbyResults.map(r => r.id));
+        const nearbyKeywordMatches = results.filter(r => nearbyIds.has(r.id));
+        const otherResults = results.filter(r => !nearbyIds.has(r.id));
+        const nearbyOnlyResults = nearbyResults.filter(r => !seen.has(r.id));
+
+        results = [...nearbyKeywordMatches, ...nearbyOnlyResults, ...otherResults];
+      }
+    } else if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      // No keyword, just location-based
+      const nearbyQuery = {
+        ...baseFilter,
+        location: {
+          $nearSphere: {
+            $geometry: { type: "Point", coordinates: [lng, lat] },
+            $maxDistance: radius * 1000,
+          }
+        }
+      };
+      results = await Listing.find(nearbyQuery).limit(limit).lean();
+    } else {
+      // No query, no location - return recent listings
+      results = await Listing.find(baseFilter).sort({ created_at: -1 }).limit(limit).lean();
+    }
+
+    // Paginate
+    const paginatedResults = results.slice((page - 1) * limit, page * limit);
+
+    // Always trigger Google Places fetch alongside local listings to overlay any missing items!
+    if (q && Number.isFinite(lat) && Number.isFinite(lng)) {
+      let googleSearchQuery = q;
+      try {
+        const locationPart = cleanQueryKeywords(q, category);
+        if (category && locationPart) {
+          googleSearchQuery = `${category} in ${locationPart}`;
+        } else if (locationPart) {
+          googleSearchQuery = locationPart;
+        }
+      } catch (cleanErr) {
+        console.warn("Failed to clean standard search query for Google Places:", cleanErr.message);
+      }
+
+      try {
+        const livePlaces = await fetchFromGooglePlaces(googleSearchQuery, lat, lng);
+        if (livePlaces && livePlaces.length > 0) {
+          const existingIds = new Set(paginatedResults.map(r => r.id));
+          let newPlaces = livePlaces.filter(l => !existingIds.has(l.id));
+          
+          // Filter Google Places results by the requested category if specified
+          if (category) {
+            newPlaces = newPlaces.filter(l => l.category === category);
+          }
+          
+          paginatedResults.push(...newPlaces);
+        }
+      } catch (placesErr) {
+        console.error("Google Places fallback error in standard search:", placesErr.message);
       }
     }
 
-    const items = await Listing.find(query).skip((page - 1) * limit).limit(limit).lean();
-    const withOwners = await populateListingOwners(items.map(listingToOut));
-    res.json({ listings: withOwners, page, limit });
+    const withOwners = await populateListingOwners(paginatedResults.map(listingToOut));
+    res.json({ listings: withOwners, page, limit, total: results.length });
   } catch (error) {
     next(error.status ? error : apiError(400, error.message || "Failed to search listings"));
   }

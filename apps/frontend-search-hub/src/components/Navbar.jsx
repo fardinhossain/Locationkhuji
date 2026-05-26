@@ -21,6 +21,8 @@ import { useThemeStore, useLangStore, useAuthStore, useLocationStore } from "../
 import { Button } from "../components/ui/button";
 import { api } from "../lib/api";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+
 
 const CATS = [
   { key: "flat", icon: Home, labelKey: "flatRental" },
@@ -39,6 +41,8 @@ export default function Navbar() {
   const loc = useLocation();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [resending, setResending] = React.useState(false);
+  const [checking, setChecking] = React.useState(false);
 
   React.useEffect(() => {
     i18n.changeLanguage(lang);
@@ -64,6 +68,75 @@ export default function Navbar() {
       animate={{ y: 0, opacity: 1 }}
       className="sticky top-0 z-50 backdrop-blur-xl bg-navy-900/85 border-b border-white/5"
     >
+      {/* Verification Alert Banner */}
+      {user && user.is_verified === false && (
+        <div className="bg-gradient-to-r from-amber-500/15 via-teal-500/10 to-amber-500/15 border-b border-white/5 px-4 py-2 flex flex-wrap items-center justify-center gap-3 relative z-50">
+          <span className="text-xs sm:text-sm font-medium text-amber-300 flex items-center gap-1.5 font-sans animate-pulse-slow">
+            <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            {lang === 'bn' ? 
+              "আপনার অ্যাকাউন্টটি এখনও ভেরিফাই করা হয়নি। মেইল পাননি?" : 
+              "Your account is not verified yet. Did not receive the email?"}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              size="xs"
+              disabled={resending || checking}
+              onClick={async () => {
+                setResending(true);
+                try {
+                  await api.post("/auth/resend-verification");
+                  toast.success(
+                    lang === 'bn' ? 
+                      "ভেরিফিকেশন মেইল পুনরায় পাঠানো হয়েছে! অনুগ্রহ করে ইনবক্স চেক করুন।" : 
+                      "Verification email resent successfully! Please check your inbox."
+                  );
+                } catch (err) {
+                  toast.error(err.response?.data?.detail || "Failed to resend verification email");
+                } finally {
+                  setResending(false);
+                }
+              }}
+              className="bg-teal-500 hover:bg-teal-400 text-navy-900 font-extrabold text-[11px] h-7 px-3 rounded-full shadow-[0_0_10px_rgba(0,201,167,0.3)] transition-all uppercase tracking-wider shrink-0"
+            >
+              {resending ? "..." : (lang === 'bn' ? "মেইল পুনরায় পাঠান" : "Resend Email")}
+            </Button>
+            
+            <Button
+              size="xs"
+              variant="outline"
+              disabled={resending || checking}
+              onClick={async () => {
+                setChecking(true);
+                try {
+                  const r = await api.get("/auth/me");
+                  if (r.data.is_verified) {
+                    useAuthStore.getState().updateUser({ is_verified: true });
+                    toast.success(
+                      lang === 'bn' ? 
+                        "অ্যাকাউন্ট সফলভাবে ভেরিফাই করা হয়েছে! প্রিমিয়াম ফিচারে স্বাগতম।" : 
+                        "Account verified successfully! Welcome to premium features."
+                    );
+                  } else {
+                    toast.warning(
+                      lang === 'bn' ? 
+                        "আপনার ইমেইলটি এখনো ভেরিফাই করা হয়নি। অনুগ্রহ করে ইনবক্স চেক করে লিংকে ক্লিক করুন!" : 
+                        "Your email is still unverified. Please check your inbox and click the verification link first!"
+                    );
+                  }
+                } catch (err) {
+                  toast.error("Failed to refresh status");
+                } finally {
+                  setChecking(false);
+                }
+              }}
+              className="border-white/20 hover:border-white/40 text-white font-extrabold text-[11px] h-7 px-3 rounded-full transition-all uppercase tracking-wider shrink-0 bg-navy-800/50 hover:bg-navy-700/50"
+            >
+              {checking ? "..." : (lang === 'bn' ? "স্ট্যাটাস চেক করুন" : "Check Status")}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 h-16 sm:h-20 flex items-center justify-between gap-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3 sm:gap-4 shrink-0 group">

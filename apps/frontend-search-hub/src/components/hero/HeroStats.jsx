@@ -11,7 +11,7 @@ const HeroStats = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.6 }}
-      className="mt-12 sm:mt-16 lg:mt-24 w-full max-w-3xl"
+      className="mt-6 sm:mt-8 lg:mt-4 w-full"
     >
       <div className="cyber-panel rounded-2xl grid grid-cols-2 lg:grid-cols-4 items-center py-5 px-4 sm:px-6 gap-y-6 gap-x-4 lg:gap-0 lg:divide-x divide-transparent lg:divide-white/10">
         
@@ -45,7 +45,7 @@ const HeroStats = () => {
 };
 
 const StatItem = ({ icon, count, label }) => (
-  <div className="flex items-center gap-3 sm:gap-4 justify-center sm:justify-start lg:justify-center xl:justify-start lg:pl-3 xl:pl-8 first:pl-0">
+  <div className="flex items-center gap-3 sm:gap-4 justify-start lg:pl-4 xl:pl-8 first:pl-0">
     <div className="flex-shrink-0">{icon}</div>
     <div>
       <div className="text-lg sm:text-xl font-bold text-white leading-tight">{count}</div>

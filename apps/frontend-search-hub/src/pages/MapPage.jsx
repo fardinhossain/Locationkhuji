@@ -37,6 +37,41 @@ export default function MapPage() {
   
   const [activePanel, setActivePanel] = useState(null);
   const [isAiMode, setIsAiMode] = useState(!!params.get("ai_q"));
+  const lastProcessedAiQ = React.useRef("");
+
+  const parseQueryAndSyncStore = (query) => {
+    if (!query) return;
+    const lowerQuery = query.toLowerCase();
+
+    // 1. Parse Category
+    let detectedCategory = null;
+    if (/\b(flat|rent|apartment|room|sublet|mess|basa|bari)\b/i.test(lowerQuery)) {
+      detectedCategory = "flat";
+    } else if (/\b(pharmacy|medicine|drug|osudh|pharmacist|osud|pharmacies)\b/i.test(lowerQuery)) {
+      detectedCategory = "pharmacy";
+    } else if (/\b(hospital|clinic|doctor|mbbs|medical|ambulance|icu|ccu|hospitals)\b/i.test(lowerQuery)) {
+      detectedCategory = "hospital";
+    } else if (/\b(fashion|clothing|shirt|pants|shop|mall|brand|dress|aarong|yellow|cats eye|panjabi|boutique|market|supermarket|groceries|grocery|store|convenience)\b/i.test(lowerQuery)) {
+      detectedCategory = "fashion";
+    }
+
+    if (detectedCategory) {
+      loc.setCategory(detectedCategory);
+      console.log("🎯 [Client Parse] Set category to:", detectedCategory);
+    } else {
+      loc.setCategory("all");
+    }
+
+    // 2. Parse Radius
+    const radiusMatch = lowerQuery.match(/(\d+)\s*(?:km|k.m.|kilometer|kilometers|কিলোমিটার|কিমি)/i);
+    if (radiusMatch) {
+      const parsedRadius = Number(radiusMatch[1]);
+      if (parsedRadius >= 1 && parsedRadius <= 20) {
+        loc.setRadius(parsedRadius);
+        console.log("🎯 [Client Parse] Set radius to:", parsedRadius);
+      }
+    }
+  };
 
   const mapCenter = React.useMemo(() => {
     const lat = loc.selectedLat;
@@ -57,6 +92,7 @@ export default function MapPage() {
     if (aiQuery) {
       setIsAiMode(true);
       setManualAddress(aiQuery);
+      parseQueryAndSyncStore(aiQuery);
     }
   }, [params]);
 
@@ -65,6 +101,27 @@ export default function MapPage() {
     try {
       const aiQuery = params.get("ai_q");
       if (aiQuery) {
+        // Parse category and radius on the client side immediately to ensure they are synchronized with the UI
+        parseQueryAndSyncStore(aiQuery);
+
+        // If we already parsed and loaded this conversational query, do not run the heavy AI parser again.
+        // This avoids infinite loop triggers when we sync category, center, and radius store values.
+        if (aiQuery === lastProcessedAiQ.current) {
+          const isAll = !loc.category || loc.category === 'all';
+          const r = await api.get("/listings/search", {
+            params: { 
+              lat: loc.selectedLat, 
+              lng: loc.selectedLng, 
+              radius: loc.radius || 10, 
+              category: isAll ? undefined : loc.category, 
+              q: manualAddress?.trim() || undefined,
+              limit: 50 
+            },
+          });
+          setListings(r.data.listings || []);
+          return;
+        }
+
         const r = await api.post("/listings/ai-search", {
           query: aiQuery,
           userLat: loc.selectedLat,
@@ -73,12 +130,28 @@ export default function MapPage() {
         });
         setListings(r.data.listings || []);
         
-        // Auto-center on first search result if available
-        if (r.data.listings && r.data.listings.length > 0) {
+        // Cache the processed query to prevent duplicate requests
+        lastProcessedAiQ.current = aiQuery;
+
+        // A. Center exactly on the geocoded coordinates returned by Nominatim
+        if (r.data.searchCenter) {
+          loc.setSelected(r.data.searchCenter.lat, r.data.searchCenter.lng, "Search Center");
+        } else if (r.data.listings && r.data.listings.length > 0) {
           const first = r.data.listings[0];
           loc.setSelected(first.lat, first.lng, first.area || first.title);
         }
+
+        // B. Dynamically update the selected category store based on AI intent!
+        if (r.data.intent && r.data.intent.category) {
+          loc.setCategory(r.data.intent.category);
+        }
+
+        // C. Dynamically update the search radius slider store based on parsed range!
+        if (r.data.radius && Number.isFinite(r.data.radius)) {
+          loc.setRadius(r.data.radius);
+        }
       } else {
+        lastProcessedAiQ.current = ""; // Reset ref
         const isAll = !loc.category || loc.category === 'all';
         const r = await api.get("/listings/search", {
           params: { 
@@ -86,6 +159,7 @@ export default function MapPage() {
             lng: loc.selectedLng, 
             radius: loc.radius || 10, 
             category: isAll ? undefined : loc.category, 
+            q: manualAddress?.trim() || undefined,
             limit: 50 
           },
         });
@@ -165,24 +239,32 @@ export default function MapPage() {
 
   const handleSearchAddress = async (e) => {
     if (e) e.preventDefault();
-    if (!manualAddress.trim()) return;
+    const query = manualAddress.trim();
+    if (!query) return;
+    
+    // Parse category and radius from the search query immediately to keep UI in sync
+    parseQueryAndSyncStore(query);
     
     if (isAiMode) {
-      setSearchParams({ ai_q: manualAddress.trim() });
+      setSearchParams({ ai_q: query });
     } else {
       if (suggestions.length > 0) {
         handleSelectSuggestion(suggestions[0]);
       } else {
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(manualAddress)}&countrycodes=bd&limit=1`);
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=bd&limit=1`);
           const data = await res.json();
           if (data && data.length > 0) {
             handleSelectSuggestion(data[0]);
           } else {
-            alert(lang === "bn" ? "ঠিকানা পাওয়া যায়নি" : "Address not found");
+            // No geocode result — trigger keyword-only search via backend
+            setShowSuggestions(false);
+            fetchListings();
           }
         } catch (err) {
           console.error("Geocoding error:", err);
+          // On error, still try keyword search
+          fetchListings();
         }
       }
     }
