@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { FiMapPin, FiPhone, FiMail, FiNavigation, FiBookmark, FiShare2 } from "react-icons/fi";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { FiMapPin, FiPhone, FiMail, FiNavigation, FiBookmark, FiShare2, FiFlag, FiTrash2, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import { toast } from "sonner";
 import Navbar from "../components/Navbar";
@@ -25,6 +25,7 @@ function StarPicker({ value, onChange }) {
 
 export default function ListingDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user, updateUser } = useAuthStore();
   const { lang } = useLangStore();
   const { t } = useTranslation();
@@ -74,6 +75,27 @@ export default function ListingDetailPage() {
     }
   };
 
+  const handleReport = async () => {
+    if (!user) return toast.error("Please login to report");
+    try {
+      await api.post(`/listings/${id}/report`);
+      toast.success("Listing reported for review");
+    } catch (err) {
+      toast.error("Failed to report listing");
+    }
+  };
+
+  const handleRemove = async () => {
+    if (!window.confirm("Are you sure you want to remove this listing?")) return;
+    try {
+      await api.delete(`/listings/${id}`);
+      toast.success("Listing removed");
+      navigate(user.role === "admin" ? "/admin/listings" : "/owner/dashboard");
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Failed to remove listing");
+    }
+  };
+
   if (!listing) return <div><Navbar /><div className="p-10 text-center">Loading...</div></div>;
 
   const isSaved = user?.saved_listings?.includes(id);
@@ -88,12 +110,38 @@ export default function ListingDetailPage() {
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 grid lg:grid-cols-[1fr_360px] gap-8">
         <div>
           {/* Gallery */}
-          <div className="relative h-[400px] rounded-2xl overflow-hidden bg-[var(--bg-elevated)] shadow-lg border border-[var(--border-light)]">
-            {img ? <img src={img} alt={listing.title} className="w-full h-full object-cover"/> :
+          <div className="relative h-[400px] rounded-2xl overflow-hidden bg-[var(--bg-elevated)] shadow-lg border border-[var(--border-light)] group">
+            {img ? <img src={img} alt={listing.title} className="w-full h-full object-cover transition-opacity duration-300"/> :
               <div className="w-full h-full flex items-center justify-center text-[var(--text-tertiary)]"><FiMapPin size={48}/></div>}
+            
+            {listing.images?.length > 1 && (
+              <>
+                <button 
+                  onClick={() => setActiveImg((prev) => (prev > 0 ? prev - 1 : listing.images.length - 1))}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-black/80"
+                >
+                  <FiChevronLeft size={24}/>
+                </button>
+                <button 
+                  onClick={() => setActiveImg((prev) => (prev < listing.images.length - 1 ? prev + 1 : 0))}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-black/80"
+                >
+                  <FiChevronRight size={24}/>
+                </button>
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  {listing.images.map((_, i) => (
+                    <button 
+                      key={i} 
+                      onClick={() => setActiveImg(i)} 
+                      className={`w-2.5 h-2.5 rounded-full transition-all shadow-sm ${i === activeImg ? 'bg-primary w-5' : 'bg-white/60 hover:bg-white'}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
             <div className="absolute top-4 left-4 flex gap-2">
               <CategoryBadge category={listing.category} />
-              {listing.is_approved && <span className="px-3 py-1 rounded-pill bg-emerald-500 text-white text-[10px] font-bold shadow-lg">✓ VERIFIED</span>}
+              {listing.is_active && <span className="px-3 py-1 rounded-pill bg-emerald-500 text-white text-[10px] font-bold shadow-lg">✓ ACTIVE</span>}
             </div>
           </div>
 
@@ -107,9 +155,9 @@ export default function ListingDetailPage() {
               <div className="flex flex-col">
                 <div className="text-xs uppercase font-bold tracking-widest text-[var(--text-tertiary)] mb-1">Rating</div>
                 <div className="flex items-center gap-2">
-                  <span className="font-sora font-bold text-xl text-[var(--text-primary)]">{listing.average_rating.toFixed(1)}</span>
-                  <StarRating rating={listing.average_rating} />
-                  <span className="text-xs text-[var(--text-tertiary)] font-medium">({listing.total_reviews} {t('reviews')})</span>
+                  <span className="font-sora font-bold text-xl text-[var(--text-primary)]">{(listing.average_rating || 0).toFixed(1)}</span>
+                  <StarRating rating={listing.average_rating || 0} />
+                  <span className="text-xs text-[var(--text-tertiary)] font-medium">({listing.total_reviews || 0} {t('reviews')})</span>
                 </div>
               </div>
               <div className="w-px h-8 bg-[var(--border-light)]" />
@@ -129,6 +177,16 @@ export default function ListingDetailPage() {
               <a href={`https://www.google.com/maps/dir/?api=1&destination=${listing.lat},${listing.lng}`} target="_blank" rel="noreferrer">
                 <Button variant="outline" className="gap-2 h-11 px-6 rounded-pill"><FiNavigation/> {t('directions')}</Button>
               </a>
+              {user && user.role !== "admin" && listing.owner?.id !== user.id && (
+                <Button variant="outline" className="gap-2 h-11 px-6 rounded-pill text-amber-600 border-amber-600/30 hover:bg-amber-50" onClick={handleReport}>
+                  <FiFlag/> Report
+                </Button>
+              )}
+              {(user?.role === "admin" || listing.owner?.id === user?.id) && (
+                <Button variant="destructive" className="gap-2 h-11 px-6 rounded-pill shadow-lg" onClick={handleRemove}>
+                  <FiTrash2/> Remove from Map
+                </Button>
+              )}
             </div>
           </div>
 
@@ -160,11 +218,21 @@ export default function ListingDetailPage() {
                   <Detail k="Hours" v={d.open_hours} />
                 </>
               )}
-              {listing.category === "fashion" && (
+              {listing.category === "restaurant" && (
                 <>
-                  <Detail k="Brands" v={(d.brands || []).join(", ")} />
+                  <Detail k="Cuisine" v={Array.isArray(d.cuisine) ? d.cuisine.join(", ") : d.cuisine} />
                   <Detail k="Hours" v={d.open_hours} />
                   <Detail k="Price Range" v={d.price_range} />
+                  <Detail k="Delivery" v={d.delivery ? "Yes" : "No"} />
+                </>
+              )}
+              {listing.category === "service" && (
+                <>
+                  <Detail k="Service Type" v={d.service_type} />
+                  <Detail k="Experience" v={d.experience} />
+                  <Detail k="Available Time" v={d.available_time} />
+                  <Detail k="Price Range" v={d.price_range} />
+                  <Detail k="Service Radius" v={d.service_radius_km ? `${d.service_radius_km} km` : "—"} />
                 </>
               )}
             </div>

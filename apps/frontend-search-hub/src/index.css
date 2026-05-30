@@ -179,24 +179,52 @@ input, select, textarea {
   filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.1) saturate(0.5) !important;
 }
 
+/* Light mode map: override CSS variables to light palette inside the map wrapper */
+:not(.map-dark).leaflet-container,
+:not(.map-dark) .leaflet-container {
+  --bg-surface: #ffffff;
+  --bg-elevated: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --border-light: rgba(0,0,0,0.10);
+  background: #e8ecf0;
+}
+
 .leaflet-container .leaflet-tile {
   mix-blend-mode: normal !important;
 }
 
-/* Custom marker */
+/* Custom marker - base styles */
 .lk-marker {
   display: flex; align-items: center; justify-content: center;
   width: 38px; height: 38px; border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
   box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-  border: 2.5px solid white;
+  border: 2.5px solid rgba(255,255,255,0.9);
 }
 .lk-marker > svg { transform: rotate(45deg); color: white; }
 .lk-marker.flat { background: #6366F1; }
 .lk-marker.pharmacy { background: #10B981; }
 .lk-marker.hospital { background: #EF4444; }
-.lk-marker.fashion { background: #F59E0B; }
+.lk-marker.restaurant { background: #F59E0B; }
+.lk-marker.service { background: #8B5CF6; }
+.lk-marker.service-plumber { background: #3B82F6; } /* Blue */
+.lk-marker.service-electrician { background: #EAB308; } /* Yellow */
+.lk-marker.service-ac-technician { background: #06B6D4; } /* Cyan */
+.lk-marker.service-cleaner { background: #10B981; } /* Emerald */
+.lk-marker.service-carpenter { background: #D97706; } /* Amber */
+.lk-marker.service-event-manager { background: #EC4899; } /* Pink */
+.lk-marker.service-photographer { background: #8B5CF6; } /* Purple */
+.lk-marker.service-pest-control { background: #84CC16; } /* Lime */
+.lk-marker.service-fixing-service { background: #64748B; } /* Slate */
+.lk-marker.service-painter { background: #F43F5E; } /* Rose */
 .lk-marker.user-pin { background: #00C9A7; }
+
+/* Light mode marker overrides - darker border visible on white map tiles */
+:not(.map-dark) .lk-marker {
+  border-color: rgba(30,30,30,0.25);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
 
 .lk-cluster {
   background: rgba(0,201,167,0.95);
@@ -205,6 +233,29 @@ input, select, textarea {
   border-radius: 9999px;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 16px rgba(0,201,167,0.4);
+}
+
+/* Light mode cluster - darker border and text for visibility */
+:not(.map-dark) .lk-cluster {
+  border-color: rgba(0,150,130,0.6);
+  box-shadow: 0 4px 16px rgba(0,201,167,0.3), 0 2px 6px rgba(0,0,0,0.15);
+  color: #0f172a !important; /* Dark slate text for maximum readability */
+  background: rgba(0, 180, 150, 0.95) !important; /* Slightly deeper premium teal for light tiles */
+}
+
+/* Light mode popup overrides */
+:not(.map-dark) .leaflet-popup-content-wrapper {
+  background: #ffffff !important;
+  color: #1a1a2e !important;
+  border: 1px solid rgba(0,0,0,0.12) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12) !important;
+}
+:not(.map-dark) .leaflet-popup-tip {
+  background: #ffffff !important;
+  border-color: rgba(0,0,0,0.12) !important;
+}
+:not(.map-dark) .leaflet-popup-close-button {
+  color: #475569 !important;
 }
 
 /* Scrollbar */

@@ -3,18 +3,36 @@ import { MapContainer, TileLayer, Marker, Popup, Circle, useMapEvents, useMap, Z
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { renderToStaticMarkup } from "react-dom/server";
-import { FaHome, FaPills, FaHospital, FaShoppingBag } from "react-icons/fa";
+import { FaHome, FaPills, FaHospital, FaUtensils, FaBriefcase, FaWrench, FaBolt, FaBroom, FaPaintRoller, FaBug, FaCamera, FaTools } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { CategoryBadge, StarRating } from "./ListingCard";
 import BangladeshMask from "./BangladeshMask";
 import { useThemeStore, useLangStore } from "../store";
 import { useTranslation } from "react-i18next";
 
-const ICON_MAP = { flat: FaHome, pharmacy: FaPills, hospital: FaHospital, fashion: FaShoppingBag };
+const SERVICE_ICONS = {
+  Plumber: FaWrench,
+  Electrician: FaBolt,
+  "AC Technician": FaTools,
+  Cleaner: FaBroom,
+  Carpenter: FaTools,
+  "Event Manager": FaBriefcase,
+  Photographer: FaCamera,
+  "Pest Control": FaBug,
+  "Fixing Service": FaWrench,
+  Painter: FaPaintRoller
+};
 
-const makeIcon = (category) => {
-  const Icon = ICON_MAP[category] || FaHome;
-  const html = `<div class="lk-marker ${category}">${renderToStaticMarkup(<Icon size={14} />)}</div>`;
+const ICON_MAP = { flat: FaHome, pharmacy: FaPills, hospital: FaHospital, restaurant: FaUtensils, service: FaBriefcase };
+
+const makeIcon = (listing) => {
+  let Icon = ICON_MAP[listing.category] || FaHome;
+  let serviceClass = "";
+  if (listing.category === "service" && listing.details?.service_type) {
+    Icon = SERVICE_ICONS[listing.details.service_type] || FaBriefcase;
+    serviceClass = " service-" + listing.details.service_type.toLowerCase().replace(/\s+/g, '-');
+  }
+  const html = `<div class="lk-marker ${listing.category}${serviceClass}">${renderToStaticMarkup(<Icon size={14} />)}</div>`;
   return L.divIcon({ html, className: "", iconSize: [36, 36], iconAnchor: [18, 36], popupAnchor: [0, -36] });
 };
 
@@ -33,13 +51,26 @@ function MapClicker({ onClick }) {
   return null;
 }
 
-function MapUpdater({ center }) {
+function MapUpdater({ center, radius }) {
   const map = useMap();
   useEffect(() => {
     if (center && center[0] && center[1]) {
-      map.flyTo(center, 13, { duration: 1.5 });
+      if (radius && radius > 0) {
+        // Calculate bounds from radius mathematically (no L.circle needed)
+        // 1 degree latitude ≈ 111.32 km everywhere on Earth
+        const kmPerDeg = 111.32;
+        const latOffset = radius / kmPerDeg;
+        const lngOffset = radius / (kmPerDeg * Math.cos(center[0] * Math.PI / 180));
+        const bounds = L.latLngBounds(
+          [center[0] - latOffset, center[1] - lngOffset],
+          [center[0] + latOffset, center[1] + lngOffset]
+        );
+        map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5, maxZoom: 16 });
+      } else {
+        map.flyTo(center, 13, { duration: 1.5 });
+      }
     }
-  }, [center, map]);
+  }, [center, radius, map]);
   return null;
 }
 
@@ -120,14 +151,16 @@ export default function MapView({ center, listings = [], userLocation, radius = 
         />
         <BangladeshMask />
         {onClickMap && <MapClicker onClick={onClickMap} />}
-        <MapUpdater center={validCenter} />
+        <MapUpdater center={validCenter} radius={radius} />
         
-        {/* Search Radius Visualization */}
-        {validCenter && radius > 0 && (
+        {/* Search Radius Visualization - only show when user has selected a location */}
+        {validCenter && radius > 0 &&
+         !(validCenter[0] === DEFAULT_CENTER[0] && validCenter[1] === DEFAULT_CENTER[1]) && (
            <Circle
               center={validCenter}
               radius={radius * 1000}
-              pathOptions={{ color: "var(--color-primary)", weight: 1, dashArray: "10 10", fillColor: "var(--color-primary)", fillOpacity: 0.05 }}
+              pathOptions={{ color: "var(--color-primary)", weight: 1.5, dashArray: "8 6", fillColor: "var(--color-primary)", fillOpacity: 0.04 }}
+              attribution=""
            />
         )}
 
@@ -143,21 +176,30 @@ export default function MapView({ center, listings = [], userLocation, radius = 
           chunkedLoading
           maxClusterRadius={40}
           spiderfyOnMaxZoom={true}
+          iconCreateFunction={(cluster) => {
+            const count = cluster.getChildCount();
+            const displayCount = count < 10 ? `0${count}` : count;
+            return L.divIcon({
+              html: `<div class="lk-cluster">${displayCount}</div>`,
+              className: "",
+              iconSize: [40, 40],
+            });
+          }}
         >
           {validListings.map((l) => (
             <Marker
               key={l.id}
               position={[l.lat, l.lng]}
-              icon={makeIcon(l.category)}
+              icon={makeIcon(l)}
             >
               <Popup minWidth={220} maxWidth={280}>
-                <div className="p-3 bg-[var(--bg-surface)] text-[var(--text-primary)] rounded-lg">
+                <div className="p-3 rounded-lg" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)' }}>
                   <CategoryBadge category={l.category} />
                   <h4 className="font-bold text-[15px] mt-2 leading-snug">{l.title}</h4>
-                  <div className="text-[12px] text-[var(--text-secondary)] mt-1 font-medium italic truncate">
+                  <div className="text-[12px] mt-1 font-medium italic truncate" style={{ color: 'var(--text-secondary)' }}>
                     {l.area}, {l.thana || l.city}
                   </div>
-                  <div className="mt-3 pt-2 border-t border-[var(--border-light)] flex items-center justify-between">
+                  <div className="mt-3 pt-2 flex items-center justify-between" style={{ borderTop: '1px solid var(--border-light)' }}>
                     <StarRating rating={l.average_rating} count={l.total_reviews} size={12} />
                     <Link
                       to={`/listing/${l.id}`}

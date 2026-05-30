@@ -38,6 +38,10 @@ export default function MapPage() {
   const [activePanel, setActivePanel] = useState(null);
   const [isAiMode, setIsAiMode] = useState(!!params.get("ai_q"));
   const lastProcessedAiQ = React.useRef("");
+  const skipFetchRef = React.useRef(false);
+  const aiSearchCenterRef = React.useRef(null);
+  const listingsCache = React.useRef({});
+  const fetchDebounceRef = React.useRef(null);
 
   const parseQueryAndSyncStore = (query) => {
     if (!query) return;
@@ -53,6 +57,10 @@ export default function MapPage() {
       detectedCategory = "hospital";
     } else if (/\b(fashion|clothing|shirt|pants|shop|mall|brand|dress|aarong|yellow|cats eye|panjabi|boutique|market|supermarket|groceries|grocery|store|convenience)\b/i.test(lowerQuery)) {
       detectedCategory = "fashion";
+    } else if (/\b(restaurant|food|burger|pizza|biryani|kacchi|cafe|coffee|dine|eatery)\b/i.test(lowerQuery)) {
+      detectedCategory = "restaurant";
+    } else if (/\b(service|plumber|electrician|mechanic|repair|cleaner|maid|painter|carpenter|pest)\b/i.test(lowerQuery)) {
+      detectedCategory = "service";
     }
 
     if (detectedCategory) {
@@ -96,86 +104,112 @@ export default function MapPage() {
     }
   }, [params]);
 
-  const fetchListings = async () => {
-    setLoading(true);
-    try {
-      const aiQuery = params.get("ai_q");
-      if (aiQuery) {
-        // Parse category and radius on the client side immediately to ensure they are synchronized with the UI
-        parseQueryAndSyncStore(aiQuery);
+  const fetchListings = React.useCallback(async (forceRefresh = false) => {
+    const aiQuery = params.get("ai_q");
 
-        // If we already parsed and loaded this conversational query, do not run the heavy AI parser again.
-        // This avoids infinite loop triggers when we sync category, center, and radius store values.
+    if (aiQuery) {
+      // AI mode — always fetch fresh, no cache
+      setLoading(true);
+      try {
         if (aiQuery === lastProcessedAiQ.current) {
           const isAll = !loc.category || loc.category === 'all';
+          const searchLat = aiSearchCenterRef.current?.lat || loc.selectedLat;
+          const searchLng = aiSearchCenterRef.current?.lng || loc.selectedLng;
+          const cacheKey = `ai_${loc.category}_${String(searchLat).slice(0,8)}_${String(searchLng).slice(0,8)}`;
+          if (!forceRefresh && listingsCache.current[cacheKey]) {
+            setListings(listingsCache.current[cacheKey]);
+            return;
+          }
           const r = await api.get("/listings/search", {
-            params: { 
-              lat: loc.selectedLat, 
-              lng: loc.selectedLng, 
-              radius: loc.radius || 10, 
-              category: isAll ? undefined : loc.category, 
-              q: manualAddress?.trim() || undefined,
-              limit: 50 
-            },
+            params: { lat: searchLat, lng: searchLng, radius: loc.radius || 10, category: isAll ? undefined : loc.category, limit: 150 },
           });
-          setListings(r.data.listings || []);
+          const data = r.data.listings || [];
+          listingsCache.current[cacheKey] = data;
+          setListings(data);
           return;
         }
 
+        parseQueryAndSyncStore(aiQuery);
         const r = await api.post("/listings/ai-search", {
-          query: aiQuery,
-          userLat: loc.selectedLat,
-          userLng: loc.selectedLng,
-          radiusKm: loc.radius || 10
+          query: aiQuery, userLat: loc.selectedLat, userLng: loc.selectedLng, radiusKm: loc.radius || 10
         });
-        setListings(r.data.listings || []);
-        
-        // Cache the processed query to prevent duplicate requests
+        const data = r.data.listings || [];
+        setListings(data);
         lastProcessedAiQ.current = aiQuery;
+        skipFetchRef.current = true;
 
-        // A. Center exactly on the geocoded coordinates returned by Nominatim
         if (r.data.searchCenter) {
-          loc.setSelected(r.data.searchCenter.lat, r.data.searchCenter.lng, "Search Center");
-        } else if (r.data.listings && r.data.listings.length > 0) {
-          const first = r.data.listings[0];
+          aiSearchCenterRef.current = { lat: r.data.searchCenter.lat, lng: r.data.searchCenter.lng };
+          loc.setSelected(r.data.searchCenter.lat, r.data.searchCenter.lng, r.data.searchCenter.displayName || "Search Center");
+        } else if (data.length > 0) {
+          const first = data[0];
+          aiSearchCenterRef.current = { lat: first.lat, lng: first.lng };
           loc.setSelected(first.lat, first.lng, first.area || first.title);
         }
+        if (r.data.intent?.category) loc.setCategory(r.data.intent.category);
+        if (r.data.radius && Number.isFinite(r.data.radius)) loc.setRadius(r.data.radius);
+      } catch (error) {
+        console.error("Failed to load listings:", error);
+        setListings([]);
+        toast.error("Could not load map listings. Please make sure the backend is running.");
+      } finally { setLoading(false); }
+      return;
+    }
 
-        // B. Dynamically update the selected category store based on AI intent!
-        if (r.data.intent && r.data.intent.category) {
-          loc.setCategory(r.data.intent.category);
-        }
+    // Standard mode — use cache for instant category switching!
+    lastProcessedAiQ.current = "";
+    aiSearchCenterRef.current = null;
+    const isAll = !loc.category || loc.category === 'all';
+    const cacheKey = `${loc.category || 'all'}_${String(loc.selectedLat).slice(0,8)}_${String(loc.selectedLng).slice(0,8)}_${loc.radius}`;
 
-        // C. Dynamically update the search radius slider store based on parsed range!
-        if (r.data.radius && Number.isFinite(r.data.radius)) {
-          loc.setRadius(r.data.radius);
-        }
-      } else {
-        lastProcessedAiQ.current = ""; // Reset ref
-        const isAll = !loc.category || loc.category === 'all';
-        const r = await api.get("/listings/search", {
-          params: { 
-            lat: loc.selectedLat, 
-            lng: loc.selectedLng, 
-            radius: loc.radius || 10, 
-            category: isAll ? undefined : loc.category, 
-            q: manualAddress?.trim() || undefined,
-            limit: 50 
-          },
-        });
-        setListings(r.data.listings || []);
-      }
+    // Show cached results immediately (instant UI)
+    if (!forceRefresh && listingsCache.current[cacheKey]) {
+      setListings(listingsCache.current[cacheKey]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const r = await api.get("/listings/search", {
+        params: {
+          lat: loc.selectedLat,
+          lng: loc.selectedLng,
+          radius: loc.radius || 10,
+          category: isAll ? undefined : loc.category,
+          q: manualAddress?.trim() || undefined,
+          limit: 1000
+        },
+      });
+      const data = r.data.listings || [];
+      listingsCache.current[cacheKey] = data; // Save to cache
+      setListings(data);
     } catch (error) {
       console.error("Failed to load listings:", error);
-      setListings([]);
       toast.error("Could not load map listings. Please make sure the backend is running.");
     } finally { setLoading(false); }
-  };
+  }, [loc.selectedLat, loc.selectedLng, loc.radius, loc.category, manualAddress, params]); // eslint-disable-line
 
-  useEffect(() => { fetchListings(); }, [loc.selectedLat, loc.selectedLng, loc.radius, loc.category, params]); // eslint-disable-line
+  useEffect(() => {
+    if (skipFetchRef.current) {
+      skipFetchRef.current = false;
+      return;
+    }
+    // Debounce: cancel previous pending fetch and wait 80ms before firing.
+    // This prevents rapid category clicks from firing multiple API calls.
+    if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
+    fetchDebounceRef.current = setTimeout(() => {
+      fetchListings();
+    }, 80);
+    return () => clearTimeout(fetchDebounceRef.current);
+  }, [loc.selectedLat, loc.selectedLng, loc.radius, loc.category, params]); // eslint-disable-line
 
   useEffect(() => {
     const timer = setTimeout(async () => {
+      if (isAiMode) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
       if (manualAddress.trim().length > 2) {
         try {
           const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(manualAddress)}&countrycodes=bd&limit=5`);
@@ -191,27 +225,76 @@ export default function MapPage() {
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [manualAddress]);
+  }, [manualAddress, isAiMode]);
+
+  // Use a ref to track current category and location inside the stable socket listener
+  const categoryRef = React.useRef(loc.category);
+  const latRef = React.useRef(loc.selectedLat);
+  const lngRef = React.useRef(loc.selectedLng);
+  const radiusRef = React.useRef(loc.radius);
+
+  useEffect(() => { 
+    categoryRef.current = loc.category; 
+    latRef.current = loc.selectedLat;
+    lngRef.current = loc.selectedLng;
+    radiusRef.current = loc.radius;
+  }, [loc.category, loc.selectedLat, loc.selectedLng, loc.radius]);
 
   useEffect(() => {
+    // Socket is connected ONCE and never reconnected on category change.
+    // The listener uses categoryRef so it always reads the latest category.
     const socketUrl = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || "http://localhost:8001";
     const baseSocketUrl = socketUrl.endsWith('/api') ? socketUrl.slice(0, -4) : socketUrl;
     const socket = io(baseSocketUrl, { withCredentials: true });
 
     socket.on("new_listing", (newListing) => {
-      const isAll = !loc.category || loc.category === 'all';
-      if (isAll || newListing.category === loc.category) {
+      const currentCategory = categoryRef.current;
+      const isAll = !currentCategory || currentCategory === 'all';
+      if (isAll || newListing.category === currentCategory) {
+        // Enforce radius bounds client-side
+        if (latRef.current && lngRef.current && radiusRef.current) {
+          const R = 6371; // Earth's radius in km
+          const dLat = (newListing.lat - latRef.current) * Math.PI / 180;
+          const dLng = (newListing.lng - lngRef.current) * Math.PI / 180;
+          const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(latRef.current * Math.PI / 180) * Math.cos(newListing.lat * Math.PI / 180) *
+                    Math.sin(dLng/2) * Math.sin(dLng/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          const distance = R * c;
+          
+          if (distance > radiusRef.current) {
+            return; // Ignore this socket event, it's outside our search circle
+          }
+        }
+
+        // Also update cache so next category switch shows this new listing
+        const cacheKey = `${newListing.category}_${String(newListing.lat).slice(0,8)}_${String(newListing.lng).slice(0,8)}_${loc.radius}`;
+        if (listingsCache.current[cacheKey]) {
+          listingsCache.current[cacheKey] = [newListing, ...listingsCache.current[cacheKey]];
+        }
         setListings((prev) => [newListing, ...prev]);
       }
     });
 
     return () => socket.disconnect();
-  }, [loc.category]);
+  }, []); // eslint-disable-line -- intentionally empty: socket connects once only
+
+  // Helper: clear AI search state when switching to Standard mode or selecting a location manually
+  const cleanAiState = React.useCallback(() => {
+    lastProcessedAiQ.current = "";
+    aiSearchCenterRef.current = null;
+    const newParams = new URLSearchParams(params);
+    if (newParams.has("ai_q")) {
+      newParams.delete("ai_q");
+      setSearchParams(newParams);
+    }
+  }, [params, setSearchParams]);
 
   const useMyLocation = () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        cleanAiState();
         loc.setUser(pos.coords.latitude, pos.coords.longitude);
         loc.setSelected(pos.coords.latitude, pos.coords.longitude, lang === "bn" ? "আমার অবস্থান" : "My Location");
         setShowSuggestions(false);
@@ -222,8 +305,10 @@ export default function MapPage() {
   };
 
   const handleSelectSuggestion = (s) => {
+    cleanAiState();
+    parseQueryAndSyncStore(manualAddress); // Sync category before changing location
     loc.setSelected(parseFloat(s.lat), parseFloat(s.lon), s.display_name.split(',')[0]);
-    setManualAddress("");
+    // Do not clear manualAddress so the search context (like "restaurant in") remains
     setSuggestions([]);
     setShowSuggestions(false);
   };
@@ -248,6 +333,8 @@ export default function MapPage() {
     if (isAiMode) {
       setSearchParams({ ai_q: query });
     } else {
+      // Standard mode: clear any stale AI search state
+      cleanAiState();
       if (suggestions.length > 0) {
         handleSelectSuggestion(suggestions[0]);
       } else {
@@ -298,7 +385,8 @@ export default function MapPage() {
                   }
                   value={manualAddress}
                   onChange={(e) => setManualAddress(e.target.value)}
-                  onFocus={() => !isAiMode && setShowSuggestions(suggestions.length > 0)}
+                  onFocus={() => setShowSuggestions(suggestions.length > 0)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                   className="flex-1 bg-transparent text-[15px] outline-none w-full text-foreground placeholder:text-muted-foreground/50"                  style={{ minWidth: 0 }}                />
                 {manualAddress && (
                    <button type="button" onClick={clearSearch} className="p-1 hover:bg-muted rounded-full ml-1 transition-colors">
@@ -356,7 +444,7 @@ export default function MapPage() {
           <div className="pointer-events-auto flex gap-2">
             <button 
               type="button"
-              onClick={() => setIsAiMode(false)}
+              onClick={() => { setIsAiMode(false); cleanAiState(); }}
               className={cn(
                 "px-3 py-1.5 rounded-full text-[11px] font-black transition-all border",
                 !isAiMode 
@@ -407,6 +495,11 @@ export default function MapPage() {
             listings={listings}
             userLocation={loc.userLat ? [loc.userLat, loc.userLng] : null}
             radius={loc.radius}
+            onClickMap={(lat, lng) => {
+              cleanAiState();
+              setManualAddress(""); // Drop the text filter so we don't search for "Mirpur" in "Gulshan"
+              loc.setSelected(lat, lng, lang === "bn" ? "চিহ্নিত স্থান" : "Selected Pin");
+            }}
           />
           
           <div className="md:hidden absolute bottom-24 right-4 z-[50]">
@@ -439,6 +532,7 @@ export default function MapPage() {
              isDrawer={false}
              isAiMode={isAiMode}
              setIsAiMode={setIsAiMode}
+             setShowSuggestions={setShowSuggestions}
            />
         </aside>
 
@@ -518,6 +612,7 @@ export default function MapPage() {
                   isDrawer={true}
                   isAiMode={isAiMode}
                   setIsAiMode={setIsAiMode}
+                  setShowSuggestions={setShowSuggestions}
                 />
              </div>
           </DrawerContent>
@@ -528,7 +623,7 @@ export default function MapPage() {
   );
 }
 
-function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, loc, lang, t, useMyLocation, listings, loading, suggestions, onSelectSuggestion, showSuggestions, clearSearch, isDrawer, isAiMode, setIsAiMode }) {
+function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, loc, lang, t, useMyLocation, listings, loading, suggestions, onSelectSuggestion, showSuggestions, setShowSuggestions, clearSearch, isDrawer, isAiMode, setIsAiMode }) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
@@ -544,7 +639,7 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
           <div className="flex gap-2 mb-4">
             <button 
               type="button"
-              onClick={() => setIsAiMode(false)}
+              onClick={() => { setIsAiMode(false); cleanAiState(); }}
               className={cn(
                 "px-4 py-1.5 rounded-full text-xs font-black transition-all border",
                 !isAiMode 
@@ -585,6 +680,8 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
                 }
                 value={manualAddress}
                 onChange={(e) => setManualAddress(e.target.value)}
+                onFocus={() => setShowSuggestions(suggestions.length > 0)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 className={cn(
                   "w-full pl-12 pr-12 py-4 rounded-[20px] border-2 bg-background text-[15px] font-medium outline-none transition-all shadow-sm text-foreground placeholder:text-muted-foreground/50",
                   isAiMode 
@@ -644,7 +741,7 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
             <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-5 px-1">{t('categories')}</h3>
             <div className="grid grid-cols-2 gap-4">
               {CATEGORIES.map((c) => {
-                const labels = { all: t('all'), flat: t('flatRental'), pharmacy: t('pharmacy'), hospital: t('hospital'), fashion: t('fashion') };
+                const labels = { all: t('all'), flat: t('flatRental'), pharmacy: t('pharmacy'), hospital: t('hospital'), restaurant: t('restaurant'), service: t('service') };
                 const active = loc.category === c.key || (!loc.category && c.key === 'all');
                 return (
                   <button

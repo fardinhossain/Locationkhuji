@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import Navbar from "../components/Navbar";
 import MapView from "../components/MapView";
 import { ListingCard } from "../components/ListingCard";
-import { CATEGORIES } from "../lib/constants";
+import { CATEGORIES, SERVICE_TYPES } from "../lib/constants";
 import { useAuthStore } from "../store";
 import { api, fileUrl } from "../lib/api";
 import { Button } from "../components/ui/button";
@@ -270,11 +270,28 @@ function ListingForm({ initial, onSubmit, submitLabel }) {
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.details.emergency} onChange={(e) => setDetail("emergency", e.target.checked)}/> Emergency</label>
           </div>
         )}
-        {form.category === "fashion" && (
+        {form.category === "restaurant" && (
           <div className="grid gap-3">
-            <Input placeholder="Brands (comma separated)" onChange={(e) => setDetail("brands", e.target.value.split(",").map(s=>s.trim()))} defaultValue={(form.details.brands || []).join(",")}/>
+            <Input placeholder="Cuisine (comma separated)" onChange={(e) => setDetail("cuisine", e.target.value.split(",").map(s=>s.trim()))} defaultValue={(form.details.cuisine || []).join(",")}/>
             <Input placeholder="Open hours" onChange={(e) => setDetail("open_hours", e.target.value)} value={form.details.open_hours || ""}/>
             <Input placeholder="Price range" onChange={(e) => setDetail("price_range", e.target.value)} value={form.details.price_range || ""}/>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.details.delivery} onChange={(e) => setDetail("delivery", e.target.checked)}/> Delivery Available</label>
+          </div>
+        )}
+        {form.category === "service" && (
+          <div className="grid gap-3">
+            <select
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              onChange={(e) => setDetail("service_type", e.target.value)}
+              value={form.details.service_type || ""}
+            >
+              <option value="">Select Service Type</option>
+              {SERVICE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <Input placeholder="Experience (e.g. 5 Years)" onChange={(e) => setDetail("experience", e.target.value)} value={form.details.experience || ""}/>
+            <Input placeholder="Available Time (e.g. 9 AM - 6 PM)" onChange={(e) => setDetail("available_time", e.target.value)} value={form.details.available_time || ""}/>
+            <Input placeholder="Price Range (e.g. 500 BDT - 2000 BDT)" onChange={(e) => setDetail("price_range", e.target.value)} value={form.details.price_range || ""}/>
+            <Input type="number" placeholder="Service Radius (KM)" onChange={(e) => setDetail("service_radius_km", parseInt(e.target.value))} value={form.details.service_radius_km || ""}/>
           </div>
         )}
       </div>
@@ -304,11 +321,23 @@ function ListingForm({ initial, onSubmit, submitLabel }) {
 // ----- Owner Dashboard -----
 export function OwnerDashboard() {
   const [listings, setListings] = useState([]);
-  useEffect(() => { api.get("/listings/my").then((r) => setListings(r.data.listings || [])); }, []);
+  
+  const load = () => { api.get("/listings/my").then((r) => setListings(r.data.listings || [])); };
+  useEffect(() => { load(); }, []);
+
+  const handleRemove = async (lid) => {
+    if (!window.confirm("Are you sure you want to remove this listing?")) return;
+    try {
+      await api.delete(`/listings/${lid}`);
+      toast.success("Listing removed");
+      load();
+    } catch {
+      toast.error("Failed to remove listing");
+    }
+  };
   const stats = {
     total: listings.length,
-    approved: listings.filter((l) => l.is_approved && l.is_active).length,
-    pending: listings.filter((l) => !l.is_approved && l.is_active).length,
+    active: listings.filter((l) => l.is_active).length,
   };
   return (
     <div>
@@ -320,8 +349,7 @@ export function OwnerDashboard() {
         </div>
         <div className="grid sm:grid-cols-3 gap-4 mt-6">
           <StatCard label="Total" value={stats.total} color="#6366F1"/>
-          <StatCard label="Approved" value={stats.approved} color="#10B981"/>
-          <StatCard label="Pending" value={stats.pending} color="#F59E0B"/>
+          <StatCard label="Active" value={stats.active} color="#10B981"/>
         </div>
         <h2 className="font-sora font-semibold text-lg mt-8 mb-3">My Listings</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -330,11 +358,12 @@ export function OwnerDashboard() {
               <div className="font-semibold">{l.title}</div>
               <div className="text-xs text-[var(--text-tertiary)]">{l.area}</div>
               <div className="mt-2 flex items-center gap-2">
-                <span className={`text-[10px] font-bold px-2 py-1 rounded-pill ${l.is_approved ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
-                  {l.is_approved ? "Approved" : "Pending"}
+                <span className={`text-[10px] font-bold px-2 py-1 rounded-pill ${l.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                  {l.is_active ? "Active" : "Inactive"}
                 </span>
                 <Link to={`/listing/${l.id}`} className="text-xs text-primary ml-auto">View</Link>
                 <Link to={`/owner/listings/${l.id}/edit`} className="text-xs text-primary">Edit</Link>
+                <button onClick={() => handleRemove(l.id)} className="text-xs text-red-500 hover:text-red-700 ml-2">Remove</button>
               </div>
             </div>
           ))}
@@ -443,10 +472,9 @@ export function UserDashboard() {
 // ----- Admin -----
 export function AdminDashboard() {
   const [stats, setStats] = useState(null);
-  const [pending, setPending] = useState([]);
   const load = async () => {
-    const [s, p] = await Promise.all([api.get("/admin/stats"), api.get("/admin/listings", { params: { status: "pending" } })]);
-    setStats(s.data); setPending(p.data.listings || []);
+    const s = await api.get("/admin/stats");
+    setStats(s.data);
   };
   useEffect(() => { load(); }, []);
 
@@ -465,25 +493,9 @@ export function AdminDashboard() {
             <StatCard label="Total Users" value={stats.total_users} color="#6366F1"/>
             <StatCard label="Owners" value={stats.total_owners} color="#00C9A7"/>
             <StatCard label="Listings" value={stats.total_listings} color="#10B981"/>
-            <StatCard label="Pending" value={stats.pending} color="#F59E0B"/>
           </div>
         )}
-        <h2 className="font-sora font-semibold text-lg mt-8 mb-4">Pending Approvals ({pending.length})</h2>
-        <div className="grid sm:grid-cols-2 gap-4">
-          {pending.map((l) => (
-            <div key={l.id} className="bg-[var(--bg-surface)] border border-[var(--border-light)] rounded-xl p-5">
-              <div className="font-semibold">{l.title}</div>
-              <div className="text-xs text-[var(--text-tertiary)] mt-1">{l.category} · {l.area}</div>
-              <p className="text-sm text-[var(--text-secondary)] mt-2 line-clamp-2">{l.description}</p>
-              <div className="flex gap-2 mt-4">
-                <Button data-testid={`approve-${l.id}`} className="bg-green-500 hover:bg-green-600 text-white flex-1" onClick={() => action(l.id, "approve")}>Approve</Button>
-                <Button data-testid={`reject-${l.id}`} variant="destructive" className="flex-1" onClick={() => action(l.id, "reject")}>Reject</Button>
-                <Link to={`/listing/${l.id}`}><Button variant="outline">View</Button></Link>
-              </div>
-            </div>
-          ))}
-          {!pending.length && <div className="col-span-full text-center text-[var(--text-tertiary)] py-10">No pending listings</div>}
-        </div>
+
 
         <h2 className="font-sora font-semibold text-lg mt-8 mb-4">Quick Links</h2>
         <div className="flex gap-3">
@@ -544,13 +556,24 @@ export function AdminListingsPage() {
   }, [filter]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleRemove = async (lid) => {
+    if (!window.confirm("Are you sure you want to remove this listing?")) return;
+    try {
+      await api.delete(`/listings/${lid}`);
+      toast.success("Listing removed");
+      load();
+    } catch {
+      toast.error("Failed to remove listing");
+    }
+  };
   return (
     <div>
       <Navbar />
       <div className="max-w-[1280px] mx-auto px-6 py-8">
         <h1 className="font-sora font-bold text-2xl mb-6">All Listings</h1>
         <div className="flex gap-2 mb-4">
-          {["", "pending", "approved", "rejected"].map((f) => (
+          {["", "rejected"].map((f) => (
             <button key={f || "all"} onClick={() => setFilter(f)}
               className={`px-3 py-1.5 rounded-pill text-xs font-semibold ${filter === f ? "bg-primary text-white" : "bg-[var(--bg-elevated)]"}`}>
               {f || "all"}
@@ -558,7 +581,18 @@ export function AdminListingsPage() {
           ))}
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((l) => <ListingCard key={l.id} listing={l}/>)}
+          {items.map((l) => (
+            <div key={l.id} className="relative group">
+              <ListingCard listing={l}/>
+              <button 
+                onClick={() => handleRemove(l.id)} 
+                className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 transition shadow-lg z-10 flex items-center justify-center font-bold text-sm" 
+                title="Remove Listing"
+              >
+                ×
+              </button>
+            </div>
+          ))}
         </div>
       </div>
     </div>

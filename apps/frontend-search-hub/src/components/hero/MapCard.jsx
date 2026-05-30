@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Home, Pill, PlusSquare, ShoppingBag } from 'lucide-react';
+import { Home, Pill, PlusSquare, ShoppingBag, Briefcase } from 'lucide-react';
 
 const MapCard = () => {
   const { t } = useTranslation();
@@ -26,40 +26,47 @@ const MapCard = () => {
       <div className="space-y-3 xl:space-y-4">
         <MapStatRow
           icon={<Home size={15} />}
-          color="text-teal-400"
+          color="text-gray-500"
           label={t('flatRental')}
           count={t('mapCard.counts.flat')}
         />
         <MapStatRow
           icon={<Pill size={15} />}
-          color="text-accent-orange"
+          color="text-gray-500"
           label={t('pharmacy')}
           count={t('mapCard.counts.pharmacy')}
         />
         <MapStatRow
           icon={<PlusSquare size={15} />}
-          color="text-accent-red"
+          color="text-gray-500"
           label={t('hospital')}
           count={t('mapCard.counts.hospital')}
         />
         <MapStatRow
           icon={<ShoppingBag size={15} />}
-          color="text-accent-purple"
-          label={t('fashion')}
-          count={t('mapCard.counts.fashion')}
+          color="text-gray-500"
+          label={t('restaurant')}
+          count={t('mapCard.counts.restaurant')}
+        />
+        <MapStatRow
+          icon={<Briefcase size={15} />}
+          color="text-purple-400"
+          label={t('service')}
+          count={t('mapCard.counts.service')}
+          highlight={true}
         />
       </div>
     </motion.div>
   );
 };
 
-const MapStatRow = ({ icon, color, label, count }) => (
-  <div className="flex items-center justify-between text-sm p-2 -mx-2 rounded-xl hover:bg-white/5 transition-all cursor-pointer group">
+const MapStatRow = ({ icon, color, label, count, highlight }) => (
+  <div className={`flex items-center justify-between text-sm p-2 -mx-2 rounded-xl transition-all cursor-pointer group ${highlight ? 'bg-purple-500/10 border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)] hover:bg-purple-500/20' : 'hover:bg-white/5'}`}>
     <div className="flex items-center gap-2.5">
-      <span className={`${color} group-hover:scale-110 transition-transform duration-300`}>{icon}</span>
-      <span className="text-gray-400 group-hover:text-white transition-colors duration-300 text-xs xl:text-sm">{label}</span>
+      <span className={`${color} group-hover:scale-110 transition-transform duration-300 ${highlight ? 'animate-pulse' : ''}`}>{icon}</span>
+      <span className={`${highlight ? 'text-purple-50 font-medium' : 'text-gray-400 group-hover:text-white'} transition-colors duration-300 text-xs xl:text-sm`}>{label}</span>
     </div>
-    <span className={`font-mono font-medium text-xs xl:text-sm ${color} group-hover:drop-shadow-[0_0_8px_currentColor] transition-all duration-300`}>{count}</span>
+    <span className={`font-mono font-medium text-xs xl:text-sm ${color} group-hover:drop-shadow-[0_0_8px_currentColor] transition-all duration-300 ${highlight ? 'text-purple-300 drop-shadow-[0_0_5px_currentColor]' : ''}`}>{count}</span>
   </div>
 );
 

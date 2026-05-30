@@ -17,7 +17,7 @@ export const CategoryBadge = ({ category }) => {
     flat: { text: "text-indigo-400", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
     pharmacy: { text: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
     hospital: { text: "text-rose-400", bg: "bg-rose-500/10", border: "border-rose-500/20" },
-    fashion: { text: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+    restaurant: { text: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
   };
   const theme = colors[category] || { text: "text-teal-400", bg: "bg-teal-500/10", border: "border-teal-500/20" };
 
@@ -56,7 +56,8 @@ function ListingCardImpl({ listing, distance, compact }) {
     if (listing.category === "flat") return `${d.bedrooms || 0} ${t('bedrooms')} · ${d.bathrooms || 0} ${t('bathrooms')}`;
     if (listing.category === "pharmacy") return `${d.open_hours || "—"}${d.emergency ? ` · ${t('emergency')}` : ""}`;
     if (listing.category === "hospital") return `${(d.specialty || []).slice(0,1).join(", ")}${d.emergency ? ` · ${t('emergency')}` : ""}`;
-    if (listing.category === "fashion") return `${(d.brands || []).slice(0,2).join(", ")}`;
+    if (listing.category === "restaurant") return `${(Array.isArray(d.cuisine) ? d.cuisine : [d.cuisine].filter(Boolean)).slice(0,2).join(", ")}`;
+    if (listing.category === "service") return `${d.service_type || "Service"} · ${d.experience ? `${d.experience}` : "Available"}`;
     return "";
   };
 

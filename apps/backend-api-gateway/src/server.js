@@ -41,7 +41,7 @@ if (GEMINI_API_KEY && GEMINI_API_KEY !== "your_gemini_api_key_here") {
 }
 
 const ALLOWED_ROLES = ["user", "owner", "admin"];
-const ALLOWED_CATEGORIES = ["flat", "pharmacy", "hospital", "fashion"];
+const ALLOWED_CATEGORIES = ["flat", "pharmacy", "hospital", "restaurant", "service"];
 const FILE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
 
 function apiError(status, detail) {
@@ -545,6 +545,15 @@ function validateListingBody(body) {
     }
   }
   if (!ALLOWED_CATEGORIES.includes(String(body.category))) throw apiError(400, "Invalid category");
+
+  const lat = Number(body.lat);
+  const lng = Number(body.lng);
+  if (isNaN(lat) || isNaN(lng)) throw apiError(400, "Coordinates must be valid numbers");
+  
+  // Enforce Bangladesh bounding box: SW [20.3, 88.0], NE [26.7, 92.7]
+  if (lat < 20.3 || lat > 26.7 || lng < 88.0 || lng > 92.7) {
+    throw apiError(400, "Coordinates must be strictly within Bangladesh");
+  }
 }
 
 function buildListingPayload(body, user, existing) {
@@ -624,7 +633,7 @@ const listingSchema = new mongoose.Schema(
     },
     details: { type: mongoose.Schema.Types.Mixed, default: {} },
     tags: { type: [String], default: [] },
-    is_approved: { type: Boolean, default: true },
+
     is_active: { type: Boolean, default: true },
     is_featured: { type: Boolean, default: false },
     average_rating: { type: Number, default: 0 },
@@ -875,7 +884,7 @@ async function seedListingsIfNeeded() {
     contact: { phone: "+8801700000000", whatsapp: "+8801700000000", email: null },
     details: sample.details,
     tags: [],
-    is_approved: true,
+
     is_active: true,
     is_featured: false,
     average_rating: 0,
@@ -1328,7 +1337,7 @@ api.get("/listings/nearby", async (req, res, next) => {
 
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
 
-async function fetchFromGooglePlaces(searchQuery, parsedLat, parsedLng) {
+async function fetchFromGooglePlaces(searchQuery, parsedLat, parsedLng, parsedRadius, io) {
   if (!GOOGLE_PLACES_API_KEY || GOOGLE_PLACES_API_KEY === "your_gemini_api_key_here" || GOOGLE_PLACES_API_KEY === "your_google_places_api_key_here") {
     console.log("Google Places API Key is not configured. Skipping live Places fetch.");
     return [];
@@ -1343,7 +1352,7 @@ async function fetchFromGooglePlaces(searchQuery, parsedLat, parsedLng) {
       params: {
         query: searchQuery,
         location: `${parsedLat},${parsedLng}`,
-        radius: 20000, // 20km bias
+        radius: (parsedRadius * 1000) || 5000,
         key: GOOGLE_PLACES_API_KEY
       }
     });
@@ -1375,8 +1384,11 @@ async function fetchFromGooglePlaces(searchQuery, parsedLat, parsedLng) {
         category = "fashion";
         details = { brands: ["Global Brands"], open_hours: "10 AM - 9 PM", price_range: "Mid to High" };
       } else if (types.includes("restaurant") || types.includes("cafe") || types.includes("food") || types.includes("bakery") || types.includes("meal_takeaway")) {
-        category = "fashion"; // catch-all for local businesses
-        details = { brands: [], open_hours: "10 AM - 10 PM", price_range: "Mid" };
+        category = "restaurant";
+        details = { cuisine: ["Local Cuisine"], open_hours: "10 AM - 10 PM", price_range: "Mid" };
+      } else if (types.includes("plumber") || types.includes("electrician") || types.includes("repair") || types.includes("car_repair")) {
+        category = "service";
+        details = { type: "General Service", open_hours: "9 AM - 6 PM" };
       } else {
         continue;
       }
@@ -1419,7 +1431,7 @@ async function fetchFromGooglePlaces(searchQuery, parsedLat, parsedLng) {
         },
         details: details,
         tags: ["google-places", "live-search"],
-        is_approved: true,
+
         is_active: true,
         is_featured: false,
         average_rating: place.rating || 0,
@@ -1427,7 +1439,12 @@ async function fetchFromGooglePlaces(searchQuery, parsedLat, parsedLng) {
         created_at: new Date().toISOString()
       });
 
-      newlySeededListings.push(doc.toObject());
+      const out = doc.toObject();
+      newlySeededListings.push(out);
+      if (io) {
+        const [populatedOut] = await populateListingOwners([listingToOut(out)]);
+        io.emit("new_listing", populatedOut);
+      }
     }
 
     return newlySeededListings;
@@ -1436,6 +1453,155 @@ async function fetchFromGooglePlaces(searchQuery, parsedLat, parsedLng) {
     return [];
   }
 }
+
+async function fetchFromOSMOverpass(category, lat, lng, radiusKm, io) {
+  try {
+    console.log(`Live OSM Overpass fallback query triggered for category: "${category}" around [${lat}, ${lng}]`);
+    const overpassUrl = "https://overpass-api.de/api/interpreter";
+    
+    const offset = (radiusKm || 2) * 0.01;
+    const south = lat - offset;
+    const west = lng - offset;
+    const north = lat + offset;
+    const east = lng + offset;
+    let stmts = [];
+    if (category === 'pharmacy') {
+      stmts = [
+        `node["amenity"="pharmacy"](${south},${west},${north},${east});`,
+        `way["amenity"="pharmacy"](${south},${west},${north},${east});`
+      ];
+    } else if (category === 'hospital') {
+      stmts = [
+        `node["amenity"="hospital"](${south},${west},${north},${east});`,
+        `node["amenity"="clinic"](${south},${west},${north},${east});`,
+        `way["amenity"="hospital"](${south},${west},${north},${east});`
+      ];
+    } else if (category === 'restaurant') {
+      stmts = [
+        `node["amenity"="restaurant"](${south},${west},${north},${east});`,
+        `node["amenity"="cafe"](${south},${west},${north},${east});`,
+        `way["amenity"="restaurant"](${south},${west},${north},${east});`
+      ];
+    } else {
+      stmts = [
+        `node["amenity"="pharmacy"](${south},${west},${north},${east});`,
+        `node["amenity"="hospital"](${south},${west},${north},${east});`,
+        `node["amenity"="restaurant"](${south},${west},${north},${east});`,
+        `node["amenity"="cafe"](${south},${west},${north},${east});`
+      ];
+    }
+
+    const query = `[out:json][timeout:15];\n(\n${stmts.join("\n")}\n);\nout center body;`;
+
+    // Fetch from Overpass API using axios
+    const response = await axios.post(overpassUrl, `data=${encodeURIComponent(query)}`, {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": "LocationKhujiSeeder/2.0 (contact@locationkhuji.com)"
+      },
+      timeout: 20000
+    });
+
+    const elements = response.data?.elements || [];
+    console.log(`OSM Overpass live query returned ${elements.length} elements.`);
+
+    const newlySeededListings = [];
+
+    for (const el of elements) {
+      const tags = el.tags || {};
+      const name = tags.name || tags["name:en"] || tags["name:bn"];
+      if (!name) continue;
+
+      const placeLat = el.lat || el.center?.lat;
+      const placeLng = el.lon || el.center?.lon;
+      if (!placeLat || !placeLng) continue;
+
+      // Determine category mapping from OSM tags
+      let itemCategory = "restaurant";
+      let details = {};
+      let description = "";
+
+      if (tags.amenity === "hospital" || tags.amenity === "clinic" || tags.healthcare === "hospital" || tags.healthcare === "clinic") {
+        itemCategory = "hospital";
+        details = { specialty: ["General Medical"], beds: 100, open_hours: "24/7", emergency: true };
+        description = `${name} is an active healthcare facility providing medical care and professional services.`;
+      } else if (tags.amenity === "pharmacy" || tags.healthcare === "pharmacy") {
+        itemCategory = "pharmacy";
+        details = { open_hours: "9 AM - 10 PM", emergency: true, delivery: true };
+        description = `${name} is a licensed pharmacy stocking medicines, healthcare essentials, and prescriptions.`;
+      } else {
+        itemCategory = "restaurant";
+        details = { cuisine: "Local", price_range: "Mid", delivery: true };
+        description = `${name} is a local restaurant offering delicious meals and dining experiences.`;
+      }
+
+      // Check if this listing already exists in MongoDB
+      const existing = await Listing.findOne({
+        title: name,
+        location: {
+          $nearSphere: {
+            $geometry: { type: "Point", coordinates: [placeLng, placeLat] },
+            $maxDistance: 100 // within 100 meters
+          }
+        }
+      }).lean();
+
+      if (existing) {
+        newlySeededListings.push(existing);
+        continue;
+      }
+
+      // Address helpers
+      const street = tags["addr:street"] || tags["addr:road"] || "";
+      const suburb = tags["addr:suburb"] || tags["addr:neighbourhood"] || "";
+      const city = tags["addr:city"] || "Dhaka";
+      const fullAddress = tags["addr:full"] || [street, suburb, city].filter(Boolean).join(", ") || `${name}, ${city}`;
+
+      // Create new Listing document in MongoDB
+      const doc = await Listing.create({
+        id: new mongoose.Types.ObjectId().toString(),
+        title: name,
+        description: description,
+        category: itemCategory,
+        owner_id: "dev-admin-001",
+        images: [],
+        address: fullAddress,
+        area: suburb || "Dhaka Area",
+        city: city,
+        location: {
+          type: "Point",
+          coordinates: [placeLng, placeLat]
+        },
+        contact: {
+          phone: tags.phone || "+8801700000000",
+          whatsapp: "+8801700000000",
+          email: null
+        },
+        details: details,
+        tags: ["osm-live", "live-search"],
+
+        is_active: true,
+        is_featured: false,
+        average_rating: 0,
+        total_reviews: 0,
+        created_at: new Date().toISOString()
+      });
+
+      const out = doc.toObject();
+      newlySeededListings.push(out);
+      if (io) {
+        const [populatedOut] = await populateListingOwners([listingToOut(out)]);
+        io.emit("new_listing", populatedOut);
+      }
+    }
+
+    return newlySeededListings;
+  } catch (err) {
+    console.error("OSM Overpass fallback query failed:", err.message);
+    return [];
+  }
+}
+
 
 function cleanQueryKeywords(q, category) {
   if (!q) return "";
@@ -1446,7 +1612,8 @@ function cleanQueryKeywords(q, category) {
     flat: /\b(flat|rent|apartment|room|sublet|mess|basa|bari|flatRental)\b/gi,
     pharmacy: /\b(pharmacy|medicine|drug|osudh|pharmacist|osud|pharmacies|drugstore)\b/gi,
     hospital: /\b(hospital|clinic|doctor|mbbs|medical|ambulance|icu|ccu|hospitals)\b/gi,
-    fashion: /\b(fashion|clothing|shirt|pants|shop|mall|brand|dress|aarong|yellow|cats eye|panjabi|boutique|market|supermarket|store|convenience)\b/gi
+    restaurant: /\b(restaurant|cafe|food|dining|biryani|burger|pizza|eat|hotel|kacchi|fast food|bakery|kabab|khabar)\b/gi,
+    service: /\b(service|hire|mechanic|plumber|electrician|tutor|photographer|cleaner|maid|painter|carpenter|ac technician|pest control|babysitter|moving|event manager)\b/gi
   };
 
   // Remove radius/range/km suffixes
@@ -1469,10 +1636,11 @@ function cleanQueryKeywords(q, category) {
 
 async function geocodeLocation(query) {
   try {
-    const q = encodeURIComponent(`${query}, Bangladesh`);
-    console.log(`🌐 [Geocoding Request] Nominatim searching for: "${query}, Bangladesh"`);
+    const q = encodeURIComponent(`${query}`);
+    console.log(`🌐 [Geocoding Request] Nominatim searching for: "${query}"`);
+    // viewbox for Dhaka to heavily prefer Dhaka results when ambiguous (bounded=0 means it can still find places outside Dhaka)
     const response = await axios.get(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${q}&countrycodes=bd&limit=1`,
+      `https://nominatim.openstreetmap.org/search?format=json&q=${q}&countrycodes=bd&limit=1&viewbox=90.3,23.9,90.5,23.6&bounded=0`,
       {
         headers: { "User-Agent": "LocationKhuji/1.0" },
         timeout: 5000
@@ -1516,10 +1684,17 @@ api.post("/listings/ai-search", async (req, res, next) => {
       ধানমন্ডি: [90.3742, 23.7461],
       gulshan: [90.4078, 23.7925],
       গুলশান: [90.4078, 23.7925],
-      banani: [90.4028, 23.7941],
-      বনানী: [90.4028, 23.7941],
-      mirpur: [90.3654, 23.8223],
-      মিরপুর: [90.3654, 23.8223],
+      banani: [90.4043, 23.7940],
+      বনানী: [90.4043, 23.7940],
+      mirpur: [90.3665, 23.8223],
+      মিরপুর: [90.3665, 23.8223],
+      "mirpur 1": [90.3541, 23.7956],
+      "mirpur 2": [90.3615, 23.8045],
+      "mirpur 10": [90.3688, 23.8069],
+      "mirpur 11": [90.3698, 23.8183],
+      "mirpur 12": [90.3644, 23.8242],
+      "mirpur 14": [90.3846, 23.8063],
+      "mirpur dohs": [90.3841, 23.8327],
       panthapath: [90.3817, 23.7519],
       পান্থপথ: [90.3817, 23.7519],
       kuril: [90.4248, 23.8134],
@@ -1539,18 +1714,103 @@ api.post("/listings/ai-search", async (req, res, next) => {
       chittagong: [91.7832, 22.3569],
       চট্টগ্রাম: [91.7832, 22.3569],
       sylhet: [91.8687, 24.8949],
-      সিলেট: [91.8687, 24.8949]
+      সিলেট: [91.8687, 24.8949],
+      rampura: [90.4237, 23.7614],
+      রামপুরা: [90.4237, 23.7614],
+      tejgaon: [90.3903, 23.7620],
+      তেজগাঁও: [90.3903, 23.7620],
+      farmgate: [90.3878, 23.7567],
+      ফার্মগেট: [90.3878, 23.7567],
+      wari: [90.4069, 23.7139],
+      ওয়ারী: [90.4069, 23.7139],
+      lalbagh: [90.3887, 23.7193],
+      লালবাগ: [90.3887, 23.7193],
+      shyamoli: [90.3641, 23.7710],
+      শ্যামলী: [90.3641, 23.7710],
+      agargaon: [90.3759, 23.7781],
+      আগারগাঁও: [90.3759, 23.7781],
+      azimpur: [90.3826, 23.7295],
+      আজিমপুর: [90.3826, 23.7295],
+      jatrabari: [90.4251, 23.7100],
+      যাত্রাবাড়ী: [90.4251, 23.7100],
+      shahbag: [90.3956, 23.7393],
+      শাহবাগ: [90.3956, 23.7393],
+      malibagh: [90.4151, 23.7492],
+      মালিবাগ: [90.4151, 23.7492],
+      lalmatia: [90.3711, 23.7530],
+      লালমাটিয়া: [90.3711, 23.7530],
+      newmarket: [90.3857, 23.7339],
+      নিউমার্কেট: [90.3857, 23.7339],
+      kakrail: [90.4100, 23.7410],
+      কাকরাইল: [90.4100, 23.7410],
+      kallyanpur: [90.3610, 23.7870],
+      কল্যাণপুর: [90.3610, 23.7870],
+      narayanganj: [90.5000, 23.6238],
+      নারায়ণগঞ্জ: [90.5000, 23.6238],
+      gazipur: [90.4013, 23.9999],
+      গাজীপুর: [90.4013, 23.9999]
     };
 
     const lowerQuery = searchQuery.toLowerCase();
     let overriddenLocation = false;
 
+    // Extended Bangladesh-wide coverage: Division Capitals, Districts & Destinations
+    const AREA_COORDS_EXT = {
+      rajshahi: [88.6042, 24.3745], khulna: [89.5403, 22.8456],
+      barishal: [90.3535, 22.7010], barisal: [90.3535, 22.7010],
+      rangpur: [89.2752, 25.7439], mymensingh: [90.4074, 24.7471],
+      comilla: [91.1870, 23.4607], cumilla: [91.1870, 23.4607],
+      bogra: [89.3710, 24.8465], bogura: [89.3710, 24.8465],
+      jessore: [89.2035, 23.1688], jashore: [89.2035, 23.1688],
+      dinajpur: [88.6362, 25.6279], tangail: [89.9164, 24.2513],
+      pabna: [89.2455, 24.0064], narsingdi: [90.7180, 23.9322],
+      noakhali: [91.0992, 22.8696], brahmanbaria: [91.1115, 23.9571],
+      habiganj: [91.4073, 24.3740], chandpur: [90.6712, 23.2333],
+      kishoreganj: [90.7766, 24.4449], netrokona: [90.7286, 24.8707],
+      faridpur: [89.8310, 23.6070], manikganj: [90.0047, 23.8617],
+      munshiganj: [90.5305, 23.5422], madaripur: [90.1870, 23.1641],
+      gopalganj: [89.8266, 23.0050], shariatpur: [90.3499, 23.2423],
+      satkhira: [89.0745, 22.7185], bagerhat: [89.7862, 22.6602],
+      kushtia: [89.1222, 23.9013], jhenaidah: [89.1726, 23.5448],
+      magura: [89.4185, 23.4872], meherpur: [88.6318, 23.7622],
+      chuadanga: [88.8420, 23.6402], narail: [89.5127, 23.1725],
+      natore: [89.0002, 24.4206], nawabganj: [88.2775, 24.5962],
+      chapainawabganj: [88.2775, 24.5962], naogaon: [88.9427, 24.7936],
+      joypurhat: [89.0280, 25.0968], sirajganj: [89.7007, 24.4534],
+      gaibandha: [89.5288, 25.3288], kurigram: [89.6364, 25.8072],
+      nilphamari: [88.8560, 25.9315], lalmonirhat: [89.4449, 25.9165],
+      thakurgaon: [88.4616, 26.0336], panchagarh: [88.5632, 26.3411],
+      sunamganj: [91.3950, 25.0658], moulvibazar: [91.7744, 24.4820],
+      pirojpur: [89.9760, 22.5791], jhalokathi: [90.1987, 22.6406],
+      bhola: [90.6471, 22.6859], patuakhali: [90.3535, 22.3596],
+      barguna: [90.1185, 22.0953], feni: [91.3976, 23.0159],
+      lakshmipur: [90.8282, 22.9425], bandarban: [92.2187, 22.1953],
+      rangamati: [92.2007, 22.6324], khagrachari: [91.9849, 23.1193],
+      sherpur: [90.0137, 25.0189], jamalpur: [89.9372, 24.9375],
+      coxsbazar: [91.9847, 21.4272], tongi: [90.4078, 23.9322],
+      sreemangal: [91.7253, 24.3065], sundarbans: [89.4848, 21.9497],
+    };
+    for (const [k, v] of Object.entries(AREA_COORDS_EXT)) {
+      if (!AREA_COORDS[k]) AREA_COORDS[k] = v;
+    }
+    let resolvedAreaName = "";
+
     // A. Hardcoded popular areas dictionary check (Highest Priority & 100% Precision)
-    for (const [areaName, coords] of Object.entries(AREA_COORDS)) {
-      if (lowerQuery.includes(areaName)) {
-        parsedLng = coords[0];
-        parsedLat = coords[1];
+    const sortedAreas = Object.keys(AREA_COORDS).sort((a,b) => b.length - a.length);
+    for (const areaName of sortedAreas) {
+      const matchIndex = lowerQuery.indexOf(areaName);
+      if (matchIndex !== -1) {
+        const nextCharStr = lowerQuery.substring(matchIndex + areaName.length).trim();
+        // If it's something like "mirpur 10", "mirpur 2", we skip the generic hardcoded match 
+        // to let Nominatim geocode the specific sector precisely.
+        if (/^[0-9]+/.test(nextCharStr)) {
+          continue; 
+        }
+        
+        parsedLng = AREA_COORDS[areaName][0];
+        parsedLat = AREA_COORDS[areaName][1];
         overriddenLocation = true;
+        resolvedAreaName = areaName.charAt(0).toUpperCase() + areaName.slice(1);
         console.log(`🎯 [Location Override] Resolved hardcoded popular area "${areaName}" to: [${parsedLat}, ${parsedLng}]`);
         break;
       }
@@ -1558,6 +1818,7 @@ api.post("/listings/ai-search", async (req, res, next) => {
 
     // B. If not a popular area, fall back to dynamic geocoding via Nominatim
     if (!overriddenLocation) {
+      // B1. Try with preposition pattern first (e.g. "pharmacy near Dhanmondi", "flat in Banani")
       const locMatch = searchQuery.match(/\b(?:in|near|around|inside|at|সাভার|গুলশান|ধানমন্ডি|মিরপুর|বনানী)\s+([a-zA-Z\u0980-\u09FF\s'-]+)/i);
       if (locMatch && locMatch[1]) {
         let areaToGeocode = locMatch[1].trim();
@@ -1571,7 +1832,35 @@ api.post("/listings/ai-search", async (req, res, next) => {
             parsedLng = geocoded.lng;
             parsedLat = geocoded.lat;
             overriddenLocation = true;
+            resolvedAreaName = areaToGeocode;
             console.log(`🎯 [Location Geocoded] Nominatim resolved "${areaToGeocode}" to: [${parsedLat}, ${parsedLng}]`);
+          }
+        }
+      }
+
+      // B2. Fallback: strip all category/noise/number words and geocode the residual
+      // This handles queries like "pharmacy dhanmondi" (no preposition) or "hospital rampura 5km"
+      if (!overriddenLocation) {
+        let residual = lowerQuery;
+        // Remove category keywords
+        residual = residual.replace(/\b(flat|rent|apartment|room|sublet|mess|basa|bari|pharmacy|medicine|drug|osudh|pharmacist|osud|pharmacies|drugstore|hospital|clinic|doctor|mbbs|medical|ambulance|icu|ccu|hospitals|restaurant|cafe|food|dining|biryani|burger|pizza|eat|hotel|kacchi|fast food|bakery|kabab|khabar|service|hire|mechanic|plumber|electrician|tutor|photographer|cleaner|maid|painter|carpenter|technician|pest control|babysitter|moving|event)\b/gi, "");
+        // Remove radius patterns
+        residual = residual.replace(/\d+\s*(?:km|k\.m\.|kilometer|kilometers|কিলোমিটার|কিমি|\bmeters?\b|\brange\b)/gi, "");
+        // Remove prepositions and noise words
+        residual = residual.replace(/\b(in|near|around|inside|at|find|search|me|show|for|the|a|an|best|good|cheap|under|below|with|want|need|looking|please)\b/gi, "");
+        // Remove standalone numbers
+        residual = residual.replace(/\b\d+\b/g, "");
+        residual = residual.replace(/\s+/g, " ").trim();
+
+        if (residual.length > 2) {
+          console.log(`🔍 [Fallback Location Extraction] Trying to geocode cleaned residual: "${residual}"`);
+          const geocoded = await geocodeLocation(residual);
+          if (geocoded) {
+            parsedLng = geocoded.lng;
+            parsedLat = geocoded.lat;
+            overriddenLocation = true;
+            resolvedAreaName = residual;
+            console.log(`🎯 [Fallback Geocoded] Nominatim resolved "${residual}" to: [${parsedLat}, ${parsedLng}]`);
           }
         }
       }
@@ -1595,8 +1884,8 @@ api.post("/listings/ai-search", async (req, res, next) => {
           Analyze the user's conversational search query: "${searchQuery}".
           
           Extract and output a strict JSON object with:
-          1. "category": strictly one of: "flat", "pharmacy", "hospital", "fashion", or "all" (default is "all").
-          2. "keywords": an array of descriptive search keywords extracted from the query. Keep these concise and highly relevant to listing titles or descriptions.
+          1. "category": strictly one of: "flat", "pharmacy", "hospital", "restaurant", "service", or "all" (default is "all").
+          2. "keywords": an array of descriptive search keywords extracted from the query. Keep these concise and highly relevant to listing titles or descriptions. DO NOT INCLUDE ANY LOCATION NAMES, STREET NAMES, CITIES, OR ZONES in this array. Only include feature keywords (e.g. "dental", "modern", "fast").
           3. "isEmergency": boolean indicating if this is an urgent/emergency medical/pharmacy search (e.g. ICU, ambulance, urgent delivery, 24h).
           4. "maxPrice": number (null if not specified) representing maximum rent or price limit mentioned in the query.
           5. "bedrooms": number (null if not specified) representing requested bedroom count (e.g. 2 beds, 3 bedroom).
@@ -1645,8 +1934,10 @@ api.post("/listings/ai-search", async (req, res, next) => {
         intent.category = "pharmacy";
       } else if (/\b(hospital|clinic|doctor|mbbs|medical|ambulance|icu|ccu)\b/i.test(lowerQuery)) {
         intent.category = "hospital";
-      } else if (/\b(fashion|clothing|shirt|pants|shop|mall|brand|dress|aarong|yellow|cats eye|panjabi|boutique)\b/i.test(lowerQuery)) {
-        intent.category = "fashion";
+      } else if (/\b(restaurant|cafe|food|dining|biryani|burger|pizza|eat|hotel|kacchi|fast food|bakery|kabab|khabar)\b/i.test(lowerQuery)) {
+        intent.category = "restaurant";
+      } else if (/\b(service|hire|mechanic|plumber|electrician|tutor|photographer|cleaner|maid|painter|carpenter|technician|pest control|babysitter|moving|event)\b/i.test(lowerQuery)) {
+        intent.category = "service";
       }
 
       // 2. Detect Emergency status
@@ -1717,32 +2008,36 @@ api.post("/listings/ai-search", async (req, res, next) => {
       mongoQuery["details.bedrooms"] = Number(intent.bedrooms);
     }
 
-    // If keywords exist, build an or query matching title, description, area, district, etc.
+    // If keywords exist, build an AND query matching title, description, area, district, etc.
     if (intent.keywords.length > 0) {
-      const regexPattern = intent.keywords.join("|");
-      const regexQuery = { $regex: regexPattern, $options: "i" };
-      
-      const textFilters = [
-        { title: regexQuery },
-        { description: regexQuery },
-        { area: regexQuery },
-        { address: regexQuery },
-        { tags: { $in: intent.keywords } }
-      ];
+      const keywordQueries = intent.keywords.map(kw => {
+        // Strip non-alphanumeric just to be safe for regex construction
+        const safeKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regexQuery = { $regex: safeKw, $options: "i" };
+        return {
+          $or: [
+            { title: regexQuery },
+            { description: regexQuery },
+            { area: regexQuery },
+            { address: regexQuery },
+            { tags: kw }
+          ]
+        };
+      });
 
-      // Merge $or conditions safely using $and to avoid conflicts
+      // Merge using $and to enforce strict matching of ALL keywords
       if (mongoQuery.$or) {
         mongoQuery.$and = [
           { $or: mongoQuery.$or },
-          { $or: textFilters }
+          ...keywordQueries
         ];
         delete mongoQuery.$or;
       } else {
-        mongoQuery.$or = textFilters;
+        mongoQuery.$and = keywordQueries;
       }
     }
 
-    let listings = await Listing.find(mongoQuery).limit(50).lean();
+    let listings = await Listing.find(mongoQuery).limit(150).lean();
     
     // Clean and reconstruct Google Places search query to target category and location correctly
     let googleSearchQuery = searchQuery;
@@ -1757,33 +2052,28 @@ api.post("/listings/ai-search", async (req, res, next) => {
       console.warn("Failed to clean AI search query:", cleanErr.message);
     }
 
-    // Always trigger Google Places fetch alongside local listings to overlay any missing items!
-    try {
-      const livePlaces = await fetchFromGooglePlaces(googleSearchQuery, parsedLat, parsedLng);
-      if (livePlaces && livePlaces.length > 0) {
-        const existingIds = new Set(listings.map(l => l.id));
-        let newResults = livePlaces.filter(l => !existingIds.has(l.id));
-        
-        // Filter Google Places results by the requested category if specified
-        if (intent.category !== "all") {
-          newResults = newResults.filter(l => l.category === intent.category);
-        }
-        
-        listings = [...listings, ...newResults];
-      }
-    } catch (gErr) {
-      console.warn("⚠️ [Google Places Fallback Warning] Could not fetch live places:", gErr.message);
-    }
-
     const withOwners = await populateListingOwners(listings.map(listingToOut));
 
     res.json({
       intent,
       listings: withOwners,
       processedByAI,
-      searchCenter: { lat: parsedLat, lng: parsedLng },
+      searchCenter: { lat: parsedLat, lng: parsedLng, displayName: resolvedAreaName || undefined },
       radius: parsedRadius
     });
+
+    // Run live fetch in the background to not block the UI
+    (async () => {
+      try {
+        const io = req.app.get("io");
+        const livePlaces = await fetchFromGooglePlaces(googleSearchQuery, parsedLat, parsedLng, parsedRadius, io);
+        if (!livePlaces || livePlaces.length === 0) {
+          await fetchFromOSMOverpass(intent.category, parsedLat, parsedLng, parsedRadius, io);
+        }
+      } catch (err) {
+        console.error("Background AI fetch error:", err.message);
+      }
+    })();
   } catch (error) {
     next(error.status ? error : apiError(500, error.message || "AI Search failed"));
   }
@@ -1797,7 +2087,7 @@ api.get("/listings/search", async (req, res, next) => {
     const lng = req.query.lng !== undefined && req.query.lng !== "" ? Number(req.query.lng) : null;
     const radius = Number(req.query.radius || 50);
     const page = Number(req.query.page || 1);
-    const limit = Math.min(Number(req.query.limit || 50), 200);
+    const limit = Math.min(Number(req.query.limit || 150), 1000);
 
     let results = [];
     const baseFilter = { is_active: true };
@@ -1892,7 +2182,7 @@ api.get("/listings/search", async (req, res, next) => {
         const otherResults = results.filter(r => !nearbyIds.has(r.id));
         const nearbyOnlyResults = nearbyResults.filter(r => !seen.has(r.id));
 
-        results = [...nearbyKeywordMatches, ...nearbyOnlyResults, ...otherResults];
+        results = [...nearbyKeywordMatches, ...nearbyOnlyResults];
       }
     } else if (Number.isFinite(lat) && Number.isFinite(lng)) {
       // No keyword, just location-based
@@ -1914,40 +2204,39 @@ api.get("/listings/search", async (req, res, next) => {
     // Paginate
     const paginatedResults = results.slice((page - 1) * limit, page * limit);
 
-    // Always trigger Google Places fetch alongside local listings to overlay any missing items!
-    if (q && Number.isFinite(lat) && Number.isFinite(lng)) {
-      let googleSearchQuery = q;
-      try {
-        const locationPart = cleanQueryKeywords(q, category);
-        if (category && locationPart) {
-          googleSearchQuery = `${category} in ${locationPart}`;
-        } else if (locationPart) {
-          googleSearchQuery = locationPart;
-        }
-      } catch (cleanErr) {
-        console.warn("Failed to clean standard search query for Google Places:", cleanErr.message);
-      }
-
-      try {
-        const livePlaces = await fetchFromGooglePlaces(googleSearchQuery, lat, lng);
-        if (livePlaces && livePlaces.length > 0) {
-          const existingIds = new Set(paginatedResults.map(r => r.id));
-          let newPlaces = livePlaces.filter(l => !existingIds.has(l.id));
-          
-          // Filter Google Places results by the requested category if specified
-          if (category) {
-            newPlaces = newPlaces.filter(l => l.category === category);
-          }
-          
-          paginatedResults.push(...newPlaces);
-        }
-      } catch (placesErr) {
-        console.error("Google Places fallback error in standard search:", placesErr.message);
-      }
-    }
-
     const withOwners = await populateListingOwners(paginatedResults.map(listingToOut));
     res.json({ listings: withOwners, page, limit, total: results.length });
+
+    // Run live fetch in the background to not block the UI
+    if ((q || category) && Number.isFinite(lat) && Number.isFinite(lng)) {
+      (async () => {
+        let googleSearchQuery = q || category;
+        if (!q && category) {
+          googleSearchQuery = category;
+        } else {
+          try {
+            const locationPart = cleanQueryKeywords(q, category);
+            if (category && locationPart) {
+              googleSearchQuery = `${category} in ${locationPart}`;
+            } else if (locationPart) {
+              googleSearchQuery = locationPart;
+            }
+          } catch (cleanErr) {
+            console.warn("Failed to clean standard search query for Google Places:", cleanErr.message);
+          }
+        }
+
+        try {
+          const io = req.app.get("io");
+          const livePlaces = await fetchFromGooglePlaces(googleSearchQuery, lat, lng, io);
+          if (!livePlaces || livePlaces.length === 0) {
+            await fetchFromOSMOverpass(category || "all", lat, lng, io);
+          }
+        } catch (err) {
+          console.error("Background search fetch error:", err.message);
+        }
+      })();
+    }
   } catch (error) {
     next(error.status ? error : apiError(400, error.message || "Failed to search listings"));
   }
@@ -2005,6 +2294,18 @@ api.delete("/listings/:lid", requireAuth, async (req, res, next) => {
     next(error.status ? error : apiError(400, error.message || "Failed to delete listing"));
   }
 });
+
+api.post("/listings/:lid/report", requireAuth, async (req, res, next) => {
+  try {
+    const existing = await Listing.findOne({ id: req.params.lid });
+    if (!existing) throw apiError(404, "Not found");
+    await Listing.updateOne({ id: req.params.lid }, { $inc: { reportCount: 1 } });
+    res.json({ ok: true, reported: true });
+  } catch (error) {
+    next(error.status ? error : apiError(400, error.message || "Failed to report listing"));
+  }
+});
+
 
 api.post("/listings/:lid/save", requireAuth, async (req, res, next) => {
   try {
@@ -2152,11 +2453,11 @@ api.get("/admin/stats", requireAuth, requireRoles("admin"), async (_req, res, ne
     const totalUsers = await User.countDocuments();
     const totalOwners = await User.countDocuments({ role: "owner" });
     const totalListings = await Listing.countDocuments({ is_active: true });
-    const pending = await Listing.countDocuments({ is_approved: false, is_active: true });
+    const pending = 0; // Deprecated: listings are active by default
     const totalReviews = await Review.countDocuments();
     const byCategory = {};
     for (const category of ALLOWED_CATEGORIES) {
-      byCategory[category] = await Listing.countDocuments({ category, is_active: true, is_approved: true });
+      byCategory[category] = await Listing.countDocuments({ category, is_active: true });
     }
     res.json({
       total_users: totalUsers,
@@ -2206,10 +2507,9 @@ api.get("/admin/listings", requireAuth, requireRoles("admin"), async (req, res, 
     const status = req.query.status ? String(req.query.status) : null;
     const query = {};
     if (status === "pending") {
-      query.is_approved = false;
-      query.is_active = true;
+      // Deprecated, no pending state.
+      query.is_active = false; // Just return nothing or inactive if needed, but since it's removed, return empty
     } else if (status === "approved") {
-      query.is_approved = true;
       query.is_active = true;
     } else if (status === "rejected") {
       query.is_active = false;
@@ -2223,23 +2523,7 @@ api.get("/admin/listings", requireAuth, requireRoles("admin"), async (req, res, 
   }
 });
 
-api.put("/admin/listings/:lid/approve", requireAuth, requireRoles("admin"), async (req, res, next) => {
-  try {
-    await Listing.updateOne({ id: req.params.lid }, { $set: { is_approved: true, is_active: true } });
-    res.json({ ok: true });
-  } catch (error) {
-    next(apiError(400, "Failed to approve listing"));
-  }
-});
 
-api.put("/admin/listings/:lid/reject", requireAuth, requireRoles("admin"), async (req, res, next) => {
-  try {
-    await Listing.updateOne({ id: req.params.lid }, { $set: { is_approved: false, is_active: false } });
-    res.json({ ok: true });
-  } catch (error) {
-    next(apiError(400, "Failed to reject listing"));
-  }
-});
 
 api.put("/admin/listings/:lid/feature", requireAuth, requireRoles("admin"), async (req, res, next) => {
   try {

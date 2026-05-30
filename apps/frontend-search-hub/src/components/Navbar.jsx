@@ -6,7 +6,8 @@ import {
   Home, 
   Pill, 
   PlusSquare, 
-  ShoppingBag, 
+  UtensilsCrossed, 
+  Briefcase,
   Moon,
   Sun,
   ToggleLeft,
@@ -28,7 +29,8 @@ const CATS = [
   { key: "flat", icon: Home, labelKey: "flatRental" },
   { key: "pharmacy", icon: Pill, labelKey: "pharmacy" },
   { key: "hospital", icon: PlusSquare, labelKey: "hospital" },
-  { key: "fashion", icon: ShoppingBag, labelKey: "fashion" },
+  { key: "restaurant", icon: UtensilsCrossed, labelKey: "restaurant" },
+  { key: "service", icon: Briefcase, labelKey: "service" },
 ];
 
 export default function Navbar() {

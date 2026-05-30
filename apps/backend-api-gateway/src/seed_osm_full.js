@@ -99,7 +99,7 @@ const OSM_QUERIES = [
 
 // ─── Mongoose Schema (matches server.js exactly) ─────────────────────────────
 
-const ALLOWED_CATEGORIES = ["flat", "pharmacy", "hospital", "fashion"];
+const ALLOWED_CATEGORIES = ["flat", "pharmacy", "hospital", "restaurant"];
 
 const listingSchema = new mongoose.Schema(
   {
@@ -125,7 +125,6 @@ const listingSchema = new mongoose.Schema(
     },
     details: { type: mongoose.Schema.Types.Mixed, default: {} },
     tags: { type: [String], default: [] },
-    is_approved: { type: Boolean, default: true },
     is_active: { type: Boolean, default: true },
     is_featured: { type: Boolean, default: false },
     average_rating: { type: Number, default: 0 },
@@ -189,8 +188,8 @@ function mapCategory(tags) {
   ) {
     return "pharmacy";
   }
-  // Fashion / shopping (fallback)
-  return "fashion";
+  // Restaurant (fallback)
+  return "restaurant";
 }
 
 /**
@@ -214,7 +213,7 @@ function buildDetails(category, tags) {
       delivery: true,
     };
   }
-  // fashion (catch-all for shops, markets, food, etc.)
+  // restaurant (catch-all for food, etc.)
   const result = {
     open_hours: tags.opening_hours || "10 AM - 8 PM",
     price_range: "Mid",
@@ -225,7 +224,7 @@ function buildDetails(category, tags) {
 }
 
 /**
- * Determine the sub-type label of a shop/fashion listing for richer descriptions.
+ * Determine the sub-type label of a restaurant listing for richer descriptions.
  */
 function getShopSubType(tags) {
   if (tags.amenity === "restaurant") return "restaurant";
@@ -236,7 +235,7 @@ function getShopSubType(tags) {
   if (tags.shop === "department_store") return "department_store";
   if (tags.shop === "convenience" || tags.shop === "general" || tags.shop === "variety_store") return "convenience";
   if (tags.shop === "grocery" || tags.shop === "greengrocer") return "grocery";
-  if (tags.shop === "clothes" || tags.shop === "shoes") return "fashion";
+  if (tags.shop === "clothes" || tags.shop === "shoes") return "shop";
   if (tags.shop === "jewelry" || tags.shop === "cosmetics") return "accessories";
   if (tags.shop === "electronics" || tags.shop === "mobile_phone") return "electronics";
   if (tags.shop === "books" || tags.shop === "stationery") return "books";
@@ -276,7 +275,7 @@ function buildDescription(name, category, cityName, tags) {
   if (category === "pharmacy") {
     return `${name} is a licensed pharmacy in ${cityName}, stocking medicines, healthcare essentials, and prescriptions.`;
   }
-  // Fashion / shopping — use sub-type for a specific description
+  // Restaurant — use sub-type for a specific description
   const subType = getShopSubType(tags);
   const fragment = SUBTYPE_DESCRIPTIONS[subType] || SUBTYPE_DESCRIPTIONS.shop;
   return `${name} is ${fragment} in ${cityName}.`;
@@ -371,7 +370,6 @@ function parseElement(el, region, defaultOwnerId) {
     },
     details,
     tags: listingTags,
-    is_approved: true,
     is_active: true,
     is_featured: false,
     average_rating: 0,
@@ -502,7 +500,7 @@ async function run() {
   console.log("═══════════════════════════════════════════════════════════════");
   console.log(`  Regions:    ${REGIONS.length}`);
   console.log(`  OSM Tags:   ${OSM_QUERIES.length}`);
-  console.log(`  Categories: hospital, pharmacy, fashion`);
+  console.log(`  Categories: hospital, pharmacy, restaurant`);
   console.log("═══════════════════════════════════════════════════════════════\n");
 
   try {

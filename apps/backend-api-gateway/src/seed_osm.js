@@ -15,7 +15,7 @@ const listingSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   title: { type: String, required: true },
   description: { type: String, required: true },
-  category: { type: String, enum: ["flat", "pharmacy", "hospital", "fashion"], required: true },
+  category: { type: String, enum: ["flat", "pharmacy", "hospital", "restaurant"], required: true },
   owner_id: { type: String, required: true },
   images: { type: [String], default: [] },
   address: { type: String, required: true },
@@ -34,7 +34,6 @@ const listingSchema = new mongoose.Schema({
   },
   details: { type: mongoose.Schema.Types.Mixed, default: {} },
   tags: { type: [String], default: [] },
-  is_approved: { type: Boolean, default: true },
   is_active: { type: Boolean, default: true },
   is_featured: { type: Boolean, default: false },
   average_rating: { type: Number, default: 0 },
@@ -70,7 +69,7 @@ async function run() {
     console.log("Seeding listings under Owner ID:", defaultOwnerId);
 
     // 2. Query Overpass API for Dhaka locations
-    // We target hospitals, pharmacies, marketplaces, and fashion shops in Dhaka area bounds
+    // We target hospitals, pharmacies, and restaurants in Dhaka area bounds
     console.log("Sending query to OpenStreetMap Overpass API (this can take up to 20-30 seconds)...");
     const overpassUrl = "https://overpass-api.de/api/interpreter";
     const overpassQuery = `
@@ -78,14 +77,13 @@ async function run() {
       (
         node["amenity"="hospital"](23.68,90.33,23.90,90.50);
         node["amenity"="pharmacy"](23.68,90.33,23.90,90.50);
-        node["amenity"="marketplace"](23.68,90.33,23.90,90.50);
-        node["shop"="mall"](23.68,90.33,23.90,90.50);
-        node["shop"="clothes"](23.68,90.33,23.90,90.50);
+        node["amenity"="restaurant"](23.68,90.33,23.90,90.50);
+        node["amenity"="cafe"](23.68,90.33,23.90,90.50);
         
         way["amenity"="hospital"](23.68,90.33,23.90,90.50);
         way["amenity"="pharmacy"](23.68,90.33,23.90,90.50);
-        way["amenity"="marketplace"](23.68,90.33,23.90,90.50);
-        way["shop"="mall"](23.68,90.33,23.90,90.50);
+        way["amenity"="restaurant"](23.68,90.33,23.90,90.50);
+        way["amenity"="cafe"](23.68,90.33,23.90,90.50);
       );
       out center body;
     `;
@@ -126,7 +124,7 @@ async function run() {
       seenTitles.add(dedupKey);
 
       // Map categories
-      let category = "fashion";
+      let category = "restaurant";
       let details = {};
       let description = "";
 
@@ -148,14 +146,14 @@ async function run() {
         };
         description = `${name} is a licensed pharmacy/osudh center in Dhaka, stocking generic medicines, healthcare essentials, and prescriptions.`;
       } else {
-        // shop=mall, shop=clothes, amenity=marketplace
-        category = "fashion";
+        // amenity=restaurant, amenity=cafe
+        category = "restaurant";
         details = {
-          brands: tags.brand ? tags.brand.split(";") : ["Local Retailers", "Premium Outlets"],
-          open_hours: tags.opening_hours || "10 AM - 8 PM",
-          price_range: "Mid"
+          cuisine: tags.cuisine ? tags.cuisine.split(";") : ["Local", "Asian"],
+          open_hours: tags.opening_hours || "10 AM - 10 PM",
+          delivery: true
         };
-        description = `${name} is a busy shopping hub and retail center located in Dhaka, featuring fashion outlets, clothing selections, and consumer goods.`;
+        description = `${name} is a local restaurant/cafe located in Dhaka, offering delicious meals, drinks, and dining experiences.`;
       }
 
       // Address mapping helpers
@@ -196,7 +194,6 @@ async function run() {
         },
         details: details,
         tags: listingTags,
-        is_approved: true,
         is_active: true,
         is_featured: false,
         average_rating: 0,

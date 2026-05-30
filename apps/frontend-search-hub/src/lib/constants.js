@@ -3,7 +3,14 @@ export const CATEGORIES = [
   { key: "flat", color: "#6366F1", bg: "#EEF2FF" },
   { key: "pharmacy", color: "#10B981", bg: "#D1FAE5" },
   { key: "hospital", color: "#EF4444", bg: "#FEE2E2" },
-  { key: "fashion", color: "#F59E0B", bg: "#FEF3C7" },
+  { key: "restaurant", color: "#F59E0B", bg: "#FEF3C7" },
+  { key: "service", color: "#8B5CF6", bg: "#EDE9FE" },
+];
+
+export const SERVICE_TYPES = [
+  "Photographer", "Event Manager", "Home Service", "Electrician", "Fixing Service", 
+  "Cleaner", "Plumber", "Painter", "Carpenter", "AC Technician", "Pest Control", 
+  "Moving Service", "Mechanic", "Tutor", "Babysitter", "Other"
 ];
 
 export const POPULAR_AREAS = [
