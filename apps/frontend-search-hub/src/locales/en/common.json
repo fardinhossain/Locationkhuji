@@ -20,7 +20,8 @@
       "Gulshan",
       "Banani",
       "Mirpur",
-      "Uttara"
+      "Uttara",
+      "Mohammadpur"
     ],
     "openMap": "Open Map",
     "viewList": "View List"
@@ -107,7 +108,8 @@
     "gulshan": "Gulshan",
     "banani": "Banani",
     "mirpur": "Mirpur",
-    "uttara": "Uttara"
+    "uttara": "Uttara",
+    "mohammadpur": "Mohammadpur"
   },
   "stats": {
     "listingsCount": "5000+",

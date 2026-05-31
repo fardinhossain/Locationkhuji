@@ -132,6 +132,7 @@ export default function MapView({ center, listings = [], userLocation, radius = 
         center={validCenter}
         zoom={13}
         minZoom={6}
+        maxZoom={22}
         maxBounds={BD_BOUNDS}
         maxBoundsViscosity={1.0}
         whenReady={handleMapReady}
@@ -148,6 +149,8 @@ export default function MapView({ center, listings = [], userLocation, radius = 
           attribution='&copy; OpenStreetMap contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           noWrap={true}
+          maxZoom={22}
+          maxNativeZoom={19}
         />
         <BangladeshMask />
         {onClickMap && <MapClicker onClick={onClickMap} />}

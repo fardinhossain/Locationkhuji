@@ -1326,136 +1326,35 @@ api.get("/listings/nearby", async (req, res, next) => {
     };
 
     if (category) query.category = category;
-
+// ... existing code ...
     const items = await Listing.find(query).skip((page - 1) * limit).limit(limit).lean();
-    const withOwners = await populateListingOwners(items.map(listingToOut));
+    
+    // Fallback to OSM search if no listings found
+    let withOwners = await populateListingOwners(items.map(listingToOut));
+    if (withOwners.length === 0) {
+      const osmListings = await fetchFromOSMOverpass(category, lat, lng, radius, req.app.get("io"));
+      withOwners = await populateListingOwners(osmListings.map(listingToOut));
+    }
+    
     res.json({ listings: withOwners, page, limit });
   } catch (error) {
     next(error.status ? error : apiError(400, error.message || "Failed to load nearby listings"));
   }
 });
 
-const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
+const osmCache = new Map();
 
-async function fetchFromGooglePlaces(searchQuery, parsedLat, parsedLng, parsedRadius, io) {
-  if (!GOOGLE_PLACES_API_KEY || GOOGLE_PLACES_API_KEY === "your_gemini_api_key_here" || GOOGLE_PLACES_API_KEY === "your_google_places_api_key_here") {
-    console.log("Google Places API Key is not configured. Skipping live Places fetch.");
-    return [];
-  }
-
+async function fetchFromOSMOverpass(category, lat, lng, radiusKm, io, keywords = []) {
   try {
-    console.log(`Live Google Places search triggered for: "${searchQuery}"`);
-    const placesUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json";
+    // Generate a cache key that groups requests within ~110 meters (3 decimal places)
+    // This prevents map panning from aggressively hitting the Overpass API rate limits
+    const cacheKey = `${category}_${Number(lat).toFixed(3)}_${Number(lng).toFixed(3)}_${radiusKm}_${keywords.join("|")}`;
     
-    // Call Google Places Text Search. We pass location bias around Dhaka city
-    const response = await axios.get(placesUrl, {
-      params: {
-        query: searchQuery,
-        location: `${parsedLat},${parsedLng}`,
-        radius: (parsedRadius * 1000) || 5000,
-        key: GOOGLE_PLACES_API_KEY
-      }
-    });
-
-    const results = response.data?.results || [];
-    console.log(`Google Places API returned ${results.length} results.`);
-
-    const newlySeededListings = [];
-    
-    for (const place of results.slice(0, 10)) { // take top 10 matches
-      const name = place.name;
-      const lat = place.geometry?.location?.lat;
-      const lng = place.geometry?.location?.lng;
-      if (!name || !lat || !lng) continue;
-
-      // Map Google Place types to LocationKhuji categories
-      const types = place.types || [];
-      let category = "fashion";
-      let details = {};
-      let description = `${name} is a popular spot in Dhaka. Information fetched live via Google Places.`;
-
-      if (types.includes("hospital") || types.includes("doctor") || types.includes("health") || types.includes("medical_class") || types.includes("dentist") || types.includes("physiotherapist") || types.includes("veterinary_care")) {
-        category = "hospital";
-        details = { specialty: ["General Medical"], beds: 150, open_hours: "24/7", emergency: true };
-      } else if (types.includes("pharmacy") || types.includes("drugstore")) {
-        category = "pharmacy";
-        details = { open_hours: "9 AM - 11 PM", emergency: true, delivery: true };
-      } else if (types.includes("shopping_mall") || types.includes("clothing_store") || types.includes("store") || types.includes("department_store") || types.includes("convenience_store") || types.includes("supermarket") || types.includes("electronics_store") || types.includes("furniture_store") || types.includes("beauty_salon")) {
-        category = "fashion";
-        details = { brands: ["Global Brands"], open_hours: "10 AM - 9 PM", price_range: "Mid to High" };
-      } else if (types.includes("restaurant") || types.includes("cafe") || types.includes("food") || types.includes("bakery") || types.includes("meal_takeaway")) {
-        category = "restaurant";
-        details = { cuisine: ["Local Cuisine"], open_hours: "10 AM - 10 PM", price_range: "Mid" };
-      } else if (types.includes("plumber") || types.includes("electrician") || types.includes("repair") || types.includes("car_repair")) {
-        category = "service";
-        details = { type: "General Service", open_hours: "9 AM - 6 PM" };
-      } else {
-        continue;
-      }
-
-      // Check if this listing already exists in our MongoDB database by title and coordinate proximity
-      const existing = await Listing.findOne({
-        title: name,
-        location: {
-          $nearSphere: {
-            $geometry: { type: "Point", coordinates: [lng, lat] },
-            $maxDistance: 100 // within 100 meters
-          }
-        }
-      }).lean();
-
-      if (existing) {
-        newlySeededListings.push(existing);
-        continue;
-      }
-
-      // Create a new MERN listing document
-      const doc = await Listing.create({
-        id: new mongoose.Types.ObjectId().toString(),
-        title: name,
-        description: description,
-        category: category,
-        owner_id: "dev-admin-001", // seeded under Admin
-        images: [],
-        address: place.formatted_address || `${name}, Dhaka`,
-        area: place.formatted_address?.split(",")?.[1]?.trim() || "Dhaka",
-        city: "Dhaka",
-        location: {
-          type: "Point",
-          coordinates: [lng, lat]
-        },
-        contact: {
-          phone: "+8801700000000",
-          whatsapp: "+8801700000000",
-          email: null
-        },
-        details: details,
-        tags: ["google-places", "live-search"],
-
-        is_active: true,
-        is_featured: false,
-        average_rating: place.rating || 0,
-        total_reviews: place.user_ratings_total || 0,
-        created_at: new Date().toISOString()
-      });
-
-      const out = doc.toObject();
-      newlySeededListings.push(out);
-      if (io) {
-        const [populatedOut] = await populateListingOwners([listingToOut(out)]);
-        io.emit("new_listing", populatedOut);
-      }
+    if (osmCache.has(cacheKey)) {
+      console.log(`🗺️ [OSM Cache] Used cached Overpass results for category: "${category}" around [${Number(lat).toFixed(3)}, ${Number(lng).toFixed(3)}]`);
+      return osmCache.get(cacheKey);
     }
 
-    return newlySeededListings;
-  } catch (err) {
-    console.error("Failed to query Google Places API:", err.message);
-    return [];
-  }
-}
-
-async function fetchFromOSMOverpass(category, lat, lng, radiusKm, io) {
-  try {
     console.log(`Live OSM Overpass fallback query triggered for category: "${category}" around [${lat}, ${lng}]`);
     const overpassUrl = "https://overpass-api.de/api/interpreter";
     
@@ -1474,6 +1373,8 @@ async function fetchFromOSMOverpass(category, lat, lng, radiusKm, io) {
       stmts = [
         `node["amenity"="hospital"](${south},${west},${north},${east});`,
         `node["amenity"="clinic"](${south},${west},${north},${east});`,
+        `node["amenity"="dentist"](${south},${west},${north},${east});`,
+        `node["healthcare"="dentist"](${south},${west},${north},${east});`,
         `way["amenity"="hospital"](${south},${west},${north},${east});`
       ];
     } else if (category === 'restaurant') {
@@ -1516,12 +1417,27 @@ async function fetchFromOSMOverpass(category, lat, lng, radiusKm, io) {
       const placeLng = el.lon || el.center?.lon;
       if (!placeLat || !placeLng) continue;
 
+      // Strict JS keyword filtering so we don't spam the UI with irrelevant OSM pins
+      if (keywords && keywords.length > 0) {
+        const matchesAll = keywords.every(kwGroup => {
+          const synonyms = kwGroup.split('|').map(k => k.trim());
+          return synonyms.some(kw => {
+            let safeKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            safeKw = safeKw.replace(/dental/i, 'dent');
+            const regex = new RegExp(safeKw, 'i');
+            const amenity = tags.amenity || tags.healthcare || "";
+            return regex.test(name) || regex.test(amenity);
+          });
+        });
+        if (!matchesAll) continue;
+      }
+
       // Determine category mapping from OSM tags
       let itemCategory = "restaurant";
       let details = {};
       let description = "";
 
-      if (tags.amenity === "hospital" || tags.amenity === "clinic" || tags.healthcare === "hospital" || tags.healthcare === "clinic") {
+      if (tags.amenity === "hospital" || tags.amenity === "clinic" || tags.healthcare === "hospital" || tags.healthcare === "clinic" || tags.amenity === "dentist" || tags.healthcare === "dentist") {
         itemCategory = "hospital";
         details = { specialty: ["General Medical"], beds: 100, open_hours: "24/7", emergency: true };
         description = `${name} is an active healthcare facility providing medical care and professional services.`;
@@ -1595,6 +1511,14 @@ async function fetchFromOSMOverpass(category, lat, lng, radiusKm, io) {
       }
     }
 
+    // Save to cache
+    osmCache.set(cacheKey, newlySeededListings);
+    // Prevent memory leak
+    if (osmCache.size > 500) {
+      const firstKey = osmCache.keys().next().value;
+      osmCache.delete(firstKey);
+    }
+
     return newlySeededListings;
   } catch (err) {
     console.error("OSM Overpass fallback query failed:", err.message);
@@ -1634,9 +1558,18 @@ function cleanQueryKeywords(q, category) {
   return cleanQ;
 }
 
+const geocodeCache = new Map();
+
 async function geocodeLocation(query) {
   try {
     const q = encodeURIComponent(`${query}`);
+    const cacheKey = q.toLowerCase();
+    
+    if (geocodeCache.has(cacheKey)) {
+      console.log(`🌐 [Geocoding Cache] Used cached coordinates for: "${query}"`);
+      return geocodeCache.get(cacheKey);
+    }
+    
     console.log(`🌐 [Geocoding Request] Nominatim searching for: "${query}"`);
     // viewbox for Dhaka to heavily prefer Dhaka results when ambiguous (bounded=0 means it can still find places outside Dhaka)
     const response = await axios.get(
@@ -1648,17 +1581,29 @@ async function geocodeLocation(query) {
     );
     if (response.data && response.data.length > 0) {
       const first = response.data[0];
-      return {
+      const result = {
         lat: parseFloat(first.lat),
         lng: parseFloat(first.lon),
         displayName: first.display_name
       };
+      
+      // Save to cache
+      geocodeCache.set(cacheKey, result);
+      // Prevent memory leak
+      if (geocodeCache.size > 1000) {
+        const firstKey = geocodeCache.keys().next().value;
+        geocodeCache.delete(firstKey);
+      }
+      
+      return result;
     }
   } catch (err) {
     console.warn(`⚠️ [Geocoding Warning] Nominatim failed: ${err.message}`);
   }
   return null;
 }
+
+const aiIntentCache = new Map();
 
 api.post("/listings/ai-search", async (req, res, next) => {
   try {
@@ -1876,7 +1821,13 @@ api.post("/listings/ai-search", async (req, res, next) => {
 
     let processedByAI = false;
 
-    if (aiClient) {
+    // Check Cache first to avoid hitting API rate limits for the same text query
+    if (aiIntentCache.has(lowerQuery)) {
+      const cached = aiIntentCache.get(lowerQuery);
+      intent = { ...intent, ...cached };
+      processedByAI = true;
+      console.log(`🧠 [AI Cache] Used cached intent for query: "${searchQuery}"`);
+    } else if (aiClient) {
       try {
         const prompt = `
           You are the AI Location Assistant for LocationKhuji, a map-first search platform in Bangladesh.
@@ -1885,7 +1836,7 @@ api.post("/listings/ai-search", async (req, res, next) => {
           
           Extract and output a strict JSON object with:
           1. "category": strictly one of: "flat", "pharmacy", "hospital", "restaurant", "service", or "all" (default is "all").
-          2. "keywords": an array of descriptive search keywords extracted from the query. Keep these concise and highly relevant to listing titles or descriptions. DO NOT INCLUDE ANY LOCATION NAMES, STREET NAMES, CITIES, OR ZONES in this array. Only include feature keywords (e.g. "dental", "modern", "fast").
+          2. "keywords": an array of descriptive search keywords extracted from the query. Keep these concise. DO NOT INCLUDE locations/streets. CRITICAL: For each keyword, provide a pipe-separated string containing the English word, its direct Bengali translation, and common Banglish synonyms (e.g., "balcony|বারান্দা|baranda", "generator|জেনারেটর", "dental|ডেন্টাল|dentist").
           3. "isEmergency": boolean indicating if this is an urgent/emergency medical/pharmacy search (e.g. ICU, ambulance, urgent delivery, 24h).
           4. "maxPrice": number (null if not specified) representing maximum rent or price limit mentioned in the query.
           5. "bedrooms": number (null if not specified) representing requested bedroom count (e.g. 2 beds, 3 bedroom).
@@ -1918,6 +1869,20 @@ api.post("/listings/ai-search", async (req, res, next) => {
             intent.maxPrice = parsed.maxPrice !== undefined ? parsed.maxPrice : null;
             intent.bedrooms = parsed.bedrooms !== undefined ? parsed.bedrooms : null;
             processedByAI = true;
+            
+            // Save to Cache to prevent identical subsequent requests (e.g. map panning)
+            aiIntentCache.set(lowerQuery, {
+              category: intent.category,
+              keywords: [...intent.keywords],
+              isEmergency: intent.isEmergency,
+              maxPrice: intent.maxPrice,
+              bedrooms: intent.bedrooms
+            });
+            // Prevent memory leak by capping at 1000 items
+            if (aiIntentCache.size > 1000) {
+              const firstKey = aiIntentCache.keys().next().value;
+              aiIntentCache.delete(firstKey);
+            }
           }
         }
       } catch (err) {
@@ -2009,19 +1974,33 @@ api.post("/listings/ai-search", async (req, res, next) => {
     }
 
     // If keywords exist, build an AND query matching title, description, area, district, etc.
-    if (intent.keywords.length > 0) {
-      const keywordQueries = intent.keywords.map(kw => {
-        // Strip non-alphanumeric just to be safe for regex construction
-        const safeKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regexQuery = { $regex: safeKw, $options: "i" };
+    // Strip out base category words from keywords to avoid forcing them into the strict $and requirement.
+    // If a user says "dental hospital", and we force "hospital" to be in the title, we miss "Dental Clinic".
+    const baseCategoryWords = new Set(["hospital", "clinic", "pharmacy", "restaurant", "cafe", "flat", "rent"]);
+    const strictKeywords = intent.keywords.filter(kw => !baseCategoryWords.has(kw.toLowerCase()));
+
+    if (strictKeywords && strictKeywords.length > 0) {
+      const keywordQueries = strictKeywords.map(kwGroup => {
+        // AI now returns pipe-separated synonyms (e.g., "balcony|বারান্দা|baranda")
+        const synonyms = kwGroup.split('|').map(k => k.trim());
+        
+        const regexQueries = synonyms.map(kw => {
+          const safeKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return { $regex: safeKw, $options: "i" };
+        });
+
         return {
-          $or: [
+          $or: regexQueries.flatMap(regexQuery => [
             { title: regexQuery },
             { description: regexQuery },
             { area: regexQuery },
             { address: regexQuery },
-            { tags: kw }
-          ]
+            { "details.features": regexQuery },
+            { "details.specialty": regexQuery },
+            { "details.cuisine": regexQuery },
+            { "details.brands": regexQuery },
+            { tags: regexQuery }
+          ])
         };
       });
 
@@ -2037,21 +2016,11 @@ api.post("/listings/ai-search", async (req, res, next) => {
       }
     }
 
-    let listings = await Listing.find(mongoQuery).limit(150).lean();
+    let listings = await Listing.find(mongoQuery).limit(5000).lean();
     
-    // Clean and reconstruct Google Places search query to target category and location correctly
-    let googleSearchQuery = searchQuery;
-    try {
-      const locationPart = cleanQueryKeywords(searchQuery, intent.category);
-      if (intent.category !== "all" && locationPart) {
-        googleSearchQuery = `${intent.category} in ${locationPart}`;
-      } else if (locationPart) {
-        googleSearchQuery = locationPart;
-      }
-    } catch (cleanErr) {
-      console.warn("Failed to clean AI search query:", cleanErr.message);
-    }
-
+    // For AI Search, the user's raw query is already a conversational string.
+    // We previously used Google Places here, but now we go straight to OSM Overpass.
+    
     const withOwners = await populateListingOwners(listings.map(listingToOut));
 
     res.json({
@@ -2066,12 +2035,9 @@ api.post("/listings/ai-search", async (req, res, next) => {
     (async () => {
       try {
         const io = req.app.get("io");
-        const livePlaces = await fetchFromGooglePlaces(googleSearchQuery, parsedLat, parsedLng, parsedRadius, io);
-        if (!livePlaces || livePlaces.length === 0) {
-          await fetchFromOSMOverpass(intent.category, parsedLat, parsedLng, parsedRadius, io);
-        }
+        await fetchFromOSMOverpass(intent.category, parsedLat, parsedLng, parsedRadius, io, strictKeywords);
       } catch (err) {
-        console.error("Background AI fetch error:", err.message);
+        console.error("Background AI OSM fetch error:", err.message);
       }
     })();
   } catch (error) {
@@ -2087,21 +2053,16 @@ api.get("/listings/search", async (req, res, next) => {
     const lng = req.query.lng !== undefined && req.query.lng !== "" ? Number(req.query.lng) : null;
     const radius = Number(req.query.radius || 50);
     const page = Number(req.query.page || 1);
-    const limit = Math.min(Number(req.query.limit || 150), 1000);
+    const limit = Math.min(Number(req.query.limit || 150), 5000);
 
     let results = [];
     const baseFilter = { is_active: true };
     if (category) baseFilter.category = category;
 
     if (q) {
-      // 1. Clean and reconstruct keywords for robust partial/unordered word matching
-      const locationPart = cleanQueryKeywords(q, category);
+      // 1. Just use the raw query directly for DB lookups. 
+      // We already enforce the category via baseFilter, so we shouldn't inject category names into the text regex.
       let searchKeywords = q;
-      if (category && locationPart) {
-        searchKeywords = `${category} ${locationPart}`;
-      } else if (locationPart) {
-        searchKeywords = locationPart;
-      }
 
       const escapedKeywords = searchKeywords.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const simpleRegex = { $regex: escapedKeywords, $options: "i" };
@@ -2210,28 +2171,12 @@ api.get("/listings/search", async (req, res, next) => {
     // Run live fetch in the background to not block the UI
     if ((q || category) && Number.isFinite(lat) && Number.isFinite(lng)) {
       (async () => {
-        let googleSearchQuery = q || category;
-        if (!q && category) {
-          googleSearchQuery = category;
-        } else {
-          try {
-            const locationPart = cleanQueryKeywords(q, category);
-            if (category && locationPart) {
-              googleSearchQuery = `${category} in ${locationPart}`;
-            } else if (locationPart) {
-              googleSearchQuery = locationPart;
-            }
-          } catch (cleanErr) {
-            console.warn("Failed to clean standard search query for Google Places:", cleanErr.message);
-          }
-        }
-
         try {
           const io = req.app.get("io");
-          const livePlaces = await fetchFromGooglePlaces(googleSearchQuery, lat, lng, io);
-          if (!livePlaces || livePlaces.length === 0) {
-            await fetchFromOSMOverpass(category || "all", lat, lng, io);
-          }
+          // Standard search cannot distinguish between area names (nakhalpara) and specific names (KFC).
+          // To avoid filtering out all restaurants in Nakhalpara simply because their name isn't 'nakhalpara',
+          // we pass an empty keyword array and let the location radius do the work.
+          await fetchFromOSMOverpass(category || "all", lat, lng, radius, io, []);
         } catch (err) {
           console.error("Background search fetch error:", err.message);
         }

@@ -42,6 +42,20 @@ export default function MapPage() {
   const aiSearchCenterRef = React.useRef(null);
   const listingsCache = React.useRef({});
   const fetchDebounceRef = React.useRef(null);
+  
+  // Refs for socket listener state
+  const isAiModeRef = React.useRef(isAiMode);
+  const manualAddressRef = React.useRef(manualAddress);
+  
+  const filteredListings = React.useMemo(() => {
+    if (!loc.selectedLat || !loc.selectedLng || !loc.radius) return listings;
+    return listings.filter(l => distKm(loc.selectedLat, loc.selectedLng, l.lat, l.lng) <= loc.radius);
+  }, [listings, loc.selectedLat, loc.selectedLng, loc.radius]);
+
+  useEffect(() => {
+    isAiModeRef.current = isAiMode;
+    manualAddressRef.current = manualAddress;
+  }, [isAiMode, manualAddress]);
 
   const parseQueryAndSyncStore = (query) => {
     if (!query) return;
@@ -121,7 +135,7 @@ export default function MapPage() {
             return;
           }
           const r = await api.get("/listings/search", {
-            params: { lat: searchLat, lng: searchLng, radius: loc.radius || 10, category: isAll ? undefined : loc.category, limit: 150 },
+            params: { lat: searchLat, lng: searchLng, radius: loc.radius || 10, category: isAll ? undefined : loc.category, limit: 5000 },
           });
           const data = r.data.listings || [];
           listingsCache.current[cacheKey] = data;
@@ -176,8 +190,7 @@ export default function MapPage() {
           lng: loc.selectedLng,
           radius: loc.radius || 10,
           category: isAll ? undefined : loc.category,
-          q: manualAddress?.trim() || undefined,
-          limit: 1000
+          limit: 5000
         },
       });
       const data = r.data.listings || [];
@@ -223,7 +236,7 @@ export default function MapPage() {
         setSuggestions([]);
         setShowSuggestions(false);
       }
-    }, 500);
+    }, 1000); // 1000ms strictly complies with Nominatim's absolute max of 1 request per second
     return () => clearTimeout(timer);
   }, [manualAddress, isAiMode]);
 
@@ -261,9 +274,22 @@ export default function MapPage() {
                     Math.sin(dLng/2) * Math.sin(dLng/2);
           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
           const distance = R * c;
-          
           if (distance > radiusRef.current) {
             return; // Ignore this socket event, it's outside our search circle
+          }
+        }
+
+        // Keyword enforcement to prevent socket cross-talk from other users' searches
+        // Only enforce this in AI Mode. In Standard Mode, manualAddress is just a geographic anchor (e.g. "nakhalpara"),
+        // so we shouldn't force the restaurant's name to contain "nakhalpara". Radius and Category checks are sufficient.
+        if (isAiModeRef.current && lastProcessedAiQ.current && lastProcessedAiQ.current.trim().length > 2) {
+          const words = lastProcessedAiQ.current.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+          const listingText = `${newListing.title || ''} ${newListing.description || ''} ${newListing.area || ''} ${(newListing.tags || []).join(' ')}`.toLowerCase();
+          
+          // If the AI query contains words, ensure at least one word from the query matches the listing text.
+          if (words.length > 0) {
+            const matches = words.some(w => listingText.includes(w));
+            if (!matches) return; // Drop it
           }
         }
 
@@ -492,7 +518,7 @@ export default function MapPage() {
         <div className="h-full flex-1 relative z-0">
           <MapView
             center={mapCenter}
-            listings={listings}
+            listings={filteredListings}
             userLocation={loc.userLat ? [loc.userLat, loc.userLng] : null}
             radius={loc.radius}
             onClickMap={(lat, lng) => {
@@ -523,7 +549,7 @@ export default function MapPage() {
              lang={lang}
              t={t}
              useMyLocation={useMyLocation}
-             listings={listings}
+             listings={filteredListings}
              loading={loading}
              suggestions={suggestions}
              onSelectSuggestion={handleSelectSuggestion}
@@ -603,7 +629,7 @@ export default function MapPage() {
                   lang={lang}
                   t={t}
                   useMyLocation={useMyLocation}
-                  listings={listings}
+                  listings={filteredListings}
                   loading={loading}
                   suggestions={suggestions}
                   onSelectSuggestion={(s) => { handleSelectSuggestion(s); setActivePanel(null); }}
