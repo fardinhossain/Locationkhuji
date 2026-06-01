@@ -1059,7 +1059,7 @@ api.post("/auth/login", async (req, res, next) => {
           "owner@locationkhuji.com": "Owner@123"
         };
         const expected = defaultPasswords[normalizedEmail];
-        if (!expected || expected === password) {
+        if (expected && expected === password) {
           const mockToken = `dev-test-token-${normalizedEmail}`;
           sendAuthCookies(res, mockToken, "dev-refresh-token");
           return res.json({ access_token: mockToken, user: serializeUser(devUser) });
