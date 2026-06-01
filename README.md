@@ -18,6 +18,12 @@
 
 </div>
 
+> [!NOTE]
+> ### 📋 CSE471 System Analysis & Design Project Report
+> The comprehensive design, system analysis, and implementation report for **LocationKhuji** is available:
+> * 📄 **[View Report in Browser](https://drive.google.com/file/d/1F9mZ7EcJphTSpmtqAS3iPsx6TbwoYZSt/view?usp=sharing)** (Google Drive Viewer)
+> * 💾 **[Download PDF Report](https://drive.google.com/uc?export=download&id=1F9mZ7EcJphTSpmtqAS3iPsx6TbwoYZSt)** (Direct PDF Download)
+
 ---
 
 ## 📖 Project Overview
