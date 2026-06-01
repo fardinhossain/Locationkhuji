@@ -1381,14 +1381,19 @@ async function fetchFromOSMOverpass(category, lat, lng, radiusKm, io, keywords =
       stmts = [
         `node["amenity"="restaurant"](${south},${west},${north},${east});`,
         `node["amenity"="cafe"](${south},${west},${north},${east});`,
-        `way["amenity"="restaurant"](${south},${west},${north},${east});`
+        `node["amenity"="fast_food"](${south},${west},${north},${east});`,
+        `node["amenity"="food_court"](${south},${west},${north},${east});`,
+        `way["amenity"="restaurant"](${south},${west},${north},${east});`,
+        `way["amenity"="fast_food"](${south},${west},${north},${east});`
       ];
     } else {
       stmts = [
         `node["amenity"="pharmacy"](${south},${west},${north},${east});`,
         `node["amenity"="hospital"](${south},${west},${north},${east});`,
+        `node["amenity"="clinic"](${south},${west},${north},${east});`,
         `node["amenity"="restaurant"](${south},${west},${north},${east});`,
-        `node["amenity"="cafe"](${south},${west},${north},${east});`
+        `node["amenity"="cafe"](${south},${west},${north},${east});`,
+        `node["amenity"="fast_food"](${south},${west},${north},${east});`
       ];
     }
 
@@ -1575,7 +1580,7 @@ async function geocodeLocation(query) {
     const response = await axios.get(
       `https://nominatim.openstreetmap.org/search?format=json&q=${q}&countrycodes=bd&limit=1&viewbox=90.3,23.9,90.5,23.6&bounded=0`,
       {
-        headers: { "User-Agent": "LocationKhuji/1.0" },
+        headers: { "User-Agent": "LocationKhuji/1.0 (contact@locationkhuji.com)" },
         timeout: 5000
       }
     );
@@ -1840,6 +1845,7 @@ api.post("/listings/ai-search", async (req, res, next) => {
           3. "isEmergency": boolean indicating if this is an urgent/emergency medical/pharmacy search (e.g. ICU, ambulance, urgent delivery, 24h).
           4. "maxPrice": number (null if not specified) representing maximum rent or price limit mentioned in the query.
           5. "bedrooms": number (null if not specified) representing requested bedroom count (e.g. 2 beds, 3 bedroom).
+          6. "location": string (null if not specified) representing ONLY the geographical area, neighborhood, or street name (e.g. "Mirpur 02", "Dhanmondi", "Gulshan"). CRITICAL: DO NOT include business names or fragments of business names (like "Pizza", "Burg", "KFC", "Hospital") in this field! If the user types "Pizza Burg Mirpur 02", the location MUST be strictly "Mirpur 02".
 
           Respond ONLY in this JSON format:
           {
@@ -1847,12 +1853,13 @@ api.post("/listings/ai-search", async (req, res, next) => {
             "keywords": ["keyword1", "keyword2"],
             "isEmergency": false,
             "maxPrice": null,
-            "bedrooms": null
+            "bedrooms": null,
+            "location": "string"
           }
         `;
 
         const response = await aiClient.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-2.5-pro",
           contents: prompt,
           config: {
             responseMimeType: "application/json"
@@ -1868,6 +1875,9 @@ api.post("/listings/ai-search", async (req, res, next) => {
             intent.isEmergency = !!parsed.isEmergency;
             intent.maxPrice = parsed.maxPrice !== undefined ? parsed.maxPrice : null;
             intent.bedrooms = parsed.bedrooms !== undefined ? parsed.bedrooms : null;
+            if (parsed.location) {
+              intent.aiLocation = parsed.location;
+            }
             processedByAI = true;
             
             // Save to Cache to prevent identical subsequent requests (e.g. map panning)
@@ -1876,7 +1886,8 @@ api.post("/listings/ai-search", async (req, res, next) => {
               keywords: [...intent.keywords],
               isEmergency: intent.isEmergency,
               maxPrice: intent.maxPrice,
-              bedrooms: intent.bedrooms
+              bedrooms: intent.bedrooms,
+              aiLocation: intent.aiLocation
             });
             // Prevent memory leak by capping at 1000 items
             if (aiIntentCache.size > 1000) {
@@ -1887,6 +1898,19 @@ api.post("/listings/ai-search", async (req, res, next) => {
         }
       } catch (err) {
         console.error("Gemini AI API call failed, falling back to smart regex:", err.message);
+      }
+    }
+
+    // 🤖 AI Location Geocoding: If AI found a strict location and we didn't already override it via regex
+    if (processedByAI && intent.aiLocation && !overriddenLocation) {
+      console.log(`🤖 [AI Location Extraction] Attempting to geocode: "${intent.aiLocation}"`);
+      const geocoded = await geocodeLocation(intent.aiLocation);
+      if (geocoded) {
+        parsedLng = geocoded.lng;
+        parsedLat = geocoded.lat;
+        overriddenLocation = true;
+        resolvedAreaName = intent.aiLocation;
+        console.log(`🎯 [AI Geocoded] Nominatim resolved "${intent.aiLocation}" to: [${parsedLat}, ${parsedLng}]`);
       }
     }
 
