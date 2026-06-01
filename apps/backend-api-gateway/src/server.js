@@ -11,6 +11,8 @@ const multer = require("multer");
 const { v2: cloudinary } = require("cloudinary");
 const admin = require("firebase-admin");
 const { Readable } = require("stream");
+const { normalizeBengaliText, CATEGORY_SYNONYMS, BUSINESS_NAMES, BENGALI_PREPOSITIONS } = require("shared-config");
+const { resolveLocationFromQuery } = require("./locationResolver");
 
 const { Server } = require("socket.io");
 const { GoogleGenAI } = require("@google/genai");
@@ -1703,119 +1705,22 @@ api.post("/listings/ai-search", async (req, res, next) => {
       গাজীপুর: [90.4013, 23.9999]
     };
 
-    const lowerQuery = searchQuery.toLowerCase();
+    const lowerQuery = normalizeBengaliText(searchQuery.toLowerCase());
+    const locationDebug = process.env.LOCATION_DEBUG === "true";
+    let resolvedAreaName = "";
     let overriddenLocation = false;
 
-    // Extended Bangladesh-wide coverage: Division Capitals, Districts & Destinations
-    const AREA_COORDS_EXT = {
-      rajshahi: [88.6042, 24.3745], khulna: [89.5403, 22.8456],
-      barishal: [90.3535, 22.7010], barisal: [90.3535, 22.7010],
-      rangpur: [89.2752, 25.7439], mymensingh: [90.4074, 24.7471],
-      comilla: [91.1870, 23.4607], cumilla: [91.1870, 23.4607],
-      bogra: [89.3710, 24.8465], bogura: [89.3710, 24.8465],
-      jessore: [89.2035, 23.1688], jashore: [89.2035, 23.1688],
-      dinajpur: [88.6362, 25.6279], tangail: [89.9164, 24.2513],
-      pabna: [89.2455, 24.0064], narsingdi: [90.7180, 23.9322],
-      noakhali: [91.0992, 22.8696], brahmanbaria: [91.1115, 23.9571],
-      habiganj: [91.4073, 24.3740], chandpur: [90.6712, 23.2333],
-      kishoreganj: [90.7766, 24.4449], netrokona: [90.7286, 24.8707],
-      faridpur: [89.8310, 23.6070], manikganj: [90.0047, 23.8617],
-      munshiganj: [90.5305, 23.5422], madaripur: [90.1870, 23.1641],
-      gopalganj: [89.8266, 23.0050], shariatpur: [90.3499, 23.2423],
-      satkhira: [89.0745, 22.7185], bagerhat: [89.7862, 22.6602],
-      kushtia: [89.1222, 23.9013], jhenaidah: [89.1726, 23.5448],
-      magura: [89.4185, 23.4872], meherpur: [88.6318, 23.7622],
-      chuadanga: [88.8420, 23.6402], narail: [89.5127, 23.1725],
-      natore: [89.0002, 24.4206], nawabganj: [88.2775, 24.5962],
-      chapainawabganj: [88.2775, 24.5962], naogaon: [88.9427, 24.7936],
-      joypurhat: [89.0280, 25.0968], sirajganj: [89.7007, 24.4534],
-      gaibandha: [89.5288, 25.3288], kurigram: [89.6364, 25.8072],
-      nilphamari: [88.8560, 25.9315], lalmonirhat: [89.4449, 25.9165],
-      thakurgaon: [88.4616, 26.0336], panchagarh: [88.5632, 26.3411],
-      sunamganj: [91.3950, 25.0658], moulvibazar: [91.7744, 24.4820],
-      pirojpur: [89.9760, 22.5791], jhalokathi: [90.1987, 22.6406],
-      bhola: [90.6471, 22.6859], patuakhali: [90.3535, 22.3596],
-      barguna: [90.1185, 22.0953], feni: [91.3976, 23.0159],
-      lakshmipur: [90.8282, 22.9425], bandarban: [92.2187, 22.1953],
-      rangamati: [92.2007, 22.6324], khagrachari: [91.9849, 23.1193],
-      sherpur: [90.0137, 25.0189], jamalpur: [89.9372, 24.9375],
-      coxsbazar: [91.9847, 21.4272], tongi: [90.4078, 23.9322],
-      sreemangal: [91.7253, 24.3065], sundarbans: [89.4848, 21.9497],
-    };
-    for (const [k, v] of Object.entries(AREA_COORDS_EXT)) {
-      if (!AREA_COORDS[k]) AREA_COORDS[k] = v;
-    }
-    let resolvedAreaName = "";
+    const initialLocationResult = await resolveLocationFromQuery(searchQuery, {
+      preferDhaka: true,
+      debug: locationDebug,
+      logPrefix: "AI-SEARCH"
+    });
 
-    // A. Hardcoded popular areas dictionary check (Highest Priority & 100% Precision)
-    const sortedAreas = Object.keys(AREA_COORDS).sort((a,b) => b.length - a.length);
-    for (const areaName of sortedAreas) {
-      const matchIndex = lowerQuery.indexOf(areaName);
-      if (matchIndex !== -1) {
-        const nextCharStr = lowerQuery.substring(matchIndex + areaName.length).trim();
-        // If it's something like "mirpur 10", "mirpur 2", we skip the generic hardcoded match 
-        // to let Nominatim geocode the specific sector precisely.
-        if (/^[0-9]+/.test(nextCharStr)) {
-          continue; 
-        }
-        
-        parsedLng = AREA_COORDS[areaName][0];
-        parsedLat = AREA_COORDS[areaName][1];
-        overriddenLocation = true;
-        resolvedAreaName = areaName.charAt(0).toUpperCase() + areaName.slice(1);
-        console.log(`🎯 [Location Override] Resolved hardcoded popular area "${areaName}" to: [${parsedLat}, ${parsedLng}]`);
-        break;
-      }
-    }
-
-    // B. If not a popular area, fall back to dynamic geocoding via Nominatim
-    if (!overriddenLocation) {
-      // B1. Try with preposition pattern first (e.g. "pharmacy near Dhanmondi", "flat in Banani")
-      const locMatch = searchQuery.match(/\b(?:in|near|around|inside|at|সাভার|গুলশান|ধানমন্ডি|মিরপুর|বনানী)\s+([a-zA-Z\u0980-\u09FF\s'-]+)/i);
-      if (locMatch && locMatch[1]) {
-        let areaToGeocode = locMatch[1].trim();
-        // Remove radius/range/km suffixes from the area string (e.g. "2km range", "1km", "5 km")
-        areaToGeocode = areaToGeocode.replace(/\d+\s*(?:km|k\.m\.|kilometer|kilometers|কিলোমিটার|কিমি|\bmeters?\b|\brange\b)/i, "").trim();
-        
-        if (areaToGeocode) {
-          console.log(`🔍 [Location Extraction] Found potential area to geocode: "${areaToGeocode}"`);
-          const geocoded = await geocodeLocation(areaToGeocode);
-          if (geocoded) {
-            parsedLng = geocoded.lng;
-            parsedLat = geocoded.lat;
-            overriddenLocation = true;
-            resolvedAreaName = areaToGeocode;
-            console.log(`🎯 [Location Geocoded] Nominatim resolved "${areaToGeocode}" to: [${parsedLat}, ${parsedLng}]`);
-          }
-        }
-      }
-
-      // B2. Fallback: strip all category/noise/number words and geocode the residual
-      // This handles queries like "pharmacy dhanmondi" (no preposition) or "hospital rampura 5km"
-      if (!overriddenLocation) {
-        let residual = lowerQuery;
-        // Remove category keywords
-        residual = residual.replace(/\b(flat|rent|apartment|room|sublet|mess|basa|bari|pharmacy|medicine|drug|osudh|pharmacist|osud|pharmacies|drugstore|hospital|clinic|doctor|mbbs|medical|ambulance|icu|ccu|hospitals|restaurant|cafe|food|dining|biryani|burger|pizza|eat|hotel|kacchi|fast food|bakery|kabab|khabar|service|hire|mechanic|plumber|electrician|tutor|photographer|cleaner|maid|painter|carpenter|technician|pest control|babysitter|moving|event)\b/gi, "");
-        // Remove radius patterns
-        residual = residual.replace(/\d+\s*(?:km|k\.m\.|kilometer|kilometers|কিলোমিটার|কিমি|\bmeters?\b|\brange\b)/gi, "");
-        // Remove prepositions and noise words
-        residual = residual.replace(/\b(in|near|around|inside|at|find|search|me|show|for|the|a|an|best|good|cheap|under|below|with|want|need|looking|please)\b/gi, "");
-        // Remove standalone numbers
-        residual = residual.replace(/\b\d+\b/g, "");
-        residual = residual.replace(/\s+/g, " ").trim();
-
-        if (residual.length > 2) {
-          console.log(`🔍 [Fallback Location Extraction] Trying to geocode cleaned residual: "${residual}"`);
-          const geocoded = await geocodeLocation(residual);
-          if (geocoded) {
-            parsedLng = geocoded.lng;
-            parsedLat = geocoded.lat;
-            overriddenLocation = true;
-            resolvedAreaName = residual;
-            console.log(`🎯 [Fallback Geocoded] Nominatim resolved "${residual}" to: [${parsedLat}, ${parsedLng}]`);
-          }
-        }
-      }
+    if (initialLocationResult?.found) {
+      parsedLat = initialLocationResult.lat;
+      parsedLng = initialLocationResult.lng;
+      overriddenLocation = true;
+      resolvedAreaName = initialLocationResult.displayName || "";
     }
 
     let intent = {
@@ -1903,33 +1808,32 @@ api.post("/listings/ai-search", async (req, res, next) => {
       }
     }
 
-    // 🤖 AI Location Geocoding: If AI found a strict location and we didn't already override it via regex
+    // 🤖 AI Location Geocoding: If AI found a strict location and we didn't already override it
     if (processedByAI && intent.aiLocation && !overriddenLocation) {
-      console.log(`🤖 [AI Location Extraction] Attempting to geocode: "${intent.aiLocation}"`);
-      const geocoded = await geocodeLocation(intent.aiLocation);
-      if (geocoded) {
-        parsedLng = geocoded.lng;
-        parsedLat = geocoded.lat;
+      const aiLocationResult = await resolveLocationFromQuery(intent.aiLocation, {
+        preferDhaka: true,
+        debug: locationDebug,
+        logPrefix: "AI-LOCATION"
+      });
+      if (aiLocationResult?.found) {
+        parsedLng = aiLocationResult.lng;
+        parsedLat = aiLocationResult.lat;
         overriddenLocation = true;
-        resolvedAreaName = intent.aiLocation;
-        console.log(`🎯 [AI Geocoded] Nominatim resolved "${intent.aiLocation}" to: [${parsedLat}, ${parsedLng}]`);
+        resolvedAreaName = aiLocationResult.displayName || intent.aiLocation;
+      } else if (BUSINESS_NAMES.some((b) => intent.aiLocation.toLowerCase().includes(b))) {
+        console.log(`🤖 [AI Location Guard] Rejected business name extracted as location: "${intent.aiLocation}"`);
+        intent.aiLocation = null;
       }
     }
 
     // Smart Fallback Engine: Active if AI failed or API key was omitted
     if (!processedByAI) {
       // 1. Detect Category
-      if (/\b(flat|rent|apartment|room|sublet|mess|basa|bari)\b/i.test(lowerQuery)) {
-        intent.category = "flat";
-      } else if (/\b(pharmacy|medicine|drug|osudh|pharmacist)\b/i.test(lowerQuery)) {
-        intent.category = "pharmacy";
-      } else if (/\b(hospital|clinic|doctor|mbbs|medical|ambulance|icu|ccu)\b/i.test(lowerQuery)) {
-        intent.category = "hospital";
-      } else if (/\b(restaurant|cafe|food|dining|biryani|burger|pizza|eat|hotel|kacchi|fast food|bakery|kabab|khabar)\b/i.test(lowerQuery)) {
-        intent.category = "restaurant";
-      } else if (/\b(service|hire|mechanic|plumber|electrician|tutor|photographer|cleaner|maid|painter|carpenter|technician|pest control|babysitter|moving|event)\b/i.test(lowerQuery)) {
-        intent.category = "service";
-      }
+      if (CATEGORY_SYNONYMS.flat.test(lowerQuery)) intent.category = "flat";
+      else if (CATEGORY_SYNONYMS.pharmacy.test(lowerQuery)) intent.category = "pharmacy";
+      else if (CATEGORY_SYNONYMS.hospital.test(lowerQuery)) intent.category = "hospital";
+      else if (CATEGORY_SYNONYMS.restaurant.test(lowerQuery)) intent.category = "restaurant";
+      else if (CATEGORY_SYNONYMS.service.test(lowerQuery)) intent.category = "service";
 
       // 2. Detect Emergency status
       if (/\b(emergency|urgent|critical|accident|blood|immediate|dying|oxygen|heart attack|icu|24h|24\/7)\b/i.test(lowerQuery)) {

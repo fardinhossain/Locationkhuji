@@ -171,7 +171,7 @@ const isValidCoords = (arr) => {
   return true;
 };
 
-export default function MapView({ center, listings = [], userLocation, radius = 5, onClickMap, height = "100%", interactive = true, confirmBeforeClick = false, onConfirmClick, isNationwide = false }) {
+export default function MapView({ center, listings = [], userLocation, radius = 1, onClickMap, height = "100%", interactive = true, confirmBeforeClick = false, onConfirmClick, isNationwide = false }) {
   const [mapId] = React.useState(() => `map-${Math.random().toString(36).slice(2)}`);
 
   const validCenter = React.useMemo(() => {

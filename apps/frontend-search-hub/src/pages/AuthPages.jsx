@@ -43,7 +43,7 @@ export function RegisterPage() {
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />
         <div className="relative max-w-md">
           <Link to="/" className="font-sora font-extrabold text-3xl text-white">Location<span className="text-teal-400 drop-shadow-[0_0_8px_rgba(0,209,178,0.4)]">Khuji</span></Link>
-          <p className="font-bengali text-white/60 mt-2">আপনার কাছের সব কিছু</p>
+          <p className="font-bengali text-white/60 mt-2">{t('tagline')}</p>
           <h2 className="font-sora font-bold text-4xl mt-12 leading-tight">Join the largest discovery platform in Bangladesh.</h2>
           <ul className="mt-8 space-y-3 text-white/80 font-medium">
             <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-teal-500" /> 20km radius discovery</li>
@@ -239,7 +239,7 @@ export function LoginPage() {
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />
         <div className="relative max-w-md">
           <Link to="/" className="font-sora font-extrabold text-3xl text-black">Location<span className="text-primary">Khuji</span></Link>
-          <p className="font-bengali text-white/60 mt-2">আপনার কাছের সব কিছু</p>
+          <p className="font-bengali text-white/60 mt-2">{t('tagline')}</p>
           <h2 className="font-sora font-bold text-4xl mt-12">Welcome back to Bangladesh's discovery map.</h2>
         </div>
       </div>

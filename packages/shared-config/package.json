@@ -1,0 +1,7 @@
+{
+  "name": "shared-config",
+  "version": "1.0.0",
+  "description": "Shared search configuration and parsing logic",
+  "main": "index.js",
+  "license": "MIT"
+}

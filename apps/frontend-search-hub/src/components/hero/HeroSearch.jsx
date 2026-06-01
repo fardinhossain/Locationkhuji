@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Search, Sparkles, Compass } from 'lucide-react';
+import { toast } from 'sonner';
 import { useSearchModeStore } from '../../store';
 
 const HeroSearch = () => {
@@ -13,7 +14,10 @@ const HeroSearch = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      toast.error(t("Please enter a search query"));
+      return;
+    }
     if (mode === "ai") {
       navigate(`/map?ai_q=${encodeURIComponent(query.trim())}`);
     } else {

@@ -88,7 +88,7 @@ export default function HomePage() {
         <div className="font-sora font-bold text-lg tracking-tight">
           <span className="text-white">Location</span><span className="text-teal-500">Khuji</span>
         </div>
-        <div className="font-bengali mt-1 text-gray-400">আপনার কাছের সব কিছু · Made in Bangladesh 🇧🇩</div>
+        <div className={lang === 'bn' ? "font-bengali mt-1 text-gray-400" : "font-sora mt-1 text-gray-400"}>{t('tagline')} · Made in Bangladesh 🇧🇩</div>
         <p className="mt-4 text-gray-500 text-xs">
           Developed by <span className="text-teal-500 font-medium">@Fardin_NovoSoft.AI</span>
         </p>

@@ -50,7 +50,7 @@ export const useLocationStore = create((set) => ({
   selectedLat: 23.8103,
   selectedLng: 90.4125,
   selectedName: "Dhaka",
-  radius: 5,
+  radius: 1,
   category: null,
   searchActive: false,
   isNationwide: false,

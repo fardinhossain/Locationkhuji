@@ -7,6 +7,7 @@ import MapView from "../components/MapView";
 import { ListingCard } from "../components/ListingCard";
 import { useLangStore, useLocationStore, useSearchModeStore } from "../store";
 import { CATEGORIES, POPULAR_AREAS } from "../lib/constants";
+import { CATEGORY_SYNONYMS } from "shared-config";
 import { api } from "../lib/api";
 import { Slider } from "../components/ui/slider";
 import { Button } from "../components/ui/button";
@@ -58,14 +59,24 @@ export default function MapPage() {
 
   // Show "no matching place found" toast when search completes with empty results
   useEffect(() => {
+    let timer;
     if (!loading && listings.length === 0 && loc.searchActive && !hasShownNoResultsRef.current) {
-      hasShownNoResultsRef.current = true;
-      toast.error(t('noMatchFound'));
+      timer = setTimeout(() => {
+        // Double check after timeout in case socket brought results
+        setListings((currentListings) => {
+          if (currentListings.length === 0 && !hasShownNoResultsRef.current) {
+            hasShownNoResultsRef.current = true;
+            toast.error(t('noMatchFound'));
+          }
+          return currentListings;
+        });
+      }, 3500); // 3.5s delay to allow OSM background fetch to seed the DB and emit socket events
     }
     if (listings.length > 0) {
       hasShownNoResultsRef.current = false;
     }
-  }, [loading, listings.length, loc.searchActive, t]);
+    return () => { if (timer) clearTimeout(timer); };
+  }, [loading, listings.length, loc.searchActive, t, setListings]);
 
   useEffect(() => {
     isAiModeRef.current = isAiMode;
@@ -86,22 +97,14 @@ export default function MapPage() {
   const parseQueryAndSyncStore = (query) => {
     if (!query) return;
     const lowerQuery = query.toLowerCase();
-
+    
     // 1. Parse Category
     let detectedCategory = null;
-    if (/\b(flat|rent|apartment|room|sublet|mess|basa|bari)\b/i.test(lowerQuery)) {
-      detectedCategory = "flat";
-    } else if (/\b(pharmacy|medicine|drug|osudh|pharmacist|osud|pharmacies)\b/i.test(lowerQuery)) {
-      detectedCategory = "pharmacy";
-    } else if (/\b(hospital|clinic|doctor|mbbs|medical|ambulance|icu|ccu|hospitals)\b/i.test(lowerQuery)) {
-      detectedCategory = "hospital";
-    } else if (/\b(fashion|clothing|shirt|pants|shop|mall|brand|dress|aarong|yellow|cats eye|panjabi|boutique|market|supermarket|groceries|grocery|store|convenience)\b/i.test(lowerQuery)) {
-      detectedCategory = "fashion";
-    } else if (/\b(restaurant|food|burger|pizza|biryani|kacchi|cafe|coffee|dine|eatery)\b/i.test(lowerQuery)) {
-      detectedCategory = "restaurant";
-    } else if (/\b(service|plumber|electrician|mechanic|repair|cleaner|maid|painter|carpenter|pest)\b/i.test(lowerQuery)) {
-      detectedCategory = "service";
-    }
+    if (CATEGORY_SYNONYMS.flat.test(lowerQuery)) detectedCategory = "flat";
+    else if (CATEGORY_SYNONYMS.pharmacy.test(lowerQuery)) detectedCategory = "pharmacy";
+    else if (CATEGORY_SYNONYMS.hospital.test(lowerQuery)) detectedCategory = "hospital";
+    else if (CATEGORY_SYNONYMS.restaurant.test(lowerQuery)) detectedCategory = "restaurant";
+    else if (CATEGORY_SYNONYMS.service.test(lowerQuery)) detectedCategory = "service";
 
     if (detectedCategory) {
       loc.setCategory(detectedCategory);
@@ -234,12 +237,13 @@ export default function MapPage() {
     try {
       const r = await api.get("/listings/search", {
         params: {
+          q: params.get("q") || undefined,
           lat: loc.selectedLat,
           lng: loc.selectedLng,
-          radius: loc.radius || 10,
+          radius: loc.radius || 1,
           category: isAll ? undefined : loc.category,
-          limit: 5000
-        },
+          limit: 1000 // Ensure limit to map nodes
+        }
       });
       const data = r.data.listings || [];
       listingsCache.current[cacheKey] = data; // Save to cache
@@ -346,7 +350,15 @@ export default function MapPage() {
         if (listingsCache.current[cacheKey]) {
           listingsCache.current[cacheKey] = [newListing, ...listingsCache.current[cacheKey]];
         }
-        setListings((prev) => [newListing, ...prev]);
+        setListings((prev) => {
+          // If we had a nationwide fallback but received a socket listing (e.g., Nominatim failed but OSM found it), focus it.
+          if (prev.length === 0 && useLocationStore.getState().isNationwide) {
+            useLocationStore.getState().setNationwide(false);
+            useLocationStore.getState().setSelected(newListing.lat, newListing.lng, newListing.area || newListing.title);
+            useLocationStore.getState().setRadius(2); // Zoom in
+          }
+          return [newListing, ...prev];
+        });
       }
     });
 
@@ -406,7 +418,10 @@ export default function MapPage() {
   const handleSearchAddress = async (e) => {
     if (e) e.preventDefault();
     const query = manualAddress.trim();
-    if (!query) return;
+    if (!query) {
+      toast.error(t("Please enter a search query"));
+      return;
+    }
     
     // Parse category and radius from the search query immediately to keep UI in sync
     parseQueryAndSyncStore(query);
@@ -925,10 +940,16 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
             {loading && <div className="space-y-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-40 skeleton rounded-[28px] shadow-sm border border-border/10" />)}</div>}
             
             <div className="space-y-6 pb-12">
-              {listings.map((l) => (
+              {listings.slice(0, 100).map((l) => (
                 <ListingCard key={l.id} listing={l}
                   distance={loc.userLat ? distKm(loc.userLat, loc.userLng, l.lat, l.lng) : null} />
               ))}
+              
+              {listings.length > 100 && (
+                <div className="text-center py-6 text-muted-foreground text-[13px] font-bold tracking-tight bg-muted/20 rounded-[20px] border border-border/20">
+                  Showing top 100 of {listings.length} results.<br/>Explore the map to see more.
+                </div>
+              )}
               
               {!loading && !listings.length && (
                 <div className="text-center py-20 text-muted-foreground bg-card rounded-[40px] border-2 border-dashed border-border/40 flex flex-col items-center px-12">
