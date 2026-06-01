@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { FiMapPin, FiNavigation, FiSearch, FiSliders, FiX, FiList } from "react-icons/fi";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Compass } from "lucide-react";
 import Navbar from "../components/Navbar";
 import MapView from "../components/MapView";
 import { ListingCard } from "../components/ListingCard";
-import { useLangStore, useLocationStore } from "../store";
+import { useLangStore, useLocationStore, useSearchModeStore } from "../store";
 import { CATEGORIES, POPULAR_AREAS } from "../lib/constants";
 import { api } from "../lib/api";
 import { Slider } from "../components/ui/slider";
@@ -28,6 +28,7 @@ export default function MapPage() {
   const { lang } = useLangStore();
   const { t } = useTranslation();
   const loc = useLocationStore();
+  const { mode: searchMode, setMode: setSearchMode } = useSearchModeStore();
   const [params, setSearchParams] = useSearchParams();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -42,20 +43,45 @@ export default function MapPage() {
   const aiSearchCenterRef = React.useRef(null);
   const listingsCache = React.useRef({});
   const fetchDebounceRef = React.useRef(null);
+  const hasShownNoResultsRef = React.useRef(false);
   
   // Refs for socket listener state
   const isAiModeRef = React.useRef(isAiMode);
   const manualAddressRef = React.useRef(manualAddress);
   
   const filteredListings = React.useMemo(() => {
+    // In nationwide mode, don't filter by radius — show all results
+    if (loc.isNationwide) return listings;
     if (!loc.selectedLat || !loc.selectedLng || !loc.radius) return listings;
     return listings.filter(l => distKm(loc.selectedLat, loc.selectedLng, l.lat, l.lng) <= loc.radius);
-  }, [listings, loc.selectedLat, loc.selectedLng, loc.radius]);
+  }, [listings, loc.selectedLat, loc.selectedLng, loc.radius, loc.isNationwide]);
+
+  // Show "no matching place found" toast when search completes with empty results
+  useEffect(() => {
+    if (!loading && listings.length === 0 && loc.searchActive && !hasShownNoResultsRef.current) {
+      hasShownNoResultsRef.current = true;
+      toast.error(t('noMatchFound'));
+    }
+    if (listings.length > 0) {
+      hasShownNoResultsRef.current = false;
+    }
+  }, [loading, listings.length, loc.searchActive, t]);
 
   useEffect(() => {
     isAiModeRef.current = isAiMode;
     manualAddressRef.current = manualAddress;
   }, [isAiMode, manualAddress]);
+
+  // Sync searchMode store with URL params on mount
+  useEffect(() => {
+    if (params.get("ai_q")) {
+      setIsAiMode(true);
+      setSearchMode("ai");
+    } else if (params.get("q")) {
+      setIsAiMode(false);
+      setSearchMode("standard");
+    }
+  }, []); // eslint-disable-line
 
   const parseQueryAndSyncStore = (query) => {
     if (!query) return;
@@ -116,7 +142,13 @@ export default function MapPage() {
       setManualAddress(aiQuery);
       parseQueryAndSyncStore(aiQuery);
     }
-  }, [params]);
+    const stdQuery = params.get("q");
+    if (stdQuery && !aiQuery) {
+      setIsAiMode(false);
+      setManualAddress(stdQuery);
+      parseQueryAndSyncStore(stdQuery);
+    }
+  }, [params]); // eslint-disable-line
 
   const fetchListings = React.useCallback(async (forceRefresh = false) => {
     const aiQuery = params.get("ai_q");
@@ -124,6 +156,7 @@ export default function MapPage() {
     if (aiQuery) {
       // AI mode — always fetch fresh, no cache
       setLoading(true);
+      loc.setSearchActive(true);
       try {
         if (aiQuery === lastProcessedAiQ.current) {
           const isAll = !loc.category || loc.category === 'all';
@@ -144,6 +177,7 @@ export default function MapPage() {
         }
 
         parseQueryAndSyncStore(aiQuery);
+        hasShownNoResultsRef.current = false;
         const r = await api.post("/listings/ai-search", {
           query: aiQuery, userLat: loc.selectedLat, userLng: loc.selectedLng, radiusKm: loc.radius || 10
         });
@@ -152,16 +186,28 @@ export default function MapPage() {
         lastProcessedAiQ.current = aiQuery;
         skipFetchRef.current = true;
 
-        if (r.data.searchCenter) {
+        // Handle location-detected vs nationwide
+        if (r.data.locationDetected && r.data.searchCenter) {
+          // Location was found — focus map with returned radius (default 1km)
+          loc.setNationwide(false);
           aiSearchCenterRef.current = { lat: r.data.searchCenter.lat, lng: r.data.searchCenter.lng };
           loc.setSelected(r.data.searchCenter.lat, r.data.searchCenter.lng, r.data.searchCenter.displayName || "Search Center");
+          if (r.data.radius && Number.isFinite(r.data.radius)) {
+            loc.setRadius(r.data.radius);
+          }
+        } else if (!r.data.locationDetected) {
+          // No location — nationwide search
+          loc.setNationwide(true);
+          aiSearchCenterRef.current = null;
+          // Don't change map center, let MapUpdater fit to BD bounds
         } else if (data.length > 0) {
+          // Fallback: center on first result
+          loc.setNationwide(false);
           const first = data[0];
           aiSearchCenterRef.current = { lat: first.lat, lng: first.lng };
           loc.setSelected(first.lat, first.lng, first.area || first.title);
         }
         if (r.data.intent?.category) loc.setCategory(r.data.intent.category);
-        if (r.data.radius && Number.isFinite(r.data.radius)) loc.setRadius(r.data.radius);
       } catch (error) {
         console.error("Failed to load listings:", error);
         setListings([]);
@@ -173,6 +219,8 @@ export default function MapPage() {
     // Standard mode — use cache for instant category switching!
     lastProcessedAiQ.current = "";
     aiSearchCenterRef.current = null;
+    loc.setNationwide(false);
+    loc.setSearchActive(true);
     const isAll = !loc.category || loc.category === 'all';
     const cacheKey = `${loc.category || 'all'}_${String(loc.selectedLat).slice(0,8)}_${String(loc.selectedLng).slice(0,8)}_${loc.radius}`;
 
@@ -309,18 +357,20 @@ export default function MapPage() {
   const cleanAiState = React.useCallback(() => {
     lastProcessedAiQ.current = "";
     aiSearchCenterRef.current = null;
+    loc.setNationwide(false);
     const newParams = new URLSearchParams(params);
     if (newParams.has("ai_q")) {
       newParams.delete("ai_q");
       setSearchParams(newParams);
     }
-  }, [params, setSearchParams]);
+  }, [params, setSearchParams]); // eslint-disable-line
 
   const useMyLocation = () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         cleanAiState();
+        loc.setNationwide(false);
         loc.setUser(pos.coords.latitude, pos.coords.longitude);
         loc.setSelected(pos.coords.latitude, pos.coords.longitude, lang === "bn" ? "আমার অবস্থান" : "My Location");
         setShowSuggestions(false);
@@ -332,6 +382,7 @@ export default function MapPage() {
 
   const handleSelectSuggestion = (s) => {
     cleanAiState();
+    loc.setNationwide(false);
     parseQueryAndSyncStore(manualAddress); // Sync category before changing location
     loc.setSelected(parseFloat(s.lat), parseFloat(s.lon), s.display_name.split(',')[0]);
     // Do not clear manualAddress so the search context (like "restaurant in") remains
@@ -343,8 +394,12 @@ export default function MapPage() {
     setManualAddress("");
     setSuggestions([]);
     setShowSuggestions(false);
+    loc.setSearchActive(false);
+    loc.setNationwide(false);
+    hasShownNoResultsRef.current = false;
     const newParams = new URLSearchParams(params);
     newParams.delete("ai_q");
+    newParams.delete("q");
     setSearchParams(newParams);
   };
 
@@ -355,12 +410,14 @@ export default function MapPage() {
     
     // Parse category and radius from the search query immediately to keep UI in sync
     parseQueryAndSyncStore(query);
+    hasShownNoResultsRef.current = false;
     
     if (isAiMode) {
       setSearchParams({ ai_q: query });
     } else {
       // Standard mode: clear any stale AI search state
       cleanAiState();
+      loc.setNationwide(false);
       if (suggestions.length > 0) {
         handleSelectSuggestion(suggestions[0]);
       } else {
@@ -381,6 +438,21 @@ export default function MapPage() {
         }
       }
     }
+  };
+
+  // Map click with confirmation when search is active
+  const handleMapClick = (lat, lng) => {
+    cleanAiState();
+    setManualAddress(""); // Drop the text filter so we don't search for "Mirpur" in "Gulshan"
+    loc.setNationwide(false);
+    loc.setSelected(lat, lng, lang === "bn" ? "চিহ্নিত স্থান" : "Selected Pin");
+  };
+
+  const handleConfirmedMapClick = (lat, lng) => {
+    cleanAiState();
+    setManualAddress("");
+    loc.setNationwide(false);
+    loc.setSelected(lat, lng, lang === "bn" ? "চিহ্নিত স্থান" : "Selected Pin");
   };
 
   const togglePanel = (panel) => {
@@ -407,7 +479,7 @@ export default function MapPage() {
                   type="text"
                   placeholder={isAiMode 
                     ? (lang === "bn" ? "এআই অনুসন্ধান..." : "Ask AI Search...")
-                    : (lang === "bn" ? "কোথায় খুঁজছেন?" : "Where to?")
+                    : (lang === "bn" ? "কোথায় খুঁজছেন?" : "Where to?")
                   }
                   value={manualAddress}
                   onChange={(e) => setManualAddress(e.target.value)}
@@ -419,6 +491,10 @@ export default function MapPage() {
                       <FiX className="text-muted-foreground" size={18} />
                    </button>
                 )}
+                {/* Search button icon */}
+                <button type="submit" className="p-1.5 ml-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-full transition-colors active:scale-90">
+                  <FiSearch size={16} />
+                </button>
               </form>
               <Button 
                 variant="outline" 
@@ -470,19 +546,20 @@ export default function MapPage() {
           <div className="pointer-events-auto flex gap-2">
             <button 
               type="button"
-              onClick={() => { setIsAiMode(false); cleanAiState(); }}
+              onClick={() => { setIsAiMode(false); setSearchMode("standard"); cleanAiState(); }}
               className={cn(
-                "px-3 py-1.5 rounded-full text-[11px] font-black transition-all border",
+                "px-3 py-1.5 rounded-full text-[11px] font-black transition-all border flex items-center gap-1",
                 !isAiMode 
                   ? "bg-primary/20 text-primary border-primary/30" 
                   : "bg-card/90 backdrop-blur-md text-muted-foreground border-border/40 hover:bg-muted/40"
               )}
             >
-              🗺️ Standard
+              <Compass size={10} />
+              🗺️ {t('standardMode')}
             </button>
             <button 
               type="button"
-              onClick={() => setIsAiMode(true)}
+              onClick={() => { setIsAiMode(true); setSearchMode("ai"); }}
               className={cn(
                 "px-3 py-1.5 rounded-full text-[11px] font-black transition-all border flex items-center gap-1",
                 isAiMode 
@@ -491,7 +568,7 @@ export default function MapPage() {
               )}
             >
               <Sparkles size={10} className={cn(isAiMode ? "animate-pulse" : "")} />
-              <span>AI Search</span>
+              <span>{t('aiMode')}</span>
             </button>
           </div>
 
@@ -521,11 +598,10 @@ export default function MapPage() {
             listings={filteredListings}
             userLocation={loc.userLat ? [loc.userLat, loc.userLng] : null}
             radius={loc.radius}
-            onClickMap={(lat, lng) => {
-              cleanAiState();
-              setManualAddress(""); // Drop the text filter so we don't search for "Mirpur" in "Gulshan"
-              loc.setSelected(lat, lng, lang === "bn" ? "চিহ্নিত স্থান" : "Selected Pin");
-            }}
+            isNationwide={loc.isNationwide}
+            confirmBeforeClick={loc.searchActive}
+            onConfirmClick={handleConfirmedMapClick}
+            onClickMap={handleMapClick}
           />
           
           <div className="md:hidden absolute bottom-24 right-4 z-[50]">
@@ -559,6 +635,9 @@ export default function MapPage() {
              isAiMode={isAiMode}
              setIsAiMode={setIsAiMode}
              setShowSuggestions={setShowSuggestions}
+             cleanAiState={cleanAiState}
+             searchMode={searchMode}
+             setSearchMode={setSearchMode}
            />
         </aside>
 
@@ -577,7 +656,7 @@ export default function MapPage() {
             )}
           >
             <FiList size={18} />
-            <span className="text-[14px] font-black uppercase tracking-tight">{listings.length} {t('placesFound')}</span>
+            <span className="text-[14px] font-black uppercase tracking-tight">{filteredListings.length} {t('placesFound')}</span>
           </motion.button>
         </div>
 
@@ -587,9 +666,9 @@ export default function MapPage() {
              <div className="flex flex-col h-full overflow-hidden">
                 <DrawerHeader className="px-6 pt-6 pb-2 shrink-0">
                   <div className="flex items-center justify-between mb-4">
-                    <DrawerTitle className="text-2xl font-black tracking-tight text-foreground">{listings.length} {t('placesFound')}</DrawerTitle>
+                    <DrawerTitle className="text-2xl font-black tracking-tight text-foreground">{filteredListings.length} {t('placesFound')}</DrawerTitle>
                     <div className="px-3 py-1 rounded-lg bg-primary/10 text-primary text-[11px] font-black uppercase">
-                      {loc.radius}km radius
+                      {loc.isNationwide ? "🇧🇩 All BD" : `${loc.radius}km radius`}
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground font-medium mb-4 flex items-center gap-2">
@@ -600,15 +679,15 @@ export default function MapPage() {
                 
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5 no-scrollbar pb-32">
                   {loading && <div className="space-y-4">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-40 skeleton rounded-[24px]" />)}</div>}
-                  {!loading && !listings.length && (
+                  {!loading && !filteredListings.length && (
                      <div className="text-center py-20 flex flex-col items-center">
                        <div className="w-20 h-20 rounded-full bg-muted/40 flex items-center justify-center mb-6">
                          <FiMapPin size={32} className="text-muted-foreground/30" />
                        </div>
-                       <p className="text-muted-foreground font-bold text-lg">{t('noResults')}</p>
+                       <p className="text-muted-foreground font-bold text-lg">{t('noMatchFound')}</p>
                      </div>
                   )}
-                  {listings.map((l) => (
+                  {filteredListings.map((l) => (
                      <ListingCard key={l.id} listing={l}
                        distance={loc.userLat ? distKm(loc.userLat, loc.userLng, l.lat, l.lng) : null} />
                   ))}
@@ -639,6 +718,9 @@ export default function MapPage() {
                   isAiMode={isAiMode}
                   setIsAiMode={setIsAiMode}
                   setShowSuggestions={setShowSuggestions}
+                  cleanAiState={cleanAiState}
+                  searchMode={searchMode}
+                  setSearchMode={setSearchMode}
                 />
              </div>
           </DrawerContent>
@@ -649,7 +731,7 @@ export default function MapPage() {
   );
 }
 
-function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, loc, lang, t, useMyLocation, listings, loading, suggestions, onSelectSuggestion, showSuggestions, setShowSuggestions, clearSearch, isDrawer, isAiMode, setIsAiMode }) {
+function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, loc, lang, t, useMyLocation, listings, loading, suggestions, onSelectSuggestion, showSuggestions, setShowSuggestions, clearSearch, isDrawer, isAiMode, setIsAiMode, cleanAiState, searchMode, setSearchMode }) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
@@ -662,22 +744,23 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
           </h2>
 
           {/* AI Toggle Pills */}
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-2 mb-2">
             <button 
               type="button"
-              onClick={() => { setIsAiMode(false); cleanAiState(); }}
+              onClick={() => { setIsAiMode(false); setSearchMode("standard"); if (cleanAiState) cleanAiState(); }}
               className={cn(
-                "px-4 py-1.5 rounded-full text-xs font-black transition-all border",
+                "px-4 py-1.5 rounded-full text-xs font-black transition-all border flex items-center gap-1.5",
                 !isAiMode 
                   ? "bg-primary/10 text-primary border-primary/30" 
                   : "bg-background text-muted-foreground border-border hover:bg-muted/40"
               )}
             >
-              🗺️ Standard
+              <Compass size={12} />
+              {t('standardMode')}
             </button>
             <button 
               type="button"
-              onClick={() => setIsAiMode(true)}
+              onClick={() => { setIsAiMode(true); setSearchMode("ai"); }}
               className={cn(
                 "px-4 py-1.5 rounded-full text-xs font-black transition-all border flex items-center gap-1.5",
                 isAiMode 
@@ -686,9 +769,14 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
               )}
             >
               <Sparkles size={12} className={cn(isAiMode ? "animate-pulse" : "")} />
-              <span>AI Search</span>
+              <span>{t('aiMode')}</span>
             </button>
           </div>
+
+          {/* Mode hint text */}
+          <p className="text-[11px] text-muted-foreground/60 font-medium mb-4 ml-1">
+            {isAiMode ? t('aiModeHint') : t('standardModeHint')}
+          </p>
 
           <div className="relative mb-6 group">
             <form onSubmit={handleSearchAddress} className="relative flex items-center">
@@ -709,18 +797,28 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
                 onFocus={() => setShowSuggestions(suggestions.length > 0)}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 className={cn(
-                  "w-full pl-12 pr-12 py-4 rounded-[20px] border-2 bg-background text-[15px] font-medium outline-none transition-all shadow-sm text-foreground placeholder:text-muted-foreground/50",
+                  "w-full pl-12 pr-20 py-4 rounded-[20px] border-2 bg-background text-[15px] font-medium outline-none transition-all shadow-sm text-foreground placeholder:text-muted-foreground/50",
                   isAiMode 
                     ? "border-primary/50 focus:ring-4 focus:ring-primary/10 focus:border-primary" 
                     : "border-border/40 focus:ring-4 focus:ring-primary/10 focus:border-primary"
                 )}
                 style={{ minWidth: 0 }}
               />
-              {manualAddress && (
-                 <button type="button" onClick={clearSearch} className="absolute right-4 p-1.5 hover:bg-muted rounded-full transition-colors">
-                    <FiX className="text-muted-foreground hover:text-foreground" size={18} />
-                 </button>
-              )}
+              {/* Action buttons (clear + search) */}
+              <div className="absolute right-3 flex items-center gap-1">
+                {manualAddress && (
+                   <button type="button" onClick={clearSearch} className="p-1.5 hover:bg-muted rounded-full transition-colors">
+                      <FiX className="text-muted-foreground hover:text-foreground" size={16} />
+                   </button>
+                )}
+                <button 
+                  type="submit" 
+                  className="p-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-full transition-all active:scale-90"
+                  title={t('search')}
+                >
+                  <FiSearch size={16} />
+                </button>
+              </div>
             </form>
 
             <AnimatePresence>
@@ -751,16 +849,29 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
 
           <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-primary/5 text-primary text-xs font-black mb-8 border border-primary/10 uppercase tracking-widest overflow-hidden">
             <div className="w-2 h-2 rounded-full bg-primary animate-ping shrink-0" />
-            <span className="truncate min-w-0">{loc.selectedName}</span>
+            <span className="truncate min-w-0">{loc.isNationwide ? "🇧🇩 All Bangladesh" : loc.selectedName}</span>
           </div>
 
           <div className="mb-10 px-1">
             <div className="flex items-center justify-between text-[14px] font-black text-foreground mb-6 uppercase tracking-wider">
               <span>{t('radius')}</span>
-              <span className="text-primary bg-primary/10 px-3 py-1 rounded-lg">{loc.radius} km</span>
+              <span className="text-primary bg-primary/10 px-3 py-1 rounded-lg">
+                {loc.isNationwide ? "∞" : `${loc.radius} km`}
+              </span>
             </div>
-            <Slider value={[loc.radius]} min={1} max={20} step={1}
-              onValueChange={(v) => loc.setRadius(v[0])} className="py-2" />
+            <Slider 
+              value={[loc.radius]} 
+              min={1} 
+              max={20} 
+              step={1}
+              onValueChange={(v) => {
+                loc.setRadius(v[0]);
+                // If user drags radius, switch off nationwide mode
+                if (loc.isNationwide) loc.setNationwide(false);
+              }} 
+              className="py-2" 
+              disabled={loc.isNationwide}
+            />
           </div>
 
           <div className="mb-8">
@@ -796,7 +907,7 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
 
           <div className="mt-8 flex flex-wrap gap-2.5">
             {POPULAR_AREAS.map((p) => (
-              <button key={p.name} onClick={() => loc.setSelected(p.lat, p.lng, p.name)}
+              <button key={p.name} onClick={() => { loc.setNationwide(false); loc.setSelected(p.lat, p.lng, p.name); }}
                 className="px-4 py-2.5 rounded-xl text-[12px] font-black uppercase tracking-tighter bg-muted/40 hover:bg-primary hover:text-primary-foreground transition-all border border-border/40 shadow-sm active:scale-95 text-foreground">
                 {t(`popularAreas.${p.name.toLowerCase()}`)}
               </button>
@@ -824,7 +935,7 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
                   <div className="w-20 h-20 rounded-full bg-muted/40 flex items-center justify-center mb-8">
                     <FiMapPin size={32} className="opacity-30" />
                   </div>
-                  <p className="font-black text-foreground text-xl mb-3 tracking-tighter">{t('noResults')}</p>
+                  <p className="font-black text-foreground text-xl mb-3 tracking-tighter">{t('noMatchFound')}</p>
                   <p className="text-sm leading-relaxed font-medium opacity-60">{t('tryDifferent')}</p>
                 </div>
               )}

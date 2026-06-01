@@ -134,5 +134,13 @@
       "restaurant": "200+",
       "service": "50+"
     }
-  }
+  },
+  "searchHereInstead": "এখানে খুঁজবেন?",
+  "confirm": "হ্যাঁ",
+  "cancel": "না",
+  "noMatchFound": "দুঃখিত, কোনো মিলে যাওয়া স্থান পাওয়া যায়নি।",
+  "aiModeHint": "আপনার প্রয়োজন লিখুন — AI সেরা ফলাফল খুঁজবে",
+  "standardModeHint": "এলাকা, ক্যাটাগরি এবং ব্যাসার্ধ দিয়ে খুঁজুন",
+  "aiMode": "AI অনুসন্ধান",
+  "standardMode": "সাধারণ"
 }

@@ -134,5 +134,13 @@
       "restaurant": "200+",
       "service": "50+"
     }
-  }
+  },
+  "searchHereInstead": "Search here instead?",
+  "confirm": "Yes",
+  "cancel": "No",
+  "noMatchFound": "Sorry, no matching place found.",
+  "aiModeHint": "Describe what you need — AI finds the best match",
+  "standardModeHint": "Search by area, category, and radius",
+  "aiMode": "AI Search",
+  "standardMode": "Standard"
 }

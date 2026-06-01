@@ -1619,10 +1619,12 @@ api.post("/listings/ai-search", async (req, res, next) => {
     let parsedLng = Number(userLng) || 90.4125;
     
     // Extract search radius in KM if specified in the query (e.g., "2km range", "5 km")
-    let parsedRadius = Number(radiusKm) || 10;
+    let userExplicitRadius = false;
+    let parsedRadius = 1; // Default to 1km for precise location-aware searches
     const radiusMatch = searchQuery.match(/(\d+)\s*(?:km|k.m.|kilometer|kilometers|কিলোমিটার|কিমি)/i);
     if (radiusMatch) {
       parsedRadius = Number(radiusMatch[1]);
+      userExplicitRadius = true;
       console.log(`🎯 [Radius Extraction] Found custom radius in query: ${parsedRadius} km`);
     }
 
@@ -1964,16 +1966,26 @@ api.post("/listings/ai-search", async (req, res, next) => {
       intent.keywords = rawWords.filter(word => word.length > 2 && !stopWords.has(word));
     }
 
+    // If location was NOT detected and user didn't specify a radius, search nationwide
+    // If location WAS detected but no explicit radius, default stays at 1km
+    if (!overriddenLocation && !userExplicitRadius) {
+      parsedRadius = 50; // Use a large radius for nationwide-style search
+    }
+
     // Build Mongoose Geospatial Query
     const mongoQuery = {
       is_active: true,
-      location: {
+    };
+
+    // Only apply geo constraint when a specific location was detected
+    if (overriddenLocation) {
+      mongoQuery.location = {
         $nearSphere: {
           $geometry: { type: "Point", coordinates: [parsedLng, parsedLat] },
           $maxDistance: parsedRadius * 1000,
         },
-      },
-    };
+      };
+    }
 
     if (intent.category !== "all") {
       mongoQuery.category = intent.category;
@@ -2051,8 +2063,9 @@ api.post("/listings/ai-search", async (req, res, next) => {
       intent,
       listings: withOwners,
       processedByAI,
-      searchCenter: { lat: parsedLat, lng: parsedLng, displayName: resolvedAreaName || undefined },
-      radius: parsedRadius
+      searchCenter: overriddenLocation ? { lat: parsedLat, lng: parsedLng, displayName: resolvedAreaName || undefined } : null,
+      radius: parsedRadius,
+      locationDetected: overriddenLocation
     });
 
     // Run live fetch in the background to not block the UI

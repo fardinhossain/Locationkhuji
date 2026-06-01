@@ -52,8 +52,17 @@ export const useLocationStore = create((set) => ({
   selectedName: "Dhaka",
   radius: 5,
   category: null,
+  searchActive: false,
+  isNationwide: false,
   setUser: (lat, lng) => set({ userLat: lat, userLng: lng, selectedLat: lat, selectedLng: lng, selectedName: "My Location" }),
   setSelected: (lat, lng, name) => set({ selectedLat: lat, selectedLng: lng, selectedName: name }),
   setRadius: (r) => set({ radius: r }),
   setCategory: (c) => set({ category: c }),
+  setSearchActive: (v) => set({ searchActive: v }),
+  setNationwide: (v) => set({ isNationwide: v }),
 }));
+
+// Search mode store (persisted)
+export const useSearchModeStore = create(
+  persist((set) => ({ mode: "ai", setMode: (m) => set({ mode: m }) }), { name: "lk_search_mode" })
+);

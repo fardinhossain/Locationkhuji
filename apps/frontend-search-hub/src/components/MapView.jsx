@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMapEvents, useMap, ZoomControl } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
@@ -9,6 +9,7 @@ import { CategoryBadge, StarRating } from "./ListingCard";
 import BangladeshMask from "./BangladeshMask";
 import { useThemeStore, useLangStore } from "../store";
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
 
 const SERVICE_ICONS = {
   Plumber: FaWrench,
@@ -46,14 +47,92 @@ const userIcon = L.divIcon({
   iconAnchor: [12, 12],
 });
 
-function MapClicker({ onClick }) {
-  useMapEvents({ click: (e) => onClick && onClick(e.latlng.lat, e.latlng.lng) });
-  return null;
+function MapClicker({ onClick, confirmBeforeClick, onConfirmClick, t }) {
+  const [pendingClick, setPendingClick] = useState(null);
+  const map = useMap();
+
+  useMapEvents({
+    click: (e) => {
+      if (confirmBeforeClick) {
+        setPendingClick({ lat: e.latlng.lat, lng: e.latlng.lng, containerPoint: e.containerPoint });
+      } else {
+        onClick && onClick(e.latlng.lat, e.latlng.lng);
+      }
+    }
+  });
+
+  const handleConfirm = () => {
+    if (pendingClick) {
+      if (onConfirmClick) {
+        onConfirmClick(pendingClick.lat, pendingClick.lng);
+      } else {
+        onClick && onClick(pendingClick.lat, pendingClick.lng);
+      }
+      setPendingClick(null);
+    }
+  };
+
+  const handleCancel = () => {
+    setPendingClick(null);
+  };
+
+  // Position the confirmation popup near the click point
+  if (!pendingClick) return null;
+
+  const point = map.latLngToContainerPoint([pendingClick.lat, pendingClick.lng]);
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: Math.min(point.x, map.getSize().x - 200),
+        top: Math.max(point.y - 70, 10),
+        zIndex: 10000,
+        pointerEvents: "auto",
+      }}
+    >
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.85, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.85, y: 10 }}
+          className="bg-card/95 backdrop-blur-xl border border-border/60 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.4)] px-4 py-3 min-w-[180px]"
+        >
+          <p className="text-foreground text-[13px] font-bold mb-2.5 tracking-tight">
+            {t('searchHereInstead')}
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleConfirm}
+              className="flex-1 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-black rounded-full hover:bg-primary/90 transition-colors active:scale-95"
+            >
+              {t('confirm')}
+            </button>
+            <button
+              onClick={handleCancel}
+              className="flex-1 px-3 py-1.5 bg-muted text-foreground text-xs font-black rounded-full hover:bg-muted/70 transition-colors active:scale-95 border border-border/40"
+            >
+              {t('cancel')}
+            </button>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
 }
 
-function MapUpdater({ center, radius }) {
+function MapUpdater({ center, radius, isNationwide }) {
   const map = useMap();
   useEffect(() => {
+    if (isNationwide) {
+      // Fit to Bangladesh bounds for nationwide search
+      const bdBounds = L.latLngBounds(
+        L.latLng(20.3, 88.0),
+        L.latLng(26.7, 92.7)
+      );
+      map.flyToBounds(bdBounds, { padding: [30, 30], duration: 1.5 });
+      return;
+    }
     if (center && center[0] && center[1]) {
       if (radius && radius > 0) {
         // Calculate bounds from radius mathematically (no L.circle needed)
@@ -70,7 +149,7 @@ function MapUpdater({ center, radius }) {
         map.flyTo(center, 13, { duration: 1.5 });
       }
     }
-  }, [center, radius, map]);
+  }, [center, radius, map, isNationwide]);
   return null;
 }
 
@@ -92,7 +171,7 @@ const isValidCoords = (arr) => {
   return true;
 };
 
-export default function MapView({ center, listings = [], userLocation, radius = 5, onClickMap, height = "100%", interactive = true }) {
+export default function MapView({ center, listings = [], userLocation, radius = 5, onClickMap, height = "100%", interactive = true, confirmBeforeClick = false, onConfirmClick, isNationwide = false }) {
   const [mapId] = React.useState(() => `map-${Math.random().toString(36).slice(2)}`);
 
   const validCenter = React.useMemo(() => {
@@ -153,11 +232,11 @@ export default function MapView({ center, listings = [], userLocation, radius = 
           maxNativeZoom={19}
         />
         <BangladeshMask />
-        {onClickMap && <MapClicker onClick={onClickMap} />}
-        <MapUpdater center={validCenter} radius={radius} />
+        {onClickMap && <MapClicker onClick={onClickMap} confirmBeforeClick={confirmBeforeClick} onConfirmClick={onConfirmClick} t={t} />}
+        <MapUpdater center={validCenter} radius={radius} isNationwide={isNationwide} />
         
-        {/* Search Radius Visualization - only show when user has selected a location */}
-        {validCenter && radius > 0 &&
+        {/* Search Radius Visualization - only show when user has selected a location and NOT nationwide */}
+        {validCenter && radius > 0 && !isNationwide &&
          !(validCenter[0] === DEFAULT_CENTER[0] && validCenter[1] === DEFAULT_CENTER[1]) && (
            <Circle
               center={validCenter}
