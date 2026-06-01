@@ -14,6 +14,7 @@
 require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
 const mongoose = require("mongoose");
 const axios = require("axios");
+const { BDLocationEngine } = require("../../packages/shared-config");
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
@@ -113,7 +114,7 @@ const listingSchema = new mongoose.Schema(
     area: { type: String, required: true },
     thana: { type: String },
     district: { type: String },
-    city: { type: String, default: "Dhaka" },
+    city: { type: String },
     location: {
       type: { type: String, default: "Point" },
       coordinates: { type: [Number], default: [0, 0] },
@@ -313,18 +314,27 @@ function parseElement(el, region, defaultOwnerId) {
   const details = buildDetails(category, tags);
   const description = buildDescription(name, category, region.city, tags);
 
+  // Geometric reverse geocoding
+  const resolvedGeo = BDLocationEngine.reverseGeocode(Number(lat), Number(lng));
+  const derivedCity = resolvedGeo?.district || region.city;
+  const derivedArea = resolvedGeo?.thana || derivedCity || `${region.city} Area`;
+  const derivedDivision = resolvedGeo?.division || region.city;
+
   // Address extraction
   const street = tags["addr:street"] || tags["addr:road"] || "";
   const suburb = tags["addr:suburb"] || tags["addr:city_district"] || tags["addr:neighbourhood"] || "";
-  const addrCity = tags["addr:city"] || region.city;
+  const addrCity = tags["addr:city"] || "";
+  
+  const area = suburb || tags.place || tags.suburb || derivedArea;
+  
   const fullAddress =
     tags["addr:full"] ||
-    [street, suburb, addrCity].filter(Boolean).join(", ") ||
-    `${name}, ${region.city}`;
+    [street, area, addrCity].filter(Boolean).join(", ") ||
+    `${name}, ${derivedArea}`;
 
-  const area = suburb || tags.place || tags.suburb || `${region.city} Area`;
-  const thana = tags["addr:subdistrict"] || tags["addr:suburb"] || null;
-  const district = tags["addr:district"] || region.district;
+  const thana = resolvedGeo?.thana || tags["addr:subdistrict"] || tags["addr:suburb"] || null;
+  const district = resolvedGeo?.district || tags["addr:district"] || region.district;
+  const division = derivedDivision;
 
   // Tags for search / filtering
   const listingTags = [];
@@ -358,6 +368,7 @@ function parseElement(el, region, defaultOwnerId) {
     area,
     thana,
     district,
+    division,
     city: addrCity,
     location: {
       type: "Point",

@@ -6,7 +6,9 @@ const {
   findLocationMatch,
   CATEGORY_SYNONYMS,
   BENGALI_PREPOSITIONS,
-  BUSINESS_NAMES
+  BUSINESS_NAMES,
+  isBusinessOrCategoryName,
+  BDLocationEngine
 } = require("shared-config");
 
 const geocodeCache = new Map();
@@ -151,7 +153,10 @@ const geocodeLocationWithConfidence = async (query, options = {}) => {
   const response = await axios.get(
     `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(query)}&countrycodes=bd&limit=5${viewbox}`,
     {
-      headers: { "User-Agent": "LocationKhuji/1.0 (contact@locationkhuji.com)" },
+      headers: { 
+        "User-Agent": "LocationKhuji/1.0 (contact@locationkhuji.com)",
+        "Accept-Language": "en-US,en;q=0.9,bn;q=0.8"
+      },
       timeout: 5000
     }
   );
@@ -205,19 +210,43 @@ const resolveLocationFromQuery = async (query, options = {}) => {
 
   debugLog(debug, logPrefix, "Normalized query", normalizedQuery);
 
-  const directMatch = findLocationMatch(query);
-  if (directMatch && directMatch.area) {
+  const localMatch = findLocationMatch(query);
+  if (localMatch && localMatch.area && localMatch.area.lat) {
     const resolved = {
       found: true,
-      lat: directMatch.area.lat,
-      lng: directMatch.area.lng,
-      displayName: directMatch.area.canonical,
-      matchType: directMatch.matchType,
-      matchedAlias: directMatch.alias,
+      lat: localMatch.area.lat,
+      lng: localMatch.area.lng,
+      displayName: `${localMatch.area.canonical}, Dhaka, Bangladesh`,
+      matchType: localMatch.matchType,
+      matchedAlias: localMatch.alias,
       confidence: 1.0,
-      source: "dictionary"
+      source: "local-areas"
     };
-    debugLog(debug, logPrefix, "Matched alias", resolved);
+    debugLog(debug, logPrefix, "Matched local area config", resolved);
+    resolutionCache.set(normalizedQuery, resolved);
+    if (resolutionCache.size > 1000) {
+      const firstKey = resolutionCache.keys().next().value;
+      resolutionCache.delete(firstKey);
+    }
+    return resolved;
+  }
+
+  const directMatch = BDLocationEngine.resolveLocation(query);
+  if (directMatch && directMatch.coordinates) {
+    const resolved = {
+      found: true,
+      lat: directMatch.coordinates.latitude,
+      lng: directMatch.coordinates.longitude,
+      displayName: [directMatch.thana, directMatch.district, directMatch.division].filter(Boolean).join(", "),
+      matchType: directMatch.type,
+      matchedAlias: query,
+      confidence: 1.0,
+      source: "bd-location-engine",
+      division: directMatch.division,
+      district: directMatch.district,
+      thana: directMatch.thana
+    };
+    debugLog(debug, logPrefix, "Matched bd-location-engine", resolved);
     resolutionCache.set(normalizedQuery, resolved);
     if (resolutionCache.size > 1000) {
       const firstKey = resolutionCache.keys().next().value;
@@ -232,7 +261,7 @@ const resolveLocationFromQuery = async (query, options = {}) => {
   for (const candidate of candidates) {
     const lowerCandidate = normalizeLocationText(candidate);
     const hasBusinessName = BUSINESS_NAMES.some((b) => lowerCandidate.includes(b));
-    if (hasBusinessName) {
+    if (hasBusinessName || isBusinessOrCategoryName(candidate)) {
       debugLog(debug, logPrefix, "Rejected business candidate", candidate);
       continue;
     }

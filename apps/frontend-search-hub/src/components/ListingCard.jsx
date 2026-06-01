@@ -109,7 +109,12 @@ function ListingCardImpl({ listing, distance, compact }) {
         <div className="flex flex-col gap-2 mt-3">
           <div className="flex items-center gap-2 text-xs font-medium text-gray-400">
             <FiMapPin size={14} className="text-teal-500/70 shrink-0" />
-            <span className="truncate">{listing.area}, {listing.city}</span>
+            <span className="truncate">{(() => {
+              const area = listing.area || listing.thana || '';
+              const loc = listing.district || listing.city || '';
+              if (area && loc && area !== loc) return `${area}, ${loc}`;
+              return area || loc || listing.address || 'Bangladesh';
+            })()}</span>
           </div>
           {distance != null && (
             <div className="inline-flex items-center w-fit px-2.5 py-0.5 rounded-full bg-teal-500/10 text-teal-400 text-[10px] font-bold uppercase tracking-wider border border-teal-500/20">

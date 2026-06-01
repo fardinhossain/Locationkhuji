@@ -14,7 +14,7 @@ const listingSchema = new mongoose.Schema({
   images: { type: [String], default: [] },
   address: { type: String, required: true },
   area: { type: String, required: true },
-  city: { type: String, default: "Dhaka" },
+  city: { type: String },
   location: {
     type: { type: String, default: "Point" },
     coordinates: { type: [Number], default: [0, 0] },
@@ -75,7 +75,7 @@ async function hardResetRestaurants() {
         owner_id: "admin@locationkhuji.com",
         images: ["https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800"],
         address: tags["addr:full"] || tags["addr:street"] || `${name}, Dhaka`,
-        area: tags["addr:suburb"] || "Dhaka Area",
+        area: tags["addr:suburb"] || "",
         city: "Dhaka",
         location: { type: "Point", coordinates: [lng, lat] },
         contact: { phone: tags.phone || "01711000000" },

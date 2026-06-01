@@ -14,14 +14,20 @@ const HeroSearch = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (!query.trim()) {
+    const cleanQuery = query.trim();
+    if (!cleanQuery) {
       toast.error(t("Please enter a search query"));
       return;
     }
+    const hasAlpha = /[a-zA-Z0-9\u0980-\u09FF]/.test(cleanQuery);
+    if (!hasAlpha) {
+      toast.error(t("Please enter a valid search query"));
+      return;
+    }
     if (mode === "ai") {
-      navigate(`/map?ai_q=${encodeURIComponent(query.trim())}`);
+      navigate(`/map?ai_q=${encodeURIComponent(cleanQuery)}`);
     } else {
-      navigate(`/map?q=${encodeURIComponent(query.trim())}`);
+      navigate(`/map?q=${encodeURIComponent(cleanQuery)}`);
     }
   };
 
@@ -47,17 +53,6 @@ const HeroSearch = () => {
       <div className="hero-search-modes flex items-center gap-3 mb-4">
         <button
           type="button"
-          onClick={() => setMode("ai")}
-          className={`px-4 py-2 rounded-full text-xs font-black transition-all border flex items-center gap-1.5 ${mode === "ai"
-            ? "bg-teal-500 text-navy-900 border-teal-500 shadow-[0_0_15px_rgba(0,209,178,0.4)]"
-            : "bg-transparent text-gray-400 border-gray-600 hover:border-gray-500 hover:text-gray-300"
-            }`}
-        >
-          <Sparkles size={12} className={mode === "ai" ? "animate-pulse" : ""} />
-          <span>{t('aiMode')}</span>
-        </button>
-        <button
-          type="button"
           onClick={() => setMode("standard")}
           className={`px-4 py-2 rounded-full text-xs font-black transition-all border flex items-center gap-1.5 ${mode === "standard"
             ? "bg-teal-500/15 text-teal-400 border-teal-500/40"
@@ -66,6 +61,17 @@ const HeroSearch = () => {
         >
           <Compass size={12} />
           <span>{t('standardMode')}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("ai")}
+          className={`px-4 py-2 rounded-full text-xs font-black transition-all border flex items-center gap-1.5 ${mode === "ai"
+            ? "bg-teal-500 text-navy-900 border-teal-500 shadow-[0_0_15px_rgba(0,209,178,0.4)]"
+            : "bg-transparent text-gray-400 border-gray-600 hover:border-gray-500 hover:text-gray-300"
+            }`}
+        >
+          <Sparkles size={12} className={mode === "ai" ? "animate-pulse" : ""} />
+          <span>{t('aiMode')}</span>
         </button>
       </div>
 
@@ -87,8 +93,8 @@ const HeroSearch = () => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={mode === "ai"
-            ? (t('hero.searchPlaceholder') || "Describe what you are looking for (e.g. 2-bed flat Dhanmondi)...")
-            : (t('searchPlaceholder') || "Search area, thana or landmark...")
+            ? (isBn ? "এআই অনুসন্ধান (যেমন: ২ বেড ফ্ল্যাট ধানমন্ডি)..." : (t('hero.searchPlaceholder') || "Describe what you are looking for..."))
+            : (isBn ? "এলাকা, থানা বা ল্যান্ডমার্ক খুঁজুন..." : (t('searchPlaceholder') || "Search area, thana or landmark..."))
           }
           className={`flex-grow bg-transparent border-none outline-none text-white px-2 sm:px-4 placeholder:text-gray-500 text-[13px] sm:text-[15px] lg:text-base w-full min-w-0 ${isBn ? 'font-bengali' : ''}`}
         />

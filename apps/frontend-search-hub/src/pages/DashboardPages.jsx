@@ -15,7 +15,7 @@ import { Textarea } from "../components/ui/textarea";
 function ListingForm({ initial, onSubmit, submitLabel }) {
   const [form, setForm] = useState(initial || {
     title: "", description: "", category: "flat",
-    address: "", area: "", city: "Dhaka",
+    address: "", area: "", city: "",
     lat: 23.8103, lng: 90.4125,
     contact_phone: "", contact_whatsapp: "", contact_email: "",
     images: [], details: {}, tags: [],
@@ -55,7 +55,7 @@ function ListingForm({ initial, onSubmit, submitLabel }) {
             const areaVal = addr.suburb || addr.neighbourhood || addr.quarter || addr.city_district || addr.thana || addr.county || addr.town || addr.village || "";
             
             // Extract city
-            const cityVal = addr.city || addr.town || addr.municipality || "Dhaka";
+            const cityVal = addr.city || addr.town || addr.municipality || "";
 
             // Extract street / road / full address
             const road = addr.road || addr.pedestrian || addr.path || "";

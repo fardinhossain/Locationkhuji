@@ -36,11 +36,11 @@ const extractLocationNumbers = (text) => {
 };
 
 const CATEGORY_SYNONYMS = {
-  flat: /\b(flat|rent|apartment|room|sublet|mess|basa|bari|ফ্ল্যাট|ভাড়া|এপার্টমেন্ট|রুম|সাবলেট|মেস|বাসা|বাড়ি)\b/i,
-  pharmacy: /\b(pharmacy|medicine|drug|osudh|pharmacist|osud|pharmacies|ফার্মেসি|ওষুধ|মেডিসিন)\b/i,
-  hospital: /\b(hospital|clinic|doctor|mbbs|medical|ambulance|icu|ccu|hospitals|dental|ডেন্টাল|হাসপাতাল|ক্লিনিক|ডাক্তার)\b/i,
-  restaurant: /\b(restaurant|cafe|food|dining|biryani|burger|pizza|pizzaburg|eat|hotel|kacchi|kacchi bhai|fast food|bakery|kabab|khabar|রেস্টুরেন্ট|ক্যাফে|খাবার|বিরিয়ানি|পিৎজা|কাচ্চি|হোটেল)\b/i,
-  service: /\b(service|hire|mechanic|plumber|electrician|tutor|photographer|cleaner|maid|painter|carpenter|technician|pest control|babysitter|moving|event|service|সার্ভিস|মিস্ত্রি|ইলেকট্রিশিয়ান|ফটোগ্রাফার)\b/i,
+  flat: /(?<![a-zA-Z0-9_\u0980-\u09FF])(flat|rent|apartment|room|sublet|mess|basa|bari|ফ্ল্যাট|ভাড়া|এপার্টমেন্ট|রুম|সাবলেট|মেস|বাসা|বাড়ি)(?![a-zA-Z0-9_\u0980-\u09FF])/i,
+  pharmacy: /(?<![a-zA-Z0-9_\u0980-\u09FF])(pharmacy|medicine|drug|osudh|pharmacist|osud|pharmacies|ফার্মেসি|ওষুধ|মেডিসিন)(?![a-zA-Z0-9_\u0980-\u09FF])/i,
+  hospital: /(?<![a-zA-Z0-9_\u0980-\u09FF])(hospital|clinic|doctor|mbbs|medical|ambulance|icu|ccu|hospitals|dental|ডেন্টাল|হাসপাতাল|ক্লিনিক|ডাক্তার)(?![a-zA-Z0-9_\u0980-\u09FF])/i,
+  restaurant: /(?<![a-zA-Z0-9_\u0980-\u09FF])(restaurant|cafe|food|dining|biryani|burger|pizza|pizzaburg|eat|hotel|kacchi|kacchi bhai|fast food|bakery|kabab|khabar|রেস্টুরেন্ট|ক্যাফে|খাবার|বিরিয়ানি|পিৎজা|কাচ্চি|হোটেল)(?![a-zA-Z0-9_\u0980-\u09FF])/i,
+  service: /(?<![a-zA-Z0-9_\u0980-\u09FF])(service|hire|mechanic|plumber|electrician|tutor|photographer|cleaner|maid|painter|carpenter|technician|pest control|babysitter|moving|event|service|সার্ভিস|মিস্ত্রি|ইলেকট্রিশিয়ান|ফটোগ্রাফার)(?![a-zA-Z0-9_\u0980-\u09FF])/i,
 };
 
 // Words that typically mean a nationwide business or category name, NOT a geographical location
@@ -218,7 +218,14 @@ const LOCATION_AREAS = [
     blocks: ["A","B","C","D","E","F","G","H","I","J","K"],
     fallbackLat: 23.8193,
     fallbackLng: 90.4497
-  })
+  }),
+  { canonical: "mirpur", aliases: ["মিরপুর"], lat: 23.8223, lng: 90.3665, type: "area", region: "dhaka", keywords: ["mirpur"] },
+  { canonical: "dhanmondi", aliases: ["ধানমন্ডি"], lat: 23.7461, lng: 90.3742, type: "area", region: "dhaka", keywords: ["dhanmondi"] },
+  { canonical: "uttara", aliases: ["উত্তরা"], lat: 23.8759, lng: 90.3907, type: "area", region: "dhaka", keywords: ["uttara"] },
+  { canonical: "banani", aliases: ["বনানী"], lat: 23.7940, lng: 90.4043, type: "area", region: "dhaka", keywords: ["banani"] },
+  { canonical: "gulshan", aliases: ["গুলশান"], lat: 23.7925, lng: 90.4078, type: "area", region: "dhaka", keywords: ["gulshan"] },
+  { canonical: "mohammadpur", aliases: ["মোহাম্মদপুর"], lat: 23.7542, lng: 90.3625, type: "area", region: "dhaka", keywords: ["mohammadpur"] },
+  { canonical: "bashundhara", aliases: ["বসুন্ধরা"], lat: 23.8193, lng: 90.4497, type: "area", region: "dhaka", keywords: ["bashundhara"] }
 ];
 
 const LOCATION_ALIAS_ENTRIES = [];
@@ -364,6 +371,76 @@ const getLocationSuggestions = (query, limit = 5) => {
     }));
 };
 
+const isBusinessOrCategoryName = (text) => {
+  if (!text) return false;
+  const normalized = normalizeLocationText(text);
+  
+  // Check categories
+  for (const cat in CATEGORY_SYNONYMS) {
+    if (CATEGORY_SYNONYMS[cat].test(normalized)) return true;
+  }
+  
+  // Check business names
+  if (BUSINESS_NAMES.some(b => normalized.includes(b))) return true;
+  
+  return false;
+};
+
+const splitQueryIntoLocationAndKeyword = (query) => {
+  if (!query) return { location: null, keyword: null };
+  const normalized = normalizeLocationText(query);
+  
+  // 1. Try to find if any local area canonical/alias matches
+  // Sort entries by length descending to match longer aliases first (e.g. "mirpur 10" before "mirpur")
+  const sortedAliases = [...LOCATION_ALIAS_ENTRIES].sort((a, b) => b.normalizedAlias.length - a.normalizedAlias.length);
+  
+  for (const entry of sortedAliases) {
+    const alias = entry.normalizedAlias;
+    const regex = new RegExp(`(?<![a-zA-Z0-9_\\u0980-\\u09FF])${alias}(?![a-zA-Z0-9_\\u0980-\\u09FF])`, "i");
+    if (regex.test(normalized)) {
+      let keyword = normalized.replace(regex, " ").replace(/\s+/g, " ").trim();
+      const prepStr = BENGALI_PREPOSITIONS.join("|");
+      keyword = keyword.replace(new RegExp(`\\b(?:in|near|around|inside|at|find|search|me|show|for|the|a|an|best|good|cheap|under|below|with|want|need|looking|please|${prepStr})\\b`, "gi"), " ").replace(/\s+/g, " ").trim();
+      return {
+        location: entry.area.canonical,
+        keyword: keyword || null
+      };
+    }
+  }
+
+  // 2. Try to find if any district or thana matches from BDLocationEngine
+  const directMatch = BDLocationEngine.resolveLocation(query);
+  if (directMatch) {
+    return {
+      location: [directMatch.thana, directMatch.district, directMatch.division].filter(Boolean).join(", "),
+      keyword: null
+    };
+  }
+
+  // Check if any word/phrase in the query is a district/thana
+  const tokens = tokenizeLocationText(normalized);
+  for (let i = 0; i < tokens.length; i++) {
+    for (let j = tokens.length; j > i; j--) {
+      const phrase = tokens.slice(i, j).join(" ");
+      const match = BDLocationEngine.resolveLocation(phrase);
+      if (match) {
+        const locationStr = [match.thana, match.district, match.division].filter(Boolean).join(", ");
+        let keyword = tokens.filter((_, idx) => idx < i || idx >= j).join(" ");
+        const prepStr = BENGALI_PREPOSITIONS.join("|");
+        keyword = keyword.replace(new RegExp(`\\b(?:in|near|around|inside|at|find|search|me|show|for|the|a|an|best|good|cheap|under|below|with|want|need|looking|please|${prepStr})\\b`, "gi"), " ").replace(/\s+/g, " ").trim();
+        return {
+          location: locationStr,
+          keyword: keyword || null
+        };
+      }
+    }
+  }
+
+  return { location: null, keyword: query.trim() };
+};
+
+const BDLocationEngine = require('./bd-location-engine');
+
 module.exports = {
   BENGALI_NUMBER_MAP,
   BENGALI_DIGIT_MAP,
@@ -380,5 +457,8 @@ module.exports = {
   LOCATION_CANONICAL_INDEX,
   LOCATION_STOPWORDS,
   findLocationMatch,
-  getLocationSuggestions
+  getLocationSuggestions,
+  isBusinessOrCategoryName,
+  splitQueryIntoLocationAndKeyword,
+  BDLocationEngine
 };

@@ -149,7 +149,7 @@ export default function ListingDetailPage() {
           <div className="mt-6 bg-[var(--bg-surface)] border border-[var(--border-light)] rounded-2xl p-6 shadow-sm">
             <h1 data-testid="listing-title" className="font-sora font-bold text-3xl text-[var(--text-primary)]">{listing.title}</h1>
             <div className="flex items-center gap-2 mt-3 text-[var(--text-secondary)]">
-              <FiMapPin size={16} className="text-primary" /> {listing.address}, {listing.area}, {listing.city}
+              <FiMapPin size={16} className="text-primary" /> {[listing.address, listing.area, listing.district || listing.city].filter((v, i, arr) => v && arr.indexOf(v) === i).join(', ')}
             </div>
             <div className="flex items-center gap-4 mt-5">
               <div className="flex flex-col">

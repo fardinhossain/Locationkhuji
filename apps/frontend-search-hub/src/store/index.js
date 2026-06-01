@@ -66,5 +66,5 @@ export const useLocationStore = create((set) => ({
 
 // Search mode store (persisted)
 export const useSearchModeStore = create(
-  persist((set) => ({ mode: "ai", setMode: (m) => set({ mode: m }) }), { name: "lk_search_mode" })
+  persist((set) => ({ mode: "standard", setMode: (m) => set({ mode: m }) }), { name: "lk_search_mode" })
 );

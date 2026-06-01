@@ -2,10 +2,10 @@ services:
   - type: web
     name: locationkhuji-backend
     env: node
-    rootDir: backend
+    rootDir: apps/backend-api-gateway
     buildCommand: npm install
     startCommand: npm start
-    healthCheckPath: /api/
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production

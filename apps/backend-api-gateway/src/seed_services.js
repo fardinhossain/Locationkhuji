@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
+const { BDLocationEngine } = require("../../packages/shared-config");
 
 const MONGO_URI = process.env.MONGO_URL || process.env.MONGO_URI || "mongodb://127.0.0.1:27017/locationkhuji";
 
@@ -13,8 +14,9 @@ const listingSchema = new mongoose.Schema({
   address: { type: String, required: true },
   area: { type: String, required: true },
   thana: { type: String },
-  district: { type: String, default: "Dhaka" },
-  city: { type: String, default: "Dhaka" },
+  district: { type: String },
+  city: { type: String },
+  division: { type: String },
   location: {
     type: { type: String, default: "Point" },
     coordinates: { type: [Number], required: true },
@@ -85,6 +87,10 @@ async function seedServices() {
       const areaTemplate = areas[Math.floor(Math.random() * areas.length)];
       const coords = randomCoords(areaTemplate.lat, areaTemplate.lng);
 
+      const resolvedGeo = BDLocationEngine.reverseGeocode(coords[1], coords[0]);
+      const derivedCity = resolvedGeo?.district || "Dhaka";
+      const derivedArea = resolvedGeo?.thana || areaTemplate.name;
+
       const listing = new Listing({
         id: `svc_seed_${i}_${Date.now()}`,
         title: `${svcTemplate.t} - ${areaTemplate.name}`,
@@ -92,10 +98,11 @@ async function seedServices() {
         category: "service",
         owner_id: "owner@locationkhuji.com",
         address: `${Math.floor(Math.random() * 100) + 1} Main Road, ${areaTemplate.name}`,
-        area: areaTemplate.name,
-        thana: areaTemplate.name,
-        district: "Dhaka",
-        city: "Dhaka",
+        area: derivedArea,
+        thana: resolvedGeo?.thana || null,
+        district: resolvedGeo?.district || null,
+        division: resolvedGeo?.division || "Dhaka",
+        city: "",
         location: {
           type: "Point",
           coordinates: coords

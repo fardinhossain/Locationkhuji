@@ -1,6 +1,7 @@
 require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
 const mongoose = require("mongoose");
 const axios = require("axios");
+const { BDLocationEngine } = require("../../packages/shared-config");
 
 const MONGO_URL = process.env.MONGO_URL;
 const DB_NAME = process.env.DB_NAME || "locationkhuji";
@@ -22,7 +23,7 @@ const listingSchema = new mongoose.Schema({
   area: { type: String, required: true },
   thana: { type: String },
   district: { type: String },
-  city: { type: String, default: "Dhaka" },
+  city: { type: String },
   location: {
     type: { type: String, default: "Point" },
     coordinates: { type: [Number], default: [0, 0] }, // [Longitude, Latitude]
@@ -156,16 +157,20 @@ async function run() {
         description = `${name} is a local restaurant/cafe located in Dhaka, offering delicious meals, drinks, and dining experiences.`;
       }
 
-      // Address mapping helpers
+      const resolvedGeo = BDLocationEngine.reverseGeocode(Number(lat), Number(lng));
+      const fallbackCity = resolvedGeo?.district || "";
+      const fallbackArea = resolvedGeo?.thana || fallbackCity || "";
+      const fallbackDivision = resolvedGeo?.division || "";
+
       const street = tags["addr:street"] || tags["addr:road"] || "";
       const citySub = tags["addr:suburb"] || tags["addr:city_district"] || tags["addr:neighbourhood"] || "";
-      const city = tags["addr:city"] || "Dhaka";
+      
+      const city = tags["addr:city"] || "";
+      const area = citySub || tags.place || tags.suburb || fallbackArea;
       
       const fullAddress = tags["addr:full"] || 
-        [street, citySub, city].filter(Boolean).join(", ") || 
-        `${name}, Dhaka`;
-        
-      const area = citySub || tags.place || tags.suburb || "Dhaka Area";
+        [street, area, city].filter(Boolean).join(", ") || 
+        `${name}, ${fallbackArea}`;
 
       // Tags parsing
       const listingTags = [];
@@ -183,6 +188,9 @@ async function run() {
         address: fullAddress,
         area: area,
         city: city,
+        thana: resolvedGeo?.thana || null,
+        district: resolvedGeo?.district || null,
+        division: fallbackDivision,
         location: {
           type: "Point",
           coordinates: [Number(lng), Number(lat)]

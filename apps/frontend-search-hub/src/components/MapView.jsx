@@ -279,7 +279,7 @@ export default function MapView({ center, listings = [], userLocation, radius = 
                   <CategoryBadge category={l.category} />
                   <h4 className="font-bold text-[15px] mt-2 leading-snug">{l.title}</h4>
                   <div className="text-[12px] mt-1 font-medium italic truncate" style={{ color: 'var(--text-secondary)' }}>
-                    {l.area}, {l.thana || l.city}
+                    {[l.area || l.thana, l.district].filter((v, i, arr) => v && arr.indexOf(v) === i).join(', ') || l.address || 'Bangladesh'}
                   </div>
                   <div className="mt-3 pt-2 flex items-center justify-between" style={{ borderTop: '1px solid var(--border-light)' }}>
                     <StarRating rating={l.average_rating} count={l.total_reviews} size={12} />

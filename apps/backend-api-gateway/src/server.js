@@ -11,13 +11,23 @@ const multer = require("multer");
 const { v2: cloudinary } = require("cloudinary");
 const admin = require("firebase-admin");
 const { Readable } = require("stream");
-const { normalizeBengaliText, CATEGORY_SYNONYMS, BUSINESS_NAMES, BENGALI_PREPOSITIONS } = require("shared-config");
+const { 
+  normalizeBengaliText, 
+  normalizeLocationText, 
+  tokenizeLocationText, 
+  BDLocationEngine, 
+  CATEGORY_SYNONYMS, 
+  BUSINESS_NAMES, 
+  BENGALI_PREPOSITIONS,
+  isBusinessOrCategoryName,
+  splitQueryIntoLocationAndKeyword
+} = require("shared-config");
 const { resolveLocationFromQuery } = require("./locationResolver");
 
 const { Server } = require("socket.io");
 
 const PORT = process.env.PORT || 8001;
-const MONGO_URL = process.env.MONGO_URL;
+const MONGO_URL = process.env.MONGO_URL || process.env.MONGODB_URI;
 const DB_NAME = process.env.DB_NAME || "locationkhuji";
 const FIREBASE_WEB_API_KEY = process.env.FIREBASE_WEB_API_KEY;
 const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME;
@@ -572,7 +582,7 @@ function buildListingPayload(body, user, existing) {
     area: body.area,
     thana: body.thana || null,
     district: body.district || null,
-    city: body.city || "Dhaka",
+    city: body.city || undefined,
     location: {
       type: "Point",
       coordinates: [Number(body.lng), Number(body.lat)],
@@ -585,6 +595,29 @@ function buildListingPayload(body, user, existing) {
     details,
     tags,
   };
+
+  // Enforce consistent geography boundaries
+  const resolvedGeo = BDLocationEngine.reverseGeocode(payload.location.coordinates[1], payload.location.coordinates[0]);
+  if (resolvedGeo) {
+    payload.division = resolvedGeo.division;
+    payload.district = resolvedGeo.district;
+    // Attempt to extract Thana from area or address if not manually specified
+    if (!payload.thana && (payload.area || payload.address)) {
+      const textToCheck = `${payload.area} ${payload.address}`;
+      const resolvedText = BDLocationEngine.resolveLocation(textToCheck);
+      if (resolvedText && resolvedText.type === "upazila" && resolvedText.district.id === resolvedGeo.districtId) {
+        payload.thana = resolvedText.item.name;
+      }
+    }
+  }
+
+  // Strip 'Dhaka' from city/area if district is NOT Dhaka
+  if (payload.district && payload.district !== "Dhaka") {
+    if (payload.city === "Dhaka") payload.city = "";
+    if (payload.area === "Dhaka Area" || payload.area === "Dhaka") {
+      payload.area = payload.thana || payload.district;
+    }
+  }
 
   return payload;
 }
@@ -617,7 +650,8 @@ const listingSchema = new mongoose.Schema(
     area: { type: String, required: true },
     thana: { type: String },
     district: { type: String },
-    city: { type: String, default: "Dhaka" },
+    division: { type: String },
+    city: { type: String },
     location: {
       type: {
         type: String,
@@ -881,7 +915,7 @@ async function seedListingsIfNeeded() {
     images: [],
     address: sample.address,
     area: sample.area,
-    city: "Dhaka",
+
     location: { type: "Point", coordinates: [sample.lng, sample.lat] },
     contact: { phone: "+8801700000000", whatsapp: "+8801700000000", email: null },
     details: sample.details,
@@ -1312,6 +1346,9 @@ api.get("/listings/nearby", async (req, res, next) => {
     const lng = Number(req.query.lng);
     const radius = Number(req.query.radius || 5);
     const category = req.query.category ? String(req.query.category) : null;
+    const division = req.query.division ? String(req.query.division) : null;
+    const district = req.query.district ? String(req.query.district) : null;
+    const thana = req.query.thana ? String(req.query.thana) : null;
     const page = Number(req.query.page || 1);
     const limit = Math.min(Number(req.query.limit || 24), 100);
 
@@ -1328,6 +1365,9 @@ api.get("/listings/nearby", async (req, res, next) => {
     };
 
     if (category) query.category = category;
+    if (division) query.division = division;
+    if (district) query.district = district;
+    if (thana) query.thana = thana;
 // ... existing code ...
     const items = await Listing.find(query).skip((page - 1) * limit).limit(limit).lean();
     
@@ -1335,7 +1375,10 @@ api.get("/listings/nearby", async (req, res, next) => {
     let withOwners = await populateListingOwners(items.map(listingToOut));
     if (withOwners.length === 0) {
       const osmListings = await fetchFromOSMOverpass(category, lat, lng, radius, req.app.get("io"));
-      withOwners = await populateListingOwners(osmListings.map(listingToOut));
+      const filteredOsmListings = category && category !== 'all'
+        ? osmListings.filter(l => l.category === category)
+        : osmListings;
+      withOwners = await populateListingOwners(filteredOsmListings.map(listingToOut));
     }
     
     res.json({ listings: withOwners, page, limit });
@@ -1348,6 +1391,11 @@ const osmCache = new Map();
 
 async function fetchFromOSMOverpass(category, lat, lng, radiusKm, io, keywords = []) {
   try {
+    // If category is flat or service, do not fetch from OSM since OSM does not map them
+    if (category === 'flat' || category === 'service') {
+      return [];
+    }
+
     // Generate a cache key that groups requests within ~110 meters (3 decimal places)
     // This prevents map panning from aggressively hitting the Overpass API rate limits
     const cacheKey = `${category}_${Number(lat).toFixed(3)}_${Number(lng).toFixed(3)}_${radiusKm}_${keywords.join("|")}`;
@@ -1398,16 +1446,15 @@ async function fetchFromOSMOverpass(category, lat, lng, radiusKm, io, keywords =
         `node["amenity"="fast_food"](${south},${west},${north},${east});`
       ];
     }
-
     const query = `[out:json][timeout:15];\n(\n${stmts.join("\n")}\n);\nout center body;`;
 
     // Fetch from Overpass API using axios
     const response = await axios.post(overpassUrl, `data=${encodeURIComponent(query)}`, {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "LocationKhujiSeeder/2.0 (contact@locationkhuji.com)"
+        "User-Agent": "LocationKhuji/1.0 (contact@locationkhuji.com)"
       },
-      timeout: 20000
+      timeout: 10000
     });
 
     const elements = response.data?.elements || [];
@@ -1477,10 +1524,24 @@ async function fetchFromOSMOverpass(category, lat, lng, radiusKm, io, keywords =
       // Address helpers
       const street = tags["addr:street"] || tags["addr:road"] || "";
       const suburb = tags["addr:suburb"] || tags["addr:neighbourhood"] || "";
-      const city = tags["addr:city"] || "Dhaka";
-      const fullAddress = tags["addr:full"] || [street, suburb, city].filter(Boolean).join(", ") || `${name}, ${city}`;
+      const city = tags["addr:city"] || "";
 
       // Create new Listing document in MongoDB
+      const resolvedGeo = BDLocationEngine.reverseGeocode(placeLat, placeLng);
+      let resolvedThana = null;
+      if (resolvedGeo) {
+        const textToCheck = `${suburb} ${street} ${name}`;
+        const resolvedText = BDLocationEngine.resolveLocation(textToCheck);
+        if (resolvedText && resolvedText.type === "upazila" && resolvedText.district.id === resolvedGeo.districtId) {
+          resolvedThana = resolvedText.item.name;
+        }
+      }
+
+      // Use reverse geocoded data as fallback for location fields
+      const derivedDistrict = resolvedGeo?.district || "";
+      const derivedArea = suburb || resolvedThana || derivedDistrict || "";
+      const fullAddress = tags["addr:full"] || [street, derivedArea, city].filter(Boolean).join(", ") || `${name}, ${derivedDistrict || "Bangladesh"}`;
+
       const doc = await Listing.create({
         id: new mongoose.Types.ObjectId().toString(),
         title: name,
@@ -1489,8 +1550,11 @@ async function fetchFromOSMOverpass(category, lat, lng, radiusKm, io, keywords =
         owner_id: "dev-admin-001",
         images: [],
         address: fullAddress,
-        area: suburb || "Dhaka Area",
-        city: city,
+        area: derivedArea,
+        thana: resolvedThana,
+        district: resolvedGeo?.district || null,
+        division: resolvedGeo?.division || null,
+        city: "",
         location: {
           type: "Point",
           coordinates: [placeLng, placeLat]
@@ -1990,8 +2054,28 @@ api.post("/listings/ai-search", async (req, res, next) => {
     // Resolve Intent through Groq -> Gemini -> Regex waterfall helper
     const { intent, processedByAI } = await getAIIntent(searchQuery, parsedLat, parsedLng);
 
-    // If location was NOT detected and user didn't specify a radius, search nationwide
-    // If location WAS detected but no explicit radius, default stays at 1km
+    if (intent.aiLocation && isBusinessOrCategoryName(intent.aiLocation)) {
+      console.log(`⚠️ [AI Search] Rejected business/category name "${intent.aiLocation}" as a location.`);
+      intent.aiLocation = null;
+    }
+
+    // If AI found a specific location name BUT our geocoders completely failed to resolve it,
+    // we MUST NOT fallback to a nationwide search. We must return 0 results.
+    const hasUnresolvedLocation = intent.aiLocation && !overriddenLocation;
+
+    if (hasUnresolvedLocation) {
+      console.log(`🚫 [Strict Filter] AI detected location "${intent.aiLocation}" but it couldn't be resolved. Returning 0 results to prevent false positives.`);
+      return res.json({
+        intent,
+        listings: [],
+        processedByAI,
+        searchCenter: null,
+        radius: parsedRadius,
+        locationDetected: false
+      });
+    }
+
+    // If NO location was specified at all, and no radius specified, search nationwide
     if (!overriddenLocation && !userExplicitRadius) {
       parsedRadius = 50; // Use a large radius for nationwide-style search
     }
@@ -2110,9 +2194,9 @@ api.get("/listings/search", async (req, res, next) => {
   try {
     const q = req.query.q ? String(req.query.q).trim() : null;
     const category = req.query.category && req.query.category !== 'all' ? String(req.query.category) : null;
-    const lat = req.query.lat !== undefined && req.query.lat !== "" ? Number(req.query.lat) : null;
-    const lng = req.query.lng !== undefined && req.query.lng !== "" ? Number(req.query.lng) : null;
-    const radius = Number(req.query.radius || 50);
+    let lat = req.query.lat !== undefined && req.query.lat !== "" ? Number(req.query.lat) : null;
+    let lng = req.query.lng !== undefined && req.query.lng !== "" ? Number(req.query.lng) : null;
+    let radius = Number(req.query.radius || 50);
     const page = Number(req.query.page || 1);
     const limit = Math.min(Number(req.query.limit || 150), 5000);
 
@@ -2120,11 +2204,41 @@ api.get("/listings/search", async (req, res, next) => {
     const baseFilter = { is_active: true };
     if (category) baseFilter.category = category;
 
-    if (q) {
-      // 1. Just use the raw query directly for DB lookups. 
-      // We already enforce the category via baseFilter, so we shouldn't inject category names into the text regex.
-      let searchKeywords = q;
+    let searchKeywords = q;
+    let isLocationQuery = false;
+    let resolvedAreaName = "";
 
+    if (q) {
+      const locationCheck = await resolveLocationFromQuery(q, { preferDhaka: true });
+      if (locationCheck.found) {
+        isLocationQuery = true;
+        if (!lat || !lng) {
+          lat = locationCheck.lat;
+          lng = locationCheck.lng;
+        }
+        resolvedAreaName = locationCheck.displayName || "";
+        
+        // Dynamically adjust radius for Standard Search if resolved from q and not explicitly set small by frontend
+        if (req.query.radius === undefined || req.query.radius === "") {
+          if (locationCheck.matchType === "division") {
+            radius = 30;
+          } else if (locationCheck.matchType === "district") {
+            radius = 15;
+          } else if (locationCheck.matchType === "upazila" || locationCheck.matchType === "thana") {
+            radius = 5;
+          } else {
+            radius = 2; // default to 2km for neighborhoods
+          }
+          console.log(`📏 [Standard Search Dynamic Radius] Set radius to ${radius} km based on location type: ${locationCheck.matchType}`);
+        }
+        
+        // Strip the matched location name from the keywords so we don't apply it to text filter
+        const escapedAlias = locationCheck.matchedAlias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        searchKeywords = q.replace(new RegExp(escapedAlias, 'gi'), ' ').replace(/\s+/g, ' ').trim();
+      }
+    }
+
+    if (searchKeywords) {
       const escapedKeywords = searchKeywords.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const simpleRegex = { $regex: escapedKeywords, $options: "i" };
 
@@ -2229,8 +2343,8 @@ api.get("/listings/search", async (req, res, next) => {
     const withOwners = await populateListingOwners(paginatedResults.map(listingToOut));
     res.json({ listings: withOwners, page, limit, total: results.length });
 
-    // Run live fetch in the background to not block the UI
-    if ((q || category) && Number.isFinite(lat) && Number.isFinite(lng)) {
+    // Run live fetch in the background to not block the UI (no longer blocked by q || category)
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
       (async () => {
         try {
           const io = req.app.get("io");
@@ -2540,6 +2654,13 @@ api.put("/admin/listings/:lid/feature", requireAuth, requireRoles("admin"), asyn
   } catch (error) {
     next(error.status ? error : apiError(400, "Failed to update feature status"));
   }
+});
+
+api.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "LocationKhuji API Running"
+  });
 });
 
 app.use("/api", api);

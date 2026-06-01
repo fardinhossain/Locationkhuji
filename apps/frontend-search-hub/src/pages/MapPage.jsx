@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { cn, bnNumber } from "../lib/utils";
 import { FiMapPin, FiNavigation, FiSearch, FiSliders, FiX, FiList } from "react-icons/fi";
 import { Sparkles, Compass } from "lucide-react";
 import Navbar from "../components/Navbar";
@@ -7,13 +8,12 @@ import MapView from "../components/MapView";
 import { ListingCard } from "../components/ListingCard";
 import { useLangStore, useLocationStore, useSearchModeStore } from "../store";
 import { CATEGORIES, POPULAR_AREAS } from "../lib/constants";
-import { CATEGORY_SYNONYMS } from "shared-config";
+import { CATEGORY_SYNONYMS, splitQueryIntoLocationAndKeyword, BDLocationEngine } from "shared-config";
 import { api } from "../lib/api";
 import { Slider } from "../components/ui/slider";
 import { Button } from "../components/ui/button";
 import { io } from "socket.io-client";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "../components/ui/drawer";
-import { cn } from "../lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -46,23 +46,19 @@ export default function MapPage() {
   const fetchDebounceRef = React.useRef(null);
   const hasShownNoResultsRef = React.useRef(false);
   
-  // Refs for socket listener state
   const isAiModeRef = React.useRef(isAiMode);
   const manualAddressRef = React.useRef(manualAddress);
   
   const filteredListings = React.useMemo(() => {
-    // In nationwide mode, don't filter by radius — show all results
     if (loc.isNationwide) return listings;
     if (!loc.selectedLat || !loc.selectedLng || !loc.radius) return listings;
     return listings.filter(l => distKm(loc.selectedLat, loc.selectedLng, l.lat, l.lng) <= loc.radius);
   }, [listings, loc.selectedLat, loc.selectedLng, loc.radius, loc.isNationwide]);
 
-  // Show "no matching place found" toast when search completes with empty results
   useEffect(() => {
     let timer;
     if (!loading && listings.length === 0 && loc.searchActive && !hasShownNoResultsRef.current) {
       timer = setTimeout(() => {
-        // Double check after timeout in case socket brought results
         setListings((currentListings) => {
           if (currentListings.length === 0 && !hasShownNoResultsRef.current) {
             hasShownNoResultsRef.current = true;
@@ -70,7 +66,7 @@ export default function MapPage() {
           }
           return currentListings;
         });
-      }, 3500); // 3.5s delay to allow OSM background fetch to seed the DB and emit socket events
+      }, 3500); 
     }
     if (listings.length > 0) {
       hasShownNoResultsRef.current = false;
@@ -83,7 +79,6 @@ export default function MapPage() {
     manualAddressRef.current = manualAddress;
   }, [isAiMode, manualAddress]);
 
-  // Sync searchMode store with URL params on mount
   useEffect(() => {
     if (params.get("ai_q")) {
       setIsAiMode(true);
@@ -92,13 +87,12 @@ export default function MapPage() {
       setIsAiMode(false);
       setSearchMode("standard");
     }
-  }, []); // eslint-disable-line
+  }, []); 
 
   const parseQueryAndSyncStore = (query) => {
     if (!query) return;
     const lowerQuery = query.toLowerCase();
     
-    // 1. Parse Category
     let detectedCategory = null;
     if (CATEGORY_SYNONYMS.flat.test(lowerQuery)) detectedCategory = "flat";
     else if (CATEGORY_SYNONYMS.pharmacy.test(lowerQuery)) detectedCategory = "pharmacy";
@@ -108,18 +102,15 @@ export default function MapPage() {
 
     if (detectedCategory) {
       loc.setCategory(detectedCategory);
-      console.log("🎯 [Client Parse] Set category to:", detectedCategory);
     } else {
       loc.setCategory("all");
     }
 
-    // 2. Parse Radius
     const radiusMatch = lowerQuery.match(/(\d+)\s*(?:km|k.m.|kilometer|kilometers|কিলোমিটার|কিমি)/i);
     if (radiusMatch) {
       const parsedRadius = Number(radiusMatch[1]);
       if (parsedRadius >= 1 && parsedRadius <= 20) {
         loc.setRadius(parsedRadius);
-        console.log("🎯 [Client Parse] Set radius to:", parsedRadius);
       }
     }
   };
@@ -136,7 +127,7 @@ export default function MapPage() {
   useEffect(() => {
     const cat = params.get("cat");
     if (cat) loc.setCategory(cat);
-  }, []); // eslint-disable-line
+  }, []); 
 
   useEffect(() => {
     const aiQuery = params.get("ai_q");
@@ -151,12 +142,11 @@ export default function MapPage() {
       setManualAddress(stdQuery);
       parseQueryAndSyncStore(stdQuery);
     }
-  }, [params]); // eslint-disable-line
+  }, [params]); 
 
   const fetchListings = React.useCallback(async (forceRefresh = false) => {
     const aiQuery = params.get("ai_q");
 
-    // Cancel any pending request
     if (currentAbortController.current) {
       currentAbortController.current.abort();
     }
@@ -165,13 +155,11 @@ export default function MapPage() {
     const signal = abortController.signal;
 
     if (aiQuery) {
-      // AI mode
       setLoading(true);
       loc.setSearchActive(true);
       try {
         if (aiQuery === lastProcessedAiQ.current) {
           const isAll = !loc.category || loc.category === 'all';
-          // Fix 8: Cache key includes radius and query string
           const cacheKey = `ai_${aiQuery}_${loc.category}_${String(loc.selectedLat).slice(0,8)}_${String(loc.selectedLng).slice(0,8)}_${loc.radius}`;
           if (!forceRefresh && listingsCache.current[cacheKey]) {
             setListings(listingsCache.current[cacheKey]);
@@ -216,10 +204,10 @@ export default function MapPage() {
         }
         if (r.data.intent?.category) loc.setCategory(r.data.intent.category);
       } catch (error) {
-        if (error.name === 'CanceledError' || error.message === 'canceled') return; // Ignore aborted requests
+        if (error.name === 'CanceledError' || error.message === 'canceled') return; 
         console.error("Failed to load listings:", error);
         setListings([]);
-        toast.error("Could not load map listings. Please make sure the backend is running.");
+        toast.error("Could not load map listings.");
       } finally { 
         if (currentAbortController.current === abortController) {
           setLoading(false); 
@@ -228,12 +216,11 @@ export default function MapPage() {
       return;
     }
 
-    // Standard mode
     lastProcessedAiQ.current = "";
-    loc.setNationwide(false);
     loc.setSearchActive(true);
     const isAll = !loc.category || loc.category === 'all';
-    const cacheKey = `${loc.category || 'all'}_${String(loc.selectedLat).slice(0,8)}_${String(loc.selectedLng).slice(0,8)}_${loc.radius}`;
+    const stdQ = params.get("q") || "";
+    const cacheKey = `${loc.category || 'all'}_${stdQ}_${loc.isNationwide ? 'nationwide' : `${String(loc.selectedLat).slice(0,8)}_${String(loc.selectedLng).slice(0,8)}`}_${loc.radius}`;
 
     if (!forceRefresh && listingsCache.current[cacheKey]) {
       setListings(listingsCache.current[cacheKey]);
@@ -244,28 +231,28 @@ export default function MapPage() {
     try {
       const r = await api.get("/listings/search", {
         params: {
-          q: params.get("q") || undefined,
-          lat: loc.selectedLat,
-          lng: loc.selectedLng,
+          q: stdQ || undefined,
+          lat: loc.isNationwide ? undefined : loc.selectedLat,
+          lng: loc.isNationwide ? undefined : loc.selectedLng,
           radius: loc.radius || 1,
           category: isAll ? undefined : loc.category,
-          limit: 1000 // Ensure limit to map nodes
+          limit: 5000 
         },
         signal
       });
       const data = r.data.listings || [];
-      listingsCache.current[cacheKey] = data; // Save to cache
+      listingsCache.current[cacheKey] = data; 
       setListings(data);
     } catch (error) {
-      if (error.name === 'CanceledError' || error.message === 'canceled') return; // Ignore aborts
+      if (error.name === 'CanceledError' || error.message === 'canceled') return; 
       console.error("Failed to load listings:", error);
-      toast.error("Could not load map listings. Please make sure the backend is running.");
+      toast.error("Could not load map listings.");
     } finally { 
       if (currentAbortController.current === abortController) {
         setLoading(false); 
       }
     }
-  }, [loc.selectedLat, loc.selectedLng, loc.radius, loc.category, manualAddress, params]); // eslint-disable-line
+  }, [loc.selectedLat, loc.selectedLng, loc.radius, loc.category, manualAddress, params]); 
 
 
   useEffect(() => {
@@ -273,14 +260,12 @@ export default function MapPage() {
       skipFetchRef.current = false;
       return;
     }
-    // Debounce: cancel previous pending fetch and wait 80ms before firing.
-    // This prevents rapid category clicks from firing multiple API calls.
     if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
     fetchDebounceRef.current = setTimeout(() => {
       fetchListings();
     }, 80);
     return () => clearTimeout(fetchDebounceRef.current);
-  }, [loc.selectedLat, loc.selectedLng, loc.radius, loc.category, params]); // eslint-disable-line
+  }, [loc.selectedLat, loc.selectedLng, loc.radius, loc.category, params]); 
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -302,11 +287,10 @@ export default function MapPage() {
         setSuggestions([]);
         setShowSuggestions(false);
       }
-    }, 1000); // 1000ms strictly complies with Nominatim's absolute max of 1 request per second
+    }, 1000);
     return () => clearTimeout(timer);
   }, [manualAddress, isAiMode]);
 
-  // Use a ref to track current category and location inside the stable socket listener
   const categoryRef = React.useRef(loc.category);
   const latRef = React.useRef(loc.selectedLat);
   const lngRef = React.useRef(loc.selectedLng);
@@ -319,9 +303,7 @@ export default function MapPage() {
     radiusRef.current = loc.radius;
   }, [loc.category, loc.selectedLat, loc.selectedLng, loc.radius]);
 
-  useEffect(() => {
-    // Socket is connected ONCE and never reconnected on category change.
-    // The listener uses categoryRef so it always reads the latest category.
+  useEffect(() => { 
     const socketUrl = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || "http://localhost:8001";
     const baseSocketUrl = socketUrl.endsWith('/api') ? socketUrl.slice(0, -4) : socketUrl;
     const socket = io(baseSocketUrl, { withCredentials: true });
@@ -330,9 +312,8 @@ export default function MapPage() {
       const currentCategory = categoryRef.current;
       const isAll = !currentCategory || currentCategory === 'all';
       if (isAll || newListing.category === currentCategory) {
-        // Enforce radius bounds client-side
         if (latRef.current && lngRef.current && radiusRef.current) {
-          const R = 6371; // Earth's radius in km
+          const R = 6371;
           const dLat = (newListing.lat - latRef.current) * Math.PI / 180;
           const dLng = (newListing.lng - lngRef.current) * Math.PI / 180;
           const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -341,35 +322,29 @@ export default function MapPage() {
           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
           const distance = R * c;
           if (distance > radiusRef.current) {
-            return; // Ignore this socket event, it's outside our search circle
+            return;
           }
         }
 
-        // Keyword enforcement to prevent socket cross-talk from other users' searches
-        // Only enforce this in AI Mode. In Standard Mode, manualAddress is just a geographic anchor (e.g. "nakhalpara"),
-        // so we shouldn't force the restaurant's name to contain "nakhalpara". Radius and Category checks are sufficient.
         if (isAiModeRef.current && lastProcessedAiQ.current && lastProcessedAiQ.current.trim().length > 2) {
           const words = lastProcessedAiQ.current.toLowerCase().split(/\s+/).filter(w => w.length > 2);
           const listingText = `${newListing.title || ''} ${newListing.description || ''} ${newListing.area || ''} ${(newListing.tags || []).join(' ')}`.toLowerCase();
           
-          // If the AI query contains words, ensure at least one word from the query matches the listing text.
           if (words.length > 0) {
             const matches = words.some(w => listingText.includes(w));
-            if (!matches) return; // Drop it
+            if (!matches) return;
           }
         }
 
-        // Also update cache so next category switch shows this new listing
         const cacheKey = `${newListing.category}_${String(newListing.lat).slice(0,8)}_${String(newListing.lng).slice(0,8)}_${loc.radius}`;
         if (listingsCache.current[cacheKey]) {
           listingsCache.current[cacheKey] = [newListing, ...listingsCache.current[cacheKey]];
         }
         setListings((prev) => {
-          // If we had a nationwide fallback but received a socket listing (e.g., Nominatim failed but OSM found it), focus it.
           if (prev.length === 0 && useLocationStore.getState().isNationwide) {
             useLocationStore.getState().setNationwide(false);
             useLocationStore.getState().setSelected(newListing.lat, newListing.lng, newListing.area || newListing.title);
-            useLocationStore.getState().setRadius(2); // Zoom in
+            useLocationStore.getState().setRadius(2);
           }
           return [newListing, ...prev];
         });
@@ -377,18 +352,23 @@ export default function MapPage() {
     });
 
     return () => socket.disconnect();
-  }, []); // eslint-disable-line -- intentionally empty: socket connects once only
+  }, []); 
 
-  // Helper: clear AI search state when switching to Standard mode or selecting a location manually
   const cleanAiState = React.useCallback(() => {
-    lastProcessedAiQ.current = "";
-    loc.setNationwide(false);
-    const newParams = new URLSearchParams(params);
-    if (newParams.has("ai_q")) {
-      newParams.delete("ai_q");
-      setSearchParams(newParams);
+    try {
+      lastProcessedAiQ.current = "";
+      if (loc && typeof loc.setNationwide === 'function') {
+        loc.setNationwide(false);
+      }
+      const newParams = new URLSearchParams(params);
+      if (newParams.has("ai_q")) {
+        newParams.delete("ai_q");
+        if (typeof setSearchParams === 'function') setSearchParams(newParams);
+      }
+    } catch (e) {
+      console.error("Error in cleanAiState:", e);
     }
-  }, [params, setSearchParams]); // eslint-disable-line
+  }, [params, setSearchParams]); 
 
   const useMyLocation = () => {
     if (!navigator.geolocation) return;
@@ -408,9 +388,18 @@ export default function MapPage() {
   const handleSelectSuggestion = (s) => {
     cleanAiState();
     loc.setNationwide(false);
-    parseQueryAndSyncStore(manualAddress); // Sync category before changing location
+    parseQueryAndSyncStore(manualAddress);
     loc.setSelected(parseFloat(s.lat), parseFloat(s.lon), s.display_name.split(',')[0]);
-    // Do not clear manualAddress so the search context (like "restaurant in") remains
+    
+    const { keyword } = splitQueryIntoLocationAndKeyword(manualAddress);
+    const newParams = new URLSearchParams(params);
+    if (keyword) {
+      newParams.set("q", keyword);
+    } else {
+      newParams.delete("q");
+    }
+    setSearchParams(newParams);
+
     setSuggestions([]);
     setShowSuggestions(false);
   };
@@ -435,43 +424,85 @@ export default function MapPage() {
       toast.error(t("Please enter a search query"));
       return;
     }
+
+    const hasAlpha = /[a-zA-Z0-9\u0980-\u09FF]/.test(query);
+    if (!hasAlpha) {
+      toast.error(t("Please enter a valid search query"));
+      return;
+    }
     
-    // Parse category and radius from the search query immediately to keep UI in sync
     parseQueryAndSyncStore(query);
     hasShownNoResultsRef.current = false;
     
     if (isAiMode) {
       setSearchParams({ ai_q: query });
     } else {
-      // Standard mode: clear any stale AI search state
       cleanAiState();
-      loc.setNationwide(false);
-      if (suggestions.length > 0) {
-        handleSelectSuggestion(suggestions[0]);
-      } else {
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=bd&limit=1`);
-          const data = await res.json();
-          if (data && data.length > 0) {
-            handleSelectSuggestion(data[0]);
-          } else {
-            // No geocode result — trigger keyword-only search via backend
-            setShowSuggestions(false);
-            fetchListings();
+      
+      const { location, keyword } = splitQueryIntoLocationAndKeyword(query);
+
+      if (location) {
+        loc.setNationwide(false);
+        if (suggestions.length > 0) {
+          handleSelectSuggestion(suggestions[0]);
+        } else {
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&countrycodes=bd&limit=1`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+              const s = data[0];
+              loc.setSelected(parseFloat(s.lat), parseFloat(s.lon), s.display_name.split(',')[0]);
+
+              // Resolve location type and dynamically set radius
+              const directMatch = BDLocationEngine.resolveLocation(location);
+              let finalRadius = 2; // Default to 2km for neighborhoods
+              if (directMatch) {
+                if (directMatch.type === "division") {
+                  finalRadius = 30;
+                } else if (directMatch.type === "district") {
+                  finalRadius = 15;
+                } else if (directMatch.type === "upazila" || directMatch.type === "thana") {
+                  finalRadius = 5;
+                }
+              } else {
+                const nameLower = s.display_name.toLowerCase();
+                if (nameLower.includes("district") || nameLower.includes("division") || nameLower.includes("zila")) {
+                  finalRadius = 15;
+                } else if (nameLower.includes("upazila") || nameLower.includes("thana") || nameLower.includes("upazilla")) {
+                  finalRadius = 5;
+                }
+              }
+              loc.setRadius(finalRadius);
+              setSuggestions([]);
+              setShowSuggestions(false);
+              
+              const newParams = new URLSearchParams(params);
+              if (keyword) {
+                newParams.set("q", keyword);
+              } else {
+                newParams.delete("q");
+              }
+              setSearchParams(newParams);
+            } else {
+              loc.setNationwide(true);
+              setSearchParams({ q: query });
+            }
+          } catch (err) {
+            console.error("Geocoding error:", err);
+            loc.setNationwide(true);
+            setSearchParams({ q: query });
           }
-        } catch (err) {
-          console.error("Geocoding error:", err);
-          // On error, still try keyword search
-          fetchListings();
         }
+      } else {
+        loc.setNationwide(true);
+        setSearchParams({ q: query });
       }
     }
   };
 
-  // Map click with confirmation when search is active
   const handleMapClick = (lat, lng) => {
     cleanAiState();
-    setManualAddress(""); // Drop the text filter so we don't search for "Mirpur" in "Gulshan"
+    setManualAddress(""); 
     loc.setNationwide(false);
     loc.setSelected(lat, lng, lang === "bn" ? "চিহ্নিত স্থান" : "Selected Pin");
   };
@@ -492,7 +523,6 @@ export default function MapPage() {
       <Navbar />
       <div className="flex-1 relative flex flex-col md:flex-row overflow-hidden">
         
-        {/* Floating Search Bar (Mobile Only) */}
         <div className="md:hidden absolute top-0 left-0 right-0 z-[100] pointer-events-none p-4 space-y-3">
           <div className="pointer-events-auto relative">
             <div className="flex items-center gap-2">
@@ -519,7 +549,6 @@ export default function MapPage() {
                       <FiX className="text-muted-foreground" size={18} />
                    </button>
                 )}
-                {/* Search button icon */}
                 <button type="submit" className="p-1.5 ml-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-full transition-colors active:scale-90">
                   <FiSearch size={16} />
                 </button>
@@ -537,7 +566,6 @@ export default function MapPage() {
               </Button>
             </div>
 
-            {/* Floating Suggestions Dropdown (Mobile) */}
             <AnimatePresence>
               {showSuggestions && suggestions.length > 0 && (
                 <motion.div 
@@ -569,57 +597,8 @@ export default function MapPage() {
               )}
             </AnimatePresence>
           </div>
-
-          {/* Mobile AI Toggle Pills */}
-          <div className="pointer-events-auto flex gap-2">
-            <button 
-              type="button"
-              onClick={() => { setIsAiMode(false); setSearchMode("standard"); cleanAiState(); }}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-[11px] font-black transition-all border flex items-center gap-1",
-                !isAiMode 
-                  ? "bg-primary/20 text-primary border-primary/30" 
-                  : "bg-card/90 backdrop-blur-md text-muted-foreground border-border/40 hover:bg-muted/40"
-              )}
-            >
-              <Compass size={10} />
-              🗺️ {t('standardMode')}
-            </button>
-            <button 
-              type="button"
-              onClick={() => { setIsAiMode(true); setSearchMode("ai"); }}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-[11px] font-black transition-all border flex items-center gap-1",
-                isAiMode 
-                  ? "bg-primary text-primary-foreground border-primary neon-glow-teal shadow-lg" 
-                  : "bg-card/90 backdrop-blur-md text-muted-foreground border-border/40 hover:bg-muted/40"
-              )}
-            >
-              <Sparkles size={10} className={cn(isAiMode ? "animate-pulse" : "")} />
-              <span>{t('aiMode')}</span>
-            </button>
-          </div>
-
-          <div className="pointer-events-auto flex gap-2 overflow-x-auto no-scrollbar pb-2">
-            {CATEGORIES.map((c) => {
-              const active = loc.category === c.key || (!loc.category && c.key === 'all');
-              return (
-                <button
-                  key={c.key}
-                  onClick={() => loc.setCategory(c.key)}
-                  className={cn(
-                    "px-4 py-2 rounded-full text-[13px] font-bold whitespace-nowrap transition shadow-sm border border-border/10",
-                    active ? "bg-primary text-primary-foreground border-primary" : "bg-card/90 backdrop-blur-md text-foreground"
-                  )}
-                >
-                  {c.key === 'all' ? t('all') : (t(c.key === 'flat' ? 'flatRental' : c.key))}
-                </button>
-              );
-            })}
-          </div>
         </div>
 
-        {/* Map View */}
         <div className="h-full flex-1 relative z-0">
           <MapView
             center={mapCenter}
@@ -633,6 +612,11 @@ export default function MapPage() {
             focusTrigger={loc.mapFocusTrigger}
           />
           
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[400] bg-background/80 backdrop-blur-xl border border-border/50 px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-3 cursor-pointer hover:bg-background/90 transition-all active:scale-95" onClick={() => togglePanel('results')}>
+            <FiList className="text-primary" size={18} />
+            <span className="font-black text-[13px] tracking-wider uppercase">{bnNumber(filteredListings?.length || 0, lang)} {t('placesFound')}</span>
+          </div>
+
           <div className="md:hidden absolute bottom-24 right-4 z-[50]">
              <Button 
                size="icon" 
@@ -644,7 +628,6 @@ export default function MapPage() {
           </div>
         </div>
 
-        {/* Desktop Sidebar */}
         <aside className="hidden md:flex w-[420px] shrink-0 border-l border-border bg-card flex-col overflow-hidden relative z-10 shadow-2xl">
            <SidebarContent
              handleSearchAddress={handleSearchAddress}
@@ -670,45 +653,21 @@ export default function MapPage() {
            />
         </aside>
 
-        {/* Mobile Results Trigger Pill */}
-        <div className="md:hidden absolute bottom-6 left-0 right-0 z-[100] flex justify-center pointer-events-none">
-          <motion.button 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => togglePanel('results')}
-            className={cn(
-              "pointer-events-auto flex items-center gap-2.5 px-6 py-3.5 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.3)] border transition-all duration-300",
-              activePanel === 'results' 
-                ? "bg-primary text-primary-foreground border-primary" 
-                : "bg-foreground text-background border-white/10"
-            )}
-          >
-            <FiList size={18} />
-            <span className="text-[14px] font-black uppercase tracking-tight">{filteredListings.length} {t('placesFound')}</span>
-          </motion.button>
-        </div>
-
-        {/* Unified Bottom Drawer for Results */}
         <Drawer open={activePanel === 'results'} onOpenChange={(o) => !o && setActivePanel(null)}>
           <DrawerContent className="h-[92vh] bg-background border-t-0 rounded-t-[32px] overflow-hidden z-[1000]">
              <div className="flex flex-col h-full overflow-hidden">
                 <DrawerHeader className="px-6 pt-6 pb-2 shrink-0">
                   <div className="flex items-center justify-between mb-4">
-                    <DrawerTitle className="text-2xl font-black tracking-tight text-foreground">{filteredListings.length} {t('placesFound')}</DrawerTitle>
+                    <DrawerTitle className="text-2xl font-black tracking-tight text-foreground">{bnNumber(filteredListings.length, lang)} {t('placesFound')}</DrawerTitle>
                     <div className="px-3 py-1 rounded-lg bg-primary/10 text-primary text-[11px] font-black uppercase">
-                      {loc.isNationwide ? "🇧🇩 All BD" : `${loc.radius}km radius`}
+                      {loc.isNationwide ? "🇧🇩 All BD" : `${bnNumber(loc.radius, lang)} km`}
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground font-medium mb-4 flex items-center gap-2">
-                     <FiMapPin className="text-primary" />
-                     {t('searchNearBy')} <span className="text-foreground font-bold">{loc.selectedName || 'Dhaka'}</span>
-                  </p>
                 </DrawerHeader>
                 
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5 no-scrollbar pb-32">
                   {loading && <div className="space-y-4">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-40 skeleton rounded-[24px]" />)}</div>}
-                  {!loading && !filteredListings.length && (
+                  {!loading && !filteredListings?.length && (
                      <div className="text-center py-20 flex flex-col items-center">
                        <div className="w-20 h-20 rounded-full bg-muted/40 flex items-center justify-center mb-6">
                          <FiMapPin size={32} className="text-muted-foreground/30" />
@@ -716,16 +675,15 @@ export default function MapPage() {
                        <p className="text-muted-foreground font-bold text-lg">{t('noMatchFound')}</p>
                      </div>
                   )}
-                  {filteredListings.map((l) => (
-                     <ListingCard key={l.id} listing={l}
-                       distance={loc.userLat ? distKm(loc.userLat, loc.userLng, l.lat, l.lng) : null} />
+                  {filteredListings?.map((l) => (
+                     <ListingCard key={l?.id || Math.random()} listing={l}
+                       distance={loc?.userLat ? distKm(loc.userLat, loc.userLng, l.lat, l.lng) : null} />
                   ))}
                 </div>
              </div>
           </DrawerContent>
         </Drawer>
 
-        {/* Unified Bottom Drawer for Filters (mobile) */}
         <Drawer open={activePanel === 'filters'} onOpenChange={(o) => !o && setActivePanel(null)}>
           <DrawerContent className="h-[92vh] bg-background border-t-0 rounded-t-[32px] overflow-hidden z-[1000]">
              <div className="flex flex-col h-full overflow-hidden">
@@ -772,49 +730,46 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
             <span>{t('searchNearBy')}</span>
           </h2>
 
-          {/* AI Toggle Pills */}
-          <div className="flex gap-2 mb-2">
+          <div className="bg-background/90 backdrop-blur-xl border border-border/50 p-1.5 rounded-[24px] shadow-2xl flex gap-1 items-center pointer-events-auto mb-6">
             <button 
               type="button"
-              onClick={() => { setIsAiMode(false); setSearchMode("standard"); if (cleanAiState) cleanAiState(); }}
+              onClick={() => {
+                try {
+                  setIsAiMode(false);
+                  if (typeof setSearchMode === 'function') setSearchMode("standard");
+                  if (typeof cleanAiState === 'function') cleanAiState();
+                } catch (e) {
+                  console.error(e);
+                }
+              }}
               className={cn(
-                "px-4 py-1.5 rounded-full text-xs font-black transition-all border flex items-center gap-1.5",
+                "relative px-4 sm:px-5 py-2.5 rounded-[20px] text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all overflow-hidden whitespace-nowrap",
                 !isAiMode 
-                  ? "bg-primary/10 text-primary border-primary/30" 
-                  : "bg-background text-muted-foreground border-border hover:bg-muted/40"
+                  ? "text-primary shadow-sm" 
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Compass size={12} />
-              {t('standardMode')}
+              {!isAiMode && <div className="absolute inset-0 bg-primary/10 rounded-[20px]" />}
+              <span className="relative z-10">{t('standardMode')}</span>
             </button>
             <button 
               type="button"
-              onClick={() => { setIsAiMode(true); setSearchMode("ai"); }}
+              onClick={() => { setIsAiMode(true); if (typeof setSearchMode === 'function') setSearchMode("ai"); }}
               className={cn(
-                "px-4 py-1.5 rounded-full text-xs font-black transition-all border flex items-center gap-1.5",
+                "relative px-4 sm:px-5 py-2.5 rounded-[20px] text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-all overflow-hidden whitespace-nowrap flex items-center gap-1.5",
                 isAiMode 
-                  ? "bg-primary text-primary-foreground border-primary neon-glow-teal shadow-lg" 
-                  : "bg-background text-muted-foreground border-border hover:bg-muted/40"
+                  ? "text-primary shadow-sm" 
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
+              {isAiMode && <div className="absolute inset-0 bg-primary/10 rounded-[20px]" />}
               <Sparkles size={12} className={cn(isAiMode ? "animate-pulse" : "")} />
-              <span>{t('aiMode')}</span>
+              <span className="relative z-10">{t('aiMode')}</span>
             </button>
           </div>
 
-          {/* Mode hint text */}
-          <p className="text-[11px] text-muted-foreground/60 font-medium mb-4 ml-1">
-            {isAiMode ? t('aiModeHint') : t('standardModeHint')}
-          </p>
-
           <div className="relative mb-6 group">
             <form onSubmit={handleSearchAddress} className="relative flex items-center">
-              <div className={cn(
-                "absolute left-4 pointer-events-none transition-colors",
-                isAiMode ? "text-primary animate-pulse" : "text-muted-foreground group-focus-within:text-primary"
-              )}>
-                 {isAiMode ? <Sparkles size={18} /> : <FiSearch size={18} />}
-              </div>
               <input
                 type="text"
                 placeholder={isAiMode 
@@ -826,24 +781,16 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
                 onFocus={() => setShowSuggestions(suggestions.length > 0)}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 className={cn(
-                  "w-full pl-12 pr-20 py-4 rounded-[20px] border-2 bg-background text-[15px] font-medium outline-none transition-all shadow-sm text-foreground placeholder:text-muted-foreground/50",
+                  "w-full pl-6 pr-12 py-4 rounded-[20px] border-2 bg-background text-[13px] font-semibold outline-none transition-all shadow-sm text-foreground placeholder:text-muted-foreground/50",
                   isAiMode 
                     ? "border-primary/50 focus:ring-4 focus:ring-primary/10 focus:border-primary" 
                     : "border-border/40 focus:ring-4 focus:ring-primary/10 focus:border-primary"
                 )}
-                style={{ minWidth: 0 }}
               />
-              {/* Action buttons (clear + search) */}
               <div className="absolute right-3 flex items-center gap-1">
-                {manualAddress && (
-                   <button type="button" onClick={clearSearch} className="p-1.5 hover:bg-muted rounded-full transition-colors">
-                      <FiX className="text-muted-foreground hover:text-foreground" size={16} />
-                   </button>
-                )}
                 <button 
                   type="submit" 
                   className="p-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-full transition-all active:scale-90"
-                  title={t('search')}
                 >
                   <FiSearch size={16} />
                 </button>
@@ -876,16 +823,11 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
             </AnimatePresence>
           </div>
 
-          <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-primary/5 text-primary text-xs font-black mb-8 border border-primary/10 uppercase tracking-widest overflow-hidden">
-            <div className="w-2 h-2 rounded-full bg-primary animate-ping shrink-0" />
-            <span className="truncate min-w-0">{loc.isNationwide ? "🇧🇩 All Bangladesh" : loc.selectedName}</span>
-          </div>
-
           <div className="mb-6 sm:mb-10 px-1">
             <div className="flex items-center justify-between text-[14px] font-black text-foreground mb-4 sm:mb-6 uppercase tracking-wider">
               <span>{t('radius')}</span>
-              <span className="text-primary bg-primary/10 px-3 py-1 rounded-lg">
-                {loc.isNationwide ? "∞" : `${loc.radius} km`}
+              <span className="text-primary bg-primary/10 px-3 py-1 rounded-full">
+                {bnNumber(loc.radius, lang)} km
               </span>
             </div>
             <Slider 
@@ -895,7 +837,6 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
               step={1}
               onValueChange={(v) => {
                 loc.setRadius(v[0]);
-                // If user drags radius, switch off nationwide mode
                 if (loc.isNationwide) loc.setNationwide(false);
               }} 
               className="py-2" 
@@ -947,21 +888,21 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
         {!isDrawer && (
           <div className="p-7 bg-background no-scrollbar">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="font-black text-2xl tracking-tighter text-foreground uppercase">{listings.length} {t('placesFound')}</h3>
+              <h3 className="font-black text-2xl tracking-tighter text-foreground uppercase">{bnNumber(listings?.length || 0, lang)} {t('placesFound')}</h3>
               <div className="h-1.5 w-16 bg-primary/20 rounded-full" />
             </div>
             
             {loading && <div className="space-y-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-40 skeleton rounded-[28px] shadow-sm border border-border/10" />)}</div>}
             
             <div className="space-y-6 pb-12">
-              {listings.slice(0, 100).map((l) => (
-                <ListingCard key={l.id} listing={l}
-                  distance={loc.userLat ? distKm(loc.userLat, loc.userLng, l.lat, l.lng) : null} />
+              {listings?.slice(0, 100).map((l) => (
+                <ListingCard key={l?.id || Math.random()} listing={l}
+                  distance={loc?.userLat ? distKm(loc.userLat, loc.userLng, l.lat, l.lng) : null} />
               ))}
               
-              {listings.length > 100 && (
+              {listings?.length > 100 && (
                 <div className="text-center py-6 text-muted-foreground text-[13px] font-bold tracking-tight bg-muted/20 rounded-[20px] border border-border/20">
-                  Showing top 100 of {listings.length} results.<br/>Explore the map to see more.
+                  Showing top {bnNumber(100, lang)} of {bnNumber(listings?.length || 0, lang)} results.<br/>Explore the map to see more.
                 </div>
               )}
               
