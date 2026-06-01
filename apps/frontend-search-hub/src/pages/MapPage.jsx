@@ -41,8 +41,8 @@ export default function MapPage() {
   const [isAiMode, setIsAiMode] = useState(!!params.get("ai_q"));
   const lastProcessedAiQ = React.useRef("");
   const skipFetchRef = React.useRef(false);
-  const aiSearchCenterRef = React.useRef(null);
   const listingsCache = React.useRef({});
+  const currentAbortController = React.useRef(null);
   const fetchDebounceRef = React.useRef(null);
   const hasShownNoResultsRef = React.useRef(false);
   
@@ -156,22 +156,31 @@ export default function MapPage() {
   const fetchListings = React.useCallback(async (forceRefresh = false) => {
     const aiQuery = params.get("ai_q");
 
+    // Cancel any pending request
+    if (currentAbortController.current) {
+      currentAbortController.current.abort();
+    }
+    const abortController = new AbortController();
+    currentAbortController.current = abortController;
+    const signal = abortController.signal;
+
     if (aiQuery) {
-      // AI mode — always fetch fresh, no cache
+      // AI mode
       setLoading(true);
       loc.setSearchActive(true);
       try {
         if (aiQuery === lastProcessedAiQ.current) {
           const isAll = !loc.category || loc.category === 'all';
-          const searchLat = aiSearchCenterRef.current?.lat || loc.selectedLat;
-          const searchLng = aiSearchCenterRef.current?.lng || loc.selectedLng;
-          const cacheKey = `ai_${loc.category}_${String(searchLat).slice(0,8)}_${String(searchLng).slice(0,8)}`;
+          // Fix 8: Cache key includes radius and query string
+          const cacheKey = `ai_${aiQuery}_${loc.category}_${String(loc.selectedLat).slice(0,8)}_${String(loc.selectedLng).slice(0,8)}_${loc.radius}`;
           if (!forceRefresh && listingsCache.current[cacheKey]) {
             setListings(listingsCache.current[cacheKey]);
+            setLoading(false);
             return;
           }
           const r = await api.get("/listings/search", {
-            params: { lat: searchLat, lng: searchLng, radius: loc.radius || 10, category: isAll ? undefined : loc.category, limit: 5000 },
+            params: { lat: loc.selectedLat, lng: loc.selectedLng, radius: loc.radius || 10, category: isAll ? undefined : loc.category, limit: 5000 },
+            signal
           });
           const data = r.data.listings || [];
           listingsCache.current[cacheKey] = data;
@@ -183,51 +192,49 @@ export default function MapPage() {
         hasShownNoResultsRef.current = false;
         const r = await api.post("/listings/ai-search", {
           query: aiQuery, userLat: loc.selectedLat, userLng: loc.selectedLng, radiusKm: loc.radius || 10
-        });
+        }, { signal });
+        
         const data = r.data.listings || [];
         setListings(data);
         lastProcessedAiQ.current = aiQuery;
         skipFetchRef.current = true;
 
-        // Handle location-detected vs nationwide
         if (r.data.locationDetected && r.data.searchCenter) {
-          // Location was found — focus map with returned radius (default 1km)
           loc.setNationwide(false);
-          aiSearchCenterRef.current = { lat: r.data.searchCenter.lat, lng: r.data.searchCenter.lng };
           loc.setSelected(r.data.searchCenter.lat, r.data.searchCenter.lng, r.data.searchCenter.displayName || "Search Center");
           if (r.data.radius && Number.isFinite(r.data.radius)) {
             loc.setRadius(r.data.radius);
           }
+          loc.triggerFocus();
         } else if (!r.data.locationDetected) {
-          // No location — nationwide search
           loc.setNationwide(true);
-          aiSearchCenterRef.current = null;
-          // Don't change map center, let MapUpdater fit to BD bounds
         } else if (data.length > 0) {
-          // Fallback: center on first result
           loc.setNationwide(false);
           const first = data[0];
-          aiSearchCenterRef.current = { lat: first.lat, lng: first.lng };
           loc.setSelected(first.lat, first.lng, first.area || first.title);
+          loc.triggerFocus();
         }
         if (r.data.intent?.category) loc.setCategory(r.data.intent.category);
       } catch (error) {
+        if (error.name === 'CanceledError' || error.message === 'canceled') return; // Ignore aborted requests
         console.error("Failed to load listings:", error);
         setListings([]);
         toast.error("Could not load map listings. Please make sure the backend is running.");
-      } finally { setLoading(false); }
+      } finally { 
+        if (currentAbortController.current === abortController) {
+          setLoading(false); 
+        }
+      }
       return;
     }
 
-    // Standard mode — use cache for instant category switching!
+    // Standard mode
     lastProcessedAiQ.current = "";
-    aiSearchCenterRef.current = null;
     loc.setNationwide(false);
     loc.setSearchActive(true);
     const isAll = !loc.category || loc.category === 'all';
     const cacheKey = `${loc.category || 'all'}_${String(loc.selectedLat).slice(0,8)}_${String(loc.selectedLng).slice(0,8)}_${loc.radius}`;
 
-    // Show cached results immediately (instant UI)
     if (!forceRefresh && listingsCache.current[cacheKey]) {
       setListings(listingsCache.current[cacheKey]);
       return;
@@ -243,16 +250,23 @@ export default function MapPage() {
           radius: loc.radius || 1,
           category: isAll ? undefined : loc.category,
           limit: 1000 // Ensure limit to map nodes
-        }
+        },
+        signal
       });
       const data = r.data.listings || [];
       listingsCache.current[cacheKey] = data; // Save to cache
       setListings(data);
     } catch (error) {
+      if (error.name === 'CanceledError' || error.message === 'canceled') return; // Ignore aborts
       console.error("Failed to load listings:", error);
       toast.error("Could not load map listings. Please make sure the backend is running.");
-    } finally { setLoading(false); }
+    } finally { 
+      if (currentAbortController.current === abortController) {
+        setLoading(false); 
+      }
+    }
   }, [loc.selectedLat, loc.selectedLng, loc.radius, loc.category, manualAddress, params]); // eslint-disable-line
+
 
   useEffect(() => {
     if (skipFetchRef.current) {
@@ -368,7 +382,6 @@ export default function MapPage() {
   // Helper: clear AI search state when switching to Standard mode or selecting a location manually
   const cleanAiState = React.useCallback(() => {
     lastProcessedAiQ.current = "";
-    aiSearchCenterRef.current = null;
     loc.setNationwide(false);
     const newParams = new URLSearchParams(params);
     if (newParams.has("ai_q")) {
@@ -617,6 +630,7 @@ export default function MapPage() {
             confirmBeforeClick={loc.searchActive}
             onConfirmClick={handleConfirmedMapClick}
             onClickMap={handleMapClick}
+            focusTrigger={loc.mapFocusTrigger}
           />
           
           <div className="md:hidden absolute bottom-24 right-4 z-[50]">
@@ -867,8 +881,8 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
             <span className="truncate min-w-0">{loc.isNationwide ? "🇧🇩 All Bangladesh" : loc.selectedName}</span>
           </div>
 
-          <div className="mb-10 px-1">
-            <div className="flex items-center justify-between text-[14px] font-black text-foreground mb-6 uppercase tracking-wider">
+          <div className="mb-6 sm:mb-10 px-1">
+            <div className="flex items-center justify-between text-[14px] font-black text-foreground mb-4 sm:mb-6 uppercase tracking-wider">
               <span>{t('radius')}</span>
               <span className="text-primary bg-primary/10 px-3 py-1 rounded-lg">
                 {loc.isNationwide ? "∞" : `${loc.radius} km`}
@@ -889,9 +903,9 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
             />
           </div>
 
-          <div className="mb-8">
-            <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-5 px-1">{t('categories')}</h3>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="mb-6 sm:mb-8">
+            <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4 sm:mb-5 px-1">{t('categories')}</h3>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {CATEGORIES.map((c) => {
                 const labels = { all: t('all'), flat: t('flatRental'), pharmacy: t('pharmacy'), hospital: t('hospital'), restaurant: t('restaurant'), service: t('service') };
                 const active = loc.category === c.key || (!loc.category && c.key === 'all');
@@ -900,30 +914,30 @@ function SidebarContent({ handleSearchAddress, manualAddress, setManualAddress, 
                     key={c.key}
                     onClick={() => loc.setCategory(c.key)}
                     className={cn(
-                      "px-4 py-4 rounded-[20px] text-[13px] font-black transition-all border-2 flex flex-col items-start gap-3 group relative overflow-hidden",
+                      "px-3 py-3 sm:px-4 sm:py-4 rounded-[16px] sm:rounded-[20px] text-[11px] sm:text-[13px] font-black transition-all border-2 flex flex-col items-start gap-2.5 sm:gap-3 group relative overflow-hidden",
                       active 
                         ? "bg-primary text-primary-foreground border-primary shadow-xl scale-[1.03] -translate-y-1" 
                         : "bg-background text-foreground border-border/60 hover:border-primary/40 hover:bg-muted/40"
                     )}
                   >
-                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center transition-all duration-300" style={{ backgroundColor: active ? 'rgba(255,255,255,0.2)' : `${c.color}20` }}>
-                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: active ? "white" : c.color }} />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-[10px] sm:rounded-[14px] flex items-center justify-center transition-all duration-300" style={{ backgroundColor: active ? 'rgba(255,255,255,0.2)' : `${c.color}20` }}>
+                       <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full" style={{ backgroundColor: active ? "white" : c.color }} />
                     </div>
-                    <span className={cn("text-left w-full", lang === 'bn' ? 'font-bengali' : 'uppercase tracking-tight')}>{labels[c.key]}</span>
+                    <span className={cn("text-left w-full truncate", lang === 'bn' ? 'font-bengali' : 'uppercase tracking-tight')}>{labels[c.key]}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          <Button variant="outline" className="w-full gap-3 py-8 rounded-[24px] border-2 border-border/60 font-black uppercase tracking-[0.1em] hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all group shadow-sm active:scale-95" onClick={useMyLocation}>
-            <FiNavigation size={20} className="group-hover:rotate-45 transition-transform" /> {t('useMyLocation')}
+          <Button variant="outline" className="w-full gap-3 py-6 sm:py-8 rounded-[18px] sm:rounded-[24px] border-2 border-border/60 font-black uppercase text-xs sm:text-sm tracking-[0.1em] hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all group shadow-sm active:scale-95" onClick={useMyLocation}>
+            <FiNavigation size={18} className="group-hover:rotate-45 transition-transform" /> {t('useMyLocation')}
           </Button>
 
-          <div className="mt-8 flex flex-wrap gap-2.5">
+          <div className="mt-6 sm:mt-8 flex flex-wrap gap-2 sm:gap-2.5">
             {POPULAR_AREAS.map((p) => (
               <button key={p.name} onClick={() => { loc.setNationwide(false); loc.setSelected(p.lat, p.lng, p.name); }}
-                className="px-4 py-2.5 rounded-xl text-[12px] font-black uppercase tracking-tighter bg-muted/40 hover:bg-primary hover:text-primary-foreground transition-all border border-border/40 shadow-sm active:scale-95 text-foreground">
+                className="px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-[11px] sm:text-[12px] font-black uppercase tracking-tighter bg-muted/40 hover:bg-primary hover:text-primary-foreground transition-all border border-border/40 shadow-sm active:scale-95 text-foreground">
                 {t(`popularAreas.${p.name.toLowerCase()}`)}
               </button>
             ))}

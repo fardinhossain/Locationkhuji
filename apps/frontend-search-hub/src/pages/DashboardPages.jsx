@@ -237,7 +237,7 @@ function ListingForm({ initial, onSubmit, submitLabel }) {
         <div className="text-xs mt-2 text-[var(--text-tertiary)]">Coords: {form.lat.toFixed(4)}, {form.lng.toFixed(4)}</div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Input placeholder="Phone" value={form.contact_phone} onChange={(e) => setForm({...form, contact_phone: e.target.value})} required />
         <Input placeholder="WhatsApp" value={form.contact_whatsapp} onChange={(e) => setForm({...form, contact_whatsapp: e.target.value})} />
         <Input placeholder="Email" type="email" value={form.contact_email} onChange={(e) => setForm({...form, contact_email: e.target.value})} />
@@ -247,12 +247,12 @@ function ListingForm({ initial, onSubmit, submitLabel }) {
       <div className="p-4 rounded-lg bg-[var(--bg-elevated)]">
         <div className="font-semibold text-sm mb-3">Details ({form.category})</div>
         {form.category === "flat" && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input placeholder="Bedrooms" type="number" onChange={(e) => setDetail("bedrooms", +e.target.value)} value={form.details.bedrooms || ""}/>
             <Input placeholder="Bathrooms" type="number" onChange={(e) => setDetail("bathrooms", +e.target.value)} value={form.details.bathrooms || ""}/>
             <Input placeholder="Area sqft" type="number" onChange={(e) => setDetail("area_sqft", +e.target.value)} value={form.details.area_sqft || ""}/>
             <Input placeholder="Rent (BDT/mo)" type="number" onChange={(e) => setDetail("rent_price", +e.target.value)} value={form.details.rent_price || ""}/>
-            <label className="flex items-center gap-2 text-sm col-span-2"><input type="checkbox" checked={!!form.details.furnished} onChange={(e) => setDetail("furnished", e.target.checked)}/> Furnished</label>
+            <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" checked={!!form.details.furnished} onChange={(e) => setDetail("furnished", e.target.checked)}/> Furnished</label>
           </div>
         )}
         {form.category === "pharmacy" && (
@@ -347,7 +347,7 @@ export function OwnerDashboard() {
           <h1 className="font-sora font-bold text-2xl">Owner Dashboard</h1>
           <Link to="/owner/listings/add" data-testid="add-listing-btn"><Button className="bg-primary text-white">+ Add Listing</Button></Link>
         </div>
-        <div className="grid sm:grid-cols-3 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
           <StatCard label="Total" value={stats.total} color="#6366F1"/>
           <StatCard label="Active" value={stats.active} color="#10B981"/>
         </div>
@@ -453,7 +453,7 @@ export function UserDashboard() {
           <h1 className="font-sora font-bold text-3xl">Welcome, {user?.name}! 👋</h1>
           <p className="mt-2 opacity-80">Discover places near you</p>
         </div>
-        <div className="grid sm:grid-cols-3 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
           <StatCard label="Saved" value={user?.saved_listings?.length || 0} color="#00C9A7"/>
           <Link to="/map" className="bg-[var(--bg-surface)] border border-[var(--border-light)] rounded-xl p-5 hover:-translate-y-1 transition">
             <div className="font-sora font-semibold">Open Map →</div>
@@ -489,7 +489,7 @@ export function AdminDashboard() {
       <div className="max-w-[1280px] mx-auto px-6 py-8">
         <h1 className="font-sora font-bold text-2xl">Admin Dashboard</h1>
         {stats && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
             <StatCard label="Total Users" value={stats.total_users} color="#6366F1"/>
             <StatCard label="Owners" value={stats.total_owners} color="#00C9A7"/>
             <StatCard label="Listings" value={stats.total_listings} color="#10B981"/>
@@ -520,7 +520,7 @@ export function AdminUsersPage() {
       <Navbar />
       <div className="max-w-[1280px] mx-auto px-6 py-8">
         <h1 className="font-sora font-bold text-2xl mb-6">Manage Users</h1>
-        <div className="bg-[var(--bg-surface)] border border-[var(--border-light)] rounded-xl overflow-hidden">
+        <div className="bg-[var(--bg-surface)] border border-[var(--border-light)] rounded-xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-[var(--bg-elevated)] text-left">
               <tr><th className="p-3">Name</th><th className="p-3">Email</th><th className="p-3">Role</th><th className="p-3">Status</th><th className="p-3"></th></tr>

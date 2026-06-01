@@ -1,0 +1,514 @@
+[
+  {
+    "id": 1,
+    "name": "Barguna",
+    "bnName": "বরগুনা",
+    "slug": "barguna",
+    "divisionId": 5,
+    "coordinates": { "latitude": 22.0953, "longitude": 90.1121 }
+  },
+  {
+    "id": 2,
+    "name": "Barishal",
+    "bnName": "বরিশাল",
+    "slug": "barishal",
+    "divisionId": 5,
+    "coordinates": { "latitude": 22.701, "longitude": 90.3535 }
+  },
+  {
+    "id": 3,
+    "name": "Bhola",
+    "bnName": "ভোলা",
+    "slug": "bhola",
+    "divisionId": 5,
+    "coordinates": { "latitude": 22.6859, "longitude": 90.6482 }
+  },
+  {
+    "id": 4,
+    "name": "Jhalokati",
+    "bnName": "ঝালকাঠি",
+    "slug": "jhalokati",
+    "divisionId": 5,
+    "coordinates": { "latitude": 22.6406, "longitude": 90.1987 }
+  },
+  {
+    "id": 5,
+    "name": "Patuakhali",
+    "bnName": "পটুয়াখালী",
+    "slug": "patuakhali",
+    "divisionId": 5,
+    "coordinates": { "latitude": 22.3596, "longitude": 90.3299 }
+  },
+  {
+    "id": 6,
+    "name": "Pirojpur",
+    "bnName": "পিরোজপুর",
+    "slug": "pirojpur",
+    "divisionId": 5,
+    "coordinates": { "latitude": 22.5791, "longitude": 89.9759 }
+  },
+  {
+    "id": 7,
+    "name": "Bandarban",
+    "bnName": "বান্দরবান",
+    "slug": "bandarban",
+    "divisionId": 2,
+    "coordinates": { "latitude": 22.1953, "longitude": 92.2186 }
+  },
+  {
+    "id": 8,
+    "name": "Brahmanbaria",
+    "bnName": "ব্রাহ্মণবাড়িয়া",
+    "slug": "brahmanbaria",
+    "divisionId": 2,
+    "coordinates": { "latitude": 23.9571, "longitude": 91.1115 }
+  },
+  {
+    "id": 9,
+    "name": "Chandpur",
+    "bnName": "চাঁদপুর",
+    "slug": "chandpur",
+    "divisionId": 2,
+    "coordinates": { "latitude": 23.2513, "longitude": 90.8518 }
+  },
+  {
+    "id": 10,
+    "name": "Chattogram",
+    "bnName": "চট্টগ্রাম",
+    "slug": "chattogram",
+    "divisionId": 2,
+    "coordinates": { "latitude": 22.3569, "longitude": 91.7832 }
+  },
+  {
+    "id": 11,
+    "name": "Cumilla",
+    "bnName": "কুমিল্লা",
+    "slug": "cumilla",
+    "divisionId": 2,
+    "coordinates": { "latitude": 23.4607, "longitude": 91.1809 }
+  },
+  {
+    "id": 12,
+    "name": "Cox's Bazar",
+    "bnName": "কক্সবাজার",
+    "slug": "coxs_bazar",
+    "divisionId": 2,
+    "coordinates": { "latitude": 21.4272, "longitude": 92.0058 }
+  },
+  {
+    "id": 13,
+    "name": "Feni",
+    "bnName": "ফেনী",
+    "slug": "feni",
+    "divisionId": 2,
+    "coordinates": { "latitude": 23.0159, "longitude": 91.3976 }
+  },
+  {
+    "id": 14,
+    "name": "Khagrachhari",
+    "bnName": "খাগড়াছড়ি",
+    "slug": "khagrachhari",
+    "divisionId": 2,
+    "coordinates": { "latitude": 23.1193, "longitude": 91.9847 }
+  },
+  {
+    "id": 15,
+    "name": "Lakshmipur",
+    "bnName": "লক্ষ্মীপুর",
+    "slug": "lakshmipur",
+    "divisionId": 2,
+    "coordinates": { "latitude": 22.9447, "longitude": 90.8282 }
+  },
+  {
+    "id": 16,
+    "name": "Noakhali",
+    "bnName": "নোয়াখালী",
+    "slug": "noakhali",
+    "divisionId": 2,
+    "coordinates": { "latitude": 22.8696, "longitude": 91.0995 }
+  },
+  {
+    "id": 17,
+    "name": "Rangamati",
+    "bnName": "রাঙ্গামাটি",
+    "slug": "rangamati",
+    "divisionId": 2,
+    "coordinates": { "latitude": 22.6537, "longitude": 92.1714 }
+  },
+  {
+    "id": 18,
+    "name": "Dhaka",
+    "bnName": "ঢাকা",
+    "slug": "dhaka",
+    "divisionId": 1,
+    "coordinates": { "latitude": 23.8103, "longitude": 90.4125 }
+  },
+  {
+    "id": 19,
+    "name": "Faridpur",
+    "bnName": "ফরিদপুর",
+    "slug": "faridpur",
+    "divisionId": 1,
+    "coordinates": { "latitude": 23.6071, "longitude": 89.8429 }
+  },
+  {
+    "id": 20,
+    "name": "Gazipur",
+    "bnName": "গাজীপুর",
+    "slug": "gazipur",
+    "divisionId": 1,
+    "coordinates": { "latitude": 23.9999, "longitude": 90.4203 }
+  },
+  {
+    "id": 21,
+    "name": "Gopalganj",
+    "bnName": "গোপালগঞ্জ",
+    "slug": "gopalganj",
+    "divisionId": 1,
+    "coordinates": { "latitude": 23.0051, "longitude": 89.8266 }
+  },
+  {
+    "id": 22,
+    "name": "Kishoreganj",
+    "bnName": "কিশোরগঞ্জ",
+    "slug": "kishoreganj",
+    "divisionId": 1,
+    "coordinates": { "latitude": 24.4449, "longitude": 90.7766 }
+  },
+  {
+    "id": 23,
+    "name": "Madaripur",
+    "bnName": "মাদারীপুর",
+    "slug": "madaripur",
+    "divisionId": 1,
+    "coordinates": { "latitude": 23.1642, "longitude": 90.1896 }
+  },
+  {
+    "id": 24,
+    "name": "Manikganj",
+    "bnName": "মানিকগঞ্জ",
+    "slug": "manikganj",
+    "divisionId": 1,
+    "coordinates": { "latitude": 23.8617, "longitude": 90.0003 }
+  },
+  {
+    "id": 25,
+    "name": "Munshiganj",
+    "bnName": "মুন্সিগঞ্জ",
+    "slug": "munshiganj",
+    "divisionId": 1,
+    "coordinates": { "latitude": 23.4981, "longitude": 90.4127 }
+  },
+  {
+    "id": 26,
+    "name": "Narayanganj",
+    "bnName": "নারায়ণগঞ্জ",
+    "slug": "narayanganj",
+    "divisionId": 1,
+    "coordinates": { "latitude": 23.6238, "longitude": 90.5 }
+  },
+  {
+    "id": 27,
+    "name": "Narsingdi",
+    "bnName": "নরসিংদী",
+    "slug": "narsingdi",
+    "divisionId": 1,
+    "coordinates": { "latitude": 23.9322, "longitude": 90.7151 }
+  },
+  {
+    "id": 28,
+    "name": "Rajbari",
+    "bnName": "রাজবাড়ী",
+    "slug": "rajbari",
+    "divisionId": 1,
+    "coordinates": { "latitude": 23.7574, "longitude": 89.6445 }
+  },
+  {
+    "id": 29,
+    "name": "Shariatpur",
+    "bnName": "শরীয়তপুর",
+    "slug": "shariatpur",
+    "divisionId": 1,
+    "coordinates": { "latitude": 23.2423, "longitude": 90.4348 }
+  },
+  {
+    "id": 30,
+    "name": "Tangail",
+    "bnName": "টাঙ্গাইল",
+    "slug": "tangail",
+    "divisionId": 1,
+    "coordinates": { "latitude": 24.2513, "longitude": 89.9167 }
+  },
+  {
+    "id": 31,
+    "name": "Bagerhat",
+    "bnName": "বাগেরহাট",
+    "slug": "bagerhat",
+    "divisionId": 4,
+    "coordinates": { "latitude": 22.6512, "longitude": 89.7851 }
+  },
+  {
+    "id": 32,
+    "name": "Chuadanga",
+    "bnName": "চুয়াডাঙ্গা",
+    "slug": "chuadanga",
+    "divisionId": 4,
+    "coordinates": { "latitude": 23.6401, "longitude": 88.8418 }
+  },
+  {
+    "id": 33,
+    "name": "Jashore",
+    "bnName": "যশোর",
+    "slug": "jashore",
+    "divisionId": 4,
+    "coordinates": { "latitude": 23.1634, "longitude": 89.2182 }
+  },
+  {
+    "id": 34,
+    "name": "Jhenaidah",
+    "bnName": "ঝিনাইদহ",
+    "slug": "jhenaidah",
+    "divisionId": 4,
+    "coordinates": { "latitude": 23.5448, "longitude": 89.1539 }
+  },
+  {
+    "id": 35,
+    "name": "Khulna",
+    "bnName": "খুলনা",
+    "slug": "khulna",
+    "divisionId": 4,
+    "coordinates": { "latitude": 22.8456, "longitude": 89.5403 }
+  },
+  {
+    "id": 36,
+    "name": "Kushtia",
+    "bnName": "কুষ্টিয়া",
+    "slug": "kushtia",
+    "divisionId": 4,
+    "coordinates": { "latitude": 23.9013, "longitude": 89.1205 }
+  },
+  {
+    "id": 37,
+    "name": "Magura",
+    "bnName": "মাগুরা",
+    "slug": "magura",
+    "divisionId": 4,
+    "coordinates": { "latitude": 23.4873, "longitude": 89.419 }
+  },
+  {
+    "id": 38,
+    "name": "Meherpur",
+    "bnName": "মেহেরপুর",
+    "slug": "meherpur",
+    "divisionId": 4,
+    "coordinates": { "latitude": 23.7627, "longitude": 88.6318 }
+  },
+  {
+    "id": 39,
+    "name": "Narail",
+    "bnName": "নড়াইল",
+    "slug": "narail",
+    "divisionId": 4,
+    "coordinates": { "latitude": 23.1725, "longitude": 89.4951 }
+  },
+  {
+    "id": 40,
+    "name": "Satkhira",
+    "bnName": "সাতক্ষীরা",
+    "slug": "satkhira",
+    "divisionId": 4,
+    "coordinates": { "latitude": 22.7185, "longitude": 89.0705 }
+  },
+  {
+    "id": 41,
+    "name": "Jamalpur",
+    "bnName": "জামালপুর",
+    "slug": "jamalpur",
+    "divisionId": 8,
+    "coordinates": { "latitude": 24.9366, "longitude": 89.9375 }
+  },
+  {
+    "id": 42,
+    "name": "Mymensingh",
+    "bnName": "ময়মনসিংহ",
+    "slug": "mymensingh",
+    "divisionId": 8,
+    "coordinates": { "latitude": 24.7471, "longitude": 90.4203 }
+  },
+  {
+    "id": 43,
+    "name": "Netrokona",
+    "bnName": "নেত্রকোনা",
+    "slug": "netrokona",
+    "divisionId": 8,
+    "coordinates": { "latitude": 24.8703, "longitude": 90.7277 }
+  },
+  {
+    "id": 44,
+    "name": "Sherpur",
+    "bnName": "শেরপুর",
+    "slug": "sherpur",
+    "divisionId": 8,
+    "coordinates": { "latitude": 25.0204, "longitude": 90.0152 }
+  },
+  {
+    "id": 45,
+    "name": "Bogura",
+    "bnName": "বগুড়া",
+    "slug": "bogura",
+    "divisionId": 3,
+    "coordinates": { "latitude": 24.8466, "longitude": 89.3773 }
+  },
+  {
+    "id": 46,
+    "name": "Chapainawabganj",
+    "bnName": "চাঁপাইনবাবগঞ্জ",
+    "slug": "chapainawabganj",
+    "divisionId": 3,
+    "coordinates": { "latitude": 24.7413, "longitude": 88.2682 }
+  },
+  {
+    "id": 47,
+    "name": "Joypurhat",
+    "bnName": "জয়পুরহাট",
+    "slug": "joypurhat",
+    "divisionId": 3,
+    "coordinates": { "latitude": 25.0968, "longitude": 89.0227 }
+  },
+  {
+    "id": 48,
+    "name": "Naogaon",
+    "bnName": "নওগাঁ",
+    "slug": "naogaon",
+    "divisionId": 3,
+    "coordinates": { "latitude": 24.7936, "longitude": 88.9318 }
+  },
+  {
+    "id": 49,
+    "name": "Natore",
+    "bnName": "নাটোর",
+    "slug": "natore",
+    "divisionId": 3,
+    "coordinates": { "latitude": 24.4206, "longitude": 89.0076 }
+  },
+  {
+    "id": 50,
+    "name": "Pabna",
+    "bnName": "পাবনা",
+    "slug": "pabna",
+    "divisionId": 3,
+    "coordinates": { "latitude": 24.0064, "longitude": 89.2372 }
+  },
+  {
+    "id": 51,
+    "name": "Rajshahi",
+    "bnName": "রাজশাহী",
+    "slug": "rajshahi",
+    "divisionId": 3,
+    "coordinates": { "latitude": 24.3636, "longitude": 88.6241 }
+  },
+  {
+    "id": 52,
+    "name": "Sirajganj",
+    "bnName": "সিরাজগঞ্জ",
+    "slug": "sirajganj",
+    "divisionId": 3,
+    "coordinates": { "latitude": 24.4534, "longitude": 89.7006 }
+  },
+  {
+    "id": 53,
+    "name": "Dinajpur",
+    "bnName": "দিনাজপুর",
+    "slug": "dinajpur",
+    "divisionId": 7,
+    "coordinates": { "latitude": 25.6217, "longitude": 88.6354 }
+  },
+  {
+    "id": 54,
+    "name": "Gaibandha",
+    "bnName": "গাইবান্ধা",
+    "slug": "gaibandha",
+    "divisionId": 7,
+    "coordinates": { "latitude": 25.3288, "longitude": 89.5282 }
+  },
+  {
+    "id": 55,
+    "name": "Kurigram",
+    "bnName": "কুড়িগ্রাম",
+    "slug": "kurigram",
+    "divisionId": 7,
+    "coordinates": { "latitude": 25.8072, "longitude": 89.6295 }
+  },
+  {
+    "id": 56,
+    "name": "Lalmonirhat",
+    "bnName": "লালমনিরহাট",
+    "slug": "lalmonirhat",
+    "divisionId": 7,
+    "coordinates": { "latitude": 25.9923, "longitude": 89.2847 }
+  },
+  {
+    "id": 57,
+    "name": "Nilphamari",
+    "bnName": "নীলফামারী",
+    "slug": "nilphamari",
+    "divisionId": 7,
+    "coordinates": { "latitude": 25.9316, "longitude": 88.856 }
+  },
+  {
+    "id": 58,
+    "name": "Panchagarh",
+    "bnName": "পঞ্চগড়",
+    "slug": "panchagarh",
+    "divisionId": 7,
+    "coordinates": { "latitude": 26.3411, "longitude": 88.5541 }
+  },
+  {
+    "id": 59,
+    "name": "Rangpur",
+    "bnName": "রংপুর",
+    "slug": "rangpur",
+    "divisionId": 7,
+    "coordinates": { "latitude": 25.7439, "longitude": 89.2752 }
+  },
+  {
+    "id": 60,
+    "name": "Thakurgaon",
+    "bnName": "ঠাকুরগাঁও",
+    "slug": "thakurgaon",
+    "divisionId": 7,
+    "coordinates": { "latitude": 26.0418, "longitude": 88.4283 }
+  },
+  {
+    "id": 61,
+    "name": "Habiganj",
+    "bnName": "হবিগঞ্জ",
+    "slug": "habiganj",
+    "divisionId": 6,
+    "coordinates": { "latitude": 24.374, "longitude": 91.4163 }
+  },
+  {
+    "id": 62,
+    "name": "Moulvibazar",
+    "bnName": "মৌলভীবাজার",
+    "slug": "moulvibazar",
+    "divisionId": 6,
+    "coordinates": { "latitude": 24.4829, "longitude": 91.7774 }
+  },
+  {
+    "id": 63,
+    "name": "Sunamganj",
+    "bnName": "সুনামগঞ্জ",
+    "slug": "sunamganj",
+    "divisionId": 6,
+    "coordinates": { "latitude": 25.0658, "longitude": 91.3954 }
+  },
+  {
+    "id": 64,
+    "name": "Sylhet",
+    "bnName": "সিলেট",
+    "slug": "sylhet",
+    "divisionId": 6,
+    "coordinates": { "latitude": 24.8949, "longitude": 91.8687 }
+  }
+]

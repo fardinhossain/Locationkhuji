@@ -1,0 +1,3467 @@
+[
+  {
+    "id": 1,
+    "name": "Amtali",
+    "bnName": "আমতলী",
+    "slug": "amtali",
+    "districtId": 1
+  },
+  {
+    "id": 2,
+    "name": "Bamna",
+    "bnName": "বামনা",
+    "slug": "bamna",
+    "districtId": 1
+  },
+  {
+    "id": 3,
+    "name": "Barguna Sadar",
+    "bnName": "বরগুনা সদর",
+    "slug": "barguna_sadar",
+    "districtId": 1
+  },
+  {
+    "id": 4,
+    "name": "Betagi",
+    "bnName": "বেতাগী",
+    "slug": "betagi",
+    "districtId": 1
+  },
+  {
+    "id": 5,
+    "name": "Patharghata",
+    "bnName": "পাথরঘাটা",
+    "slug": "patharghata",
+    "districtId": 1
+  },
+  {
+    "id": 6,
+    "name": "Taltali",
+    "bnName": "তালতলী",
+    "slug": "taltali",
+    "districtId": 1
+  },
+  {
+    "id": 7,
+    "name": "Agailjhara",
+    "bnName": "আগৈলঝাড়া",
+    "slug": "agailjhara",
+    "districtId": 2
+  },
+  {
+    "id": 8,
+    "name": "Babuganj",
+    "bnName": "বাবুগঞ্জ",
+    "slug": "babuganj",
+    "districtId": 2
+  },
+  {
+    "id": 9,
+    "name": "Bakerganj",
+    "bnName": "বাকেরগঞ্জ",
+    "slug": "bakerganj",
+    "districtId": 2
+  },
+  {
+    "id": 10,
+    "name": "Banaripara",
+    "bnName": "বানারীপাড়া",
+    "slug": "banaripara",
+    "districtId": 2
+  },
+  {
+    "id": 11,
+    "name": "Barishal Sadar",
+    "bnName": "বরিশাল সদর",
+    "slug": "barishal_sadar",
+    "districtId": 2
+  },
+  {
+    "id": 12,
+    "name": "Gaurnadi",
+    "bnName": "গৌরনদী",
+    "slug": "gaurnadi",
+    "districtId": 2
+  },
+  {
+    "id": 13,
+    "name": "Hizla",
+    "bnName": "হিজলা",
+    "slug": "hizla",
+    "districtId": 2
+  },
+  {
+    "id": 14,
+    "name": "Mehendiganj",
+    "bnName": "মেহেন্দিগঞ্জ",
+    "slug": "mehendiganj",
+    "districtId": 2
+  },
+  {
+    "id": 15,
+    "name": "Muladi",
+    "bnName": "মুলাদী",
+    "slug": "muladi",
+    "districtId": 2
+  },
+  {
+    "id": 16,
+    "name": "Wazirpur",
+    "bnName": "উজিরপুর",
+    "slug": "wazirpur",
+    "districtId": 2
+  },
+  {
+    "id": 17,
+    "name": "Bhola Sadar",
+    "bnName": "ভোলা সদর",
+    "slug": "bhola_sadar",
+    "districtId": 3
+  },
+  {
+    "id": 18,
+    "name": "Burhanuddin",
+    "bnName": "বুরহানউদ্দিন",
+    "slug": "burhanuddin",
+    "districtId": 3
+  },
+  {
+    "id": 19,
+    "name": "Char Fasson",
+    "bnName": "চরফ্যাশন",
+    "slug": "char_fasson",
+    "districtId": 3
+  },
+  {
+    "id": 20,
+    "name": "Daulatkhan",
+    "bnName": "দৌলতখান",
+    "slug": "daulatkhan",
+    "districtId": 3
+  },
+  {
+    "id": 21,
+    "name": "Lalmohan",
+    "bnName": "লালমোহন",
+    "slug": "lalmohan",
+    "districtId": 3
+  },
+  {
+    "id": 22,
+    "name": "Manpura",
+    "bnName": "মনপুরা",
+    "slug": "manpura",
+    "districtId": 3
+  },
+  {
+    "id": 23,
+    "name": "Tazumuddin",
+    "bnName": "তজুমুদ্দিন",
+    "slug": "tazumuddin",
+    "districtId": 3
+  },
+  {
+    "id": 24,
+    "name": "Jhalokati Sadar",
+    "bnName": "ঝালকাঠি সদর",
+    "slug": "jhalokati_sadar",
+    "districtId": 4
+  },
+  {
+    "id": 25,
+    "name": "Kathalia",
+    "bnName": "কাঠালিয়া",
+    "slug": "kathalia",
+    "districtId": 4
+  },
+  {
+    "id": 26,
+    "name": "Nalchity",
+    "bnName": "নলছিটি",
+    "slug": "nalchity",
+    "districtId": 4
+  },
+  {
+    "id": 27,
+    "name": "Rajapur",
+    "bnName": "রাজাপুর",
+    "slug": "rajapur",
+    "districtId": 4
+  },
+  {
+    "id": 28,
+    "name": "Bauphal",
+    "bnName": "বাউফল",
+    "slug": "bauphal",
+    "districtId": 5
+  },
+  {
+    "id": 29,
+    "name": "Dashmina",
+    "bnName": "দশমিনা",
+    "slug": "dashmina",
+    "districtId": 5
+  },
+  {
+    "id": 30,
+    "name": "Dumki",
+    "bnName": "দুমকি",
+    "slug": "dumki",
+    "districtId": 5
+  },
+  {
+    "id": 31,
+    "name": "Galachipa",
+    "bnName": "গলাচিপা",
+    "slug": "galachipa",
+    "districtId": 5
+  },
+  {
+    "id": 32,
+    "name": "Kalapara",
+    "bnName": "কলাপাড়া",
+    "slug": "kalapara",
+    "districtId": 5
+  },
+  {
+    "id": 33,
+    "name": "Mirzaganj",
+    "bnName": "মির্জাগঞ্জ",
+    "slug": "mirzaganj",
+    "districtId": 5
+  },
+  {
+    "id": 34,
+    "name": "Patuakhali Sadar",
+    "bnName": "পটুয়াখালী সদর",
+    "slug": "patuakhali_sadar",
+    "districtId": 5
+  },
+  {
+    "id": 35,
+    "name": "Rangabali",
+    "bnName": "রাঙ্গাবালী",
+    "slug": "rangabali",
+    "districtId": 5
+  },
+  {
+    "id": 36,
+    "name": "Bhandaria",
+    "bnName": "ভাণ্ডারিয়া",
+    "slug": "bhandaria",
+    "districtId": 6
+  },
+  {
+    "id": 37,
+    "name": "Indurkani",
+    "bnName": "ইন্দুরকানী",
+    "slug": "indurkani",
+    "districtId": 6
+  },
+  {
+    "id": 38,
+    "name": "Kawkhali",
+    "bnName": "কাউখালী",
+    "slug": "kawkhali_pirojpur",
+    "districtId": 6
+  },
+  {
+    "id": 39,
+    "name": "Mathbaria",
+    "bnName": "মঠবাড়িয়া",
+    "slug": "mathbaria",
+    "districtId": 6
+  },
+  {
+    "id": 40,
+    "name": "Nazirpur",
+    "bnName": "নাজিরপুর",
+    "slug": "nazirpur",
+    "districtId": 6
+  },
+  {
+    "id": 41,
+    "name": "Nesarabad",
+    "bnName": "নেছারাবাদ",
+    "slug": "nesarabad",
+    "districtId": 6
+  },
+  {
+    "id": 42,
+    "name": "Pirojpur Sadar",
+    "bnName": "পিরোজপুর সদর",
+    "slug": "pirojpur_sadar",
+    "districtId": 6
+  },
+  {
+    "id": 43,
+    "name": "Ali Kadam",
+    "bnName": "আলীকদম",
+    "slug": "ali_kadam",
+    "districtId": 7
+  },
+  {
+    "id": 44,
+    "name": "Bandarban Sadar",
+    "bnName": "বান্দরবান সদর",
+    "slug": "bandarban_sadar",
+    "districtId": 7
+  },
+  {
+    "id": 45,
+    "name": "Lama",
+    "bnName": "লামা",
+    "slug": "lama",
+    "districtId": 7
+  },
+  {
+    "id": 46,
+    "name": "Naikhongchhari",
+    "bnName": "নাইক্ষ্যংছড়ি",
+    "slug": "naikhongchhari",
+    "districtId": 7
+  },
+  {
+    "id": 47,
+    "name": "Rowangchhari",
+    "bnName": "রোয়াংছড়ি",
+    "slug": "rowangchhari",
+    "districtId": 7
+  },
+  {
+    "id": 48,
+    "name": "Ruma",
+    "bnName": "রুমা",
+    "slug": "ruma",
+    "districtId": 7
+  },
+  {
+    "id": 49,
+    "name": "Thanchi",
+    "bnName": "থানচি",
+    "slug": "thanchi",
+    "districtId": 7
+  },
+  {
+    "id": 50,
+    "name": "Akhaura",
+    "bnName": "আখাউড়া",
+    "slug": "akhaura",
+    "districtId": 8
+  },
+  {
+    "id": 51,
+    "name": "Ashuganj",
+    "bnName": "আশুগঞ্জ",
+    "slug": "ashuganj",
+    "districtId": 8
+  },
+  {
+    "id": 52,
+    "name": "Bancharampur",
+    "bnName": "বাঞ্ছারামপুর",
+    "slug": "bancharampur",
+    "districtId": 8
+  },
+  {
+    "id": 53,
+    "name": "Bijoynagar",
+    "bnName": "বিজয়নগর",
+    "slug": "bijoynagar",
+    "districtId": 8
+  },
+  {
+    "id": 54,
+    "name": "Brahmanbaria Sadar",
+    "bnName": "ব্রাহ্মণবাড়িয়া সদর",
+    "slug": "brahmanbaria_sadar",
+    "districtId": 8
+  },
+  {
+    "id": 55,
+    "name": "Kasba",
+    "bnName": "কসবা",
+    "slug": "kasba",
+    "districtId": 8
+  },
+  {
+    "id": 56,
+    "name": "Nabinagar",
+    "bnName": "নবীনগর",
+    "slug": "nabinagar",
+    "districtId": 8
+  },
+  {
+    "id": 57,
+    "name": "Nasirnagar",
+    "bnName": "নাসিরনগর",
+    "slug": "nasirnagar",
+    "districtId": 8
+  },
+  {
+    "id": 58,
+    "name": "Sarail",
+    "bnName": "সরাইল",
+    "slug": "sarail",
+    "districtId": 8
+  },
+  {
+    "id": 59,
+    "name": "Chandpur Sadar",
+    "bnName": "চাঁদপুর সদর",
+    "slug": "chandpur_sadar",
+    "districtId": 9
+  },
+  {
+    "id": 60,
+    "name": "Faridganj",
+    "bnName": "ফরিদগঞ্জ",
+    "slug": "faridganj",
+    "districtId": 9
+  },
+  {
+    "id": 61,
+    "name": "Haimchar",
+    "bnName": "হাইমচর",
+    "slug": "haimchar",
+    "districtId": 9
+  },
+  {
+    "id": 62,
+    "name": "Haziganj",
+    "bnName": "হাজীগঞ্জ",
+    "slug": "haziganj",
+    "districtId": 9
+  },
+  {
+    "id": 63,
+    "name": "Kachua",
+    "bnName": "কচুয়া",
+    "slug": "kachua_chandpur",
+    "districtId": 9
+  },
+  {
+    "id": 64,
+    "name": "Matlab Dakshin",
+    "bnName": "মতলব দক্ষিণ",
+    "slug": "matlab_dakshin",
+    "districtId": 9
+  },
+  {
+    "id": 65,
+    "name": "Matlab Uttar",
+    "bnName": "মতলব উত্তর",
+    "slug": "matlab_uttar",
+    "districtId": 9
+  },
+  {
+    "id": 66,
+    "name": "Shahrasti",
+    "bnName": "শাহরাস্তি",
+    "slug": "shahrasti",
+    "districtId": 9
+  },
+  {
+    "id": 67,
+    "name": "Anwara",
+    "bnName": "আনোয়ারা",
+    "slug": "anwara",
+    "districtId": 10
+  },
+  {
+    "id": 68,
+    "name": "Banshkhali",
+    "bnName": "বাঁশখালী",
+    "slug": "banshkhali",
+    "districtId": 10
+  },
+  {
+    "id": 69,
+    "name": "Boalkhali",
+    "bnName": "বোয়ালখালী",
+    "slug": "boalkhali",
+    "districtId": 10
+  },
+  {
+    "id": 70,
+    "name": "Chandanaish",
+    "bnName": "চন্দনাইশ",
+    "slug": "chandanaish",
+    "districtId": 10
+  },
+  {
+    "id": 71,
+    "name": "Fatikchhari",
+    "bnName": "ফটিকছড়ি",
+    "slug": "fatikchhari",
+    "districtId": 10
+  },
+  {
+    "id": 72,
+    "name": "Hathazari",
+    "bnName": "হাটহাজারী",
+    "slug": "hathazari",
+    "districtId": 10
+  },
+  {
+    "id": 73,
+    "name": "Karnaphuli",
+    "bnName": "কর্ণফুলী",
+    "slug": "karnaphuli",
+    "districtId": 10
+  },
+  {
+    "id": 74,
+    "name": "Lohagara",
+    "bnName": "লোহাগাড়া",
+    "slug": "lohagara_chattogram",
+    "districtId": 10
+  },
+  {
+    "id": 75,
+    "name": "Mirsharai",
+    "bnName": "মীরসরাই",
+    "slug": "mirsharai",
+    "districtId": 10
+  },
+  {
+    "id": 76,
+    "name": "Patiya",
+    "bnName": "পটিয়া",
+    "slug": "patiya",
+    "districtId": 10
+  },
+  {
+    "id": 77,
+    "name": "Rangunia",
+    "bnName": "রাঙ্গুনিয়া",
+    "slug": "rangunia",
+    "districtId": 10
+  },
+  {
+    "id": 78,
+    "name": "Raozan",
+    "bnName": "রাউজান",
+    "slug": "raozan",
+    "districtId": 10
+  },
+  {
+    "id": 79,
+    "name": "Sandwip",
+    "bnName": "সন্দ্বীপ",
+    "slug": "sandwip",
+    "districtId": 10
+  },
+  {
+    "id": 80,
+    "name": "Satkania",
+    "bnName": "সাতকানিয়া",
+    "slug": "satkania",
+    "districtId": 10
+  },
+  {
+    "id": 81,
+    "name": "Sitakunda",
+    "bnName": "সীতাকুণ্ড",
+    "slug": "sitakunda",
+    "districtId": 10
+  },
+  {
+    "id": 82,
+    "name": "Barura",
+    "bnName": "বরুড়া",
+    "slug": "barura",
+    "districtId": 11
+  },
+  {
+    "id": 83,
+    "name": "Brahmanpara",
+    "bnName": "ব্রাহ্মণপাড়া",
+    "slug": "brahmanpara",
+    "districtId": 11
+  },
+  {
+    "id": 84,
+    "name": "Burichang",
+    "bnName": "বুড়িচং",
+    "slug": "burichang",
+    "districtId": 11
+  },
+  {
+    "id": 85,
+    "name": "Chandina",
+    "bnName": "চান্দিনা",
+    "slug": "chandina",
+    "districtId": 11
+  },
+  {
+    "id": 86,
+    "name": "Chauddagram",
+    "bnName": "চৌদ্দগ্রাম",
+    "slug": "chauddagram",
+    "districtId": 11
+  },
+  {
+    "id": 87,
+    "name": "Cumilla Adarsha Sadar",
+    "bnName": "কুমিল্লা আদর্শ সদর",
+    "slug": "cumilla_adarsha_sadar",
+    "districtId": 11
+  },
+  {
+    "id": 88,
+    "name": "Cumilla Sadar Dakshin",
+    "bnName": "কুমিল্লা সদর দক্ষিণ",
+    "slug": "cumilla_sadar_dakshin",
+    "districtId": 11
+  },
+  {
+    "id": 89,
+    "name": "Daudkandi",
+    "bnName": "দাউদকান্দি",
+    "slug": "daudkandi",
+    "districtId": 11
+  },
+  {
+    "id": 90,
+    "name": "Debidwar",
+    "bnName": "দেবীদ্বার",
+    "slug": "debidwar",
+    "districtId": 11
+  },
+  {
+    "id": 91,
+    "name": "Homna",
+    "bnName": "হোমনা",
+    "slug": "homna",
+    "districtId": 11
+  },
+  {
+    "id": 92,
+    "name": "Laksam",
+    "bnName": "লাকসাম",
+    "slug": "laksam",
+    "districtId": 11
+  },
+  {
+    "id": 93,
+    "name": "Lalmai",
+    "bnName": "লালমাই",
+    "slug": "lalmai",
+    "districtId": 11
+  },
+  {
+    "id": 94,
+    "name": "Meghna",
+    "bnName": "মেঘনা",
+    "slug": "meghna",
+    "districtId": 11
+  },
+  {
+    "id": 95,
+    "name": "Monohargonj",
+    "bnName": "মনোহরগঞ্জ",
+    "slug": "monohargonj",
+    "districtId": 11
+  },
+  {
+    "id": 96,
+    "name": "Muradnagar",
+    "bnName": "মুরাদনগর",
+    "slug": "muradnagar",
+    "districtId": 11
+  },
+  {
+    "id": 97,
+    "name": "Nangalkot",
+    "bnName": "নাঙ্গলকোট",
+    "slug": "nangalkot",
+    "districtId": 11
+  },
+  {
+    "id": 98,
+    "name": "Titas",
+    "bnName": "তিতাস",
+    "slug": "titas",
+    "districtId": 11
+  },
+  {
+    "id": 99,
+    "name": "Chakaria",
+    "bnName": "চকরিয়া",
+    "slug": "chakaria",
+    "districtId": 12
+  },
+  {
+    "id": 100,
+    "name": "Cox's Bazar Sadar",
+    "bnName": "কক্সবাজার সদর",
+    "slug": "coxs_bazar_sadar",
+    "districtId": 12
+  },
+  {
+    "id": 101,
+    "name": "Eidgaon",
+    "bnName": "ঈদগাঁও",
+    "slug": "eidgaon",
+    "districtId": 12
+  },
+  {
+    "id": 102,
+    "name": "Kutubdia",
+    "bnName": "কুতুবদিয়া",
+    "slug": "kutubdia",
+    "districtId": 12
+  },
+  {
+    "id": 103,
+    "name": "Maheshkhali",
+    "bnName": "মহেশখালী",
+    "slug": "maheshkhali",
+    "districtId": 12
+  },
+  {
+    "id": 104,
+    "name": "Pekua",
+    "bnName": "পেকুয়া",
+    "slug": "pekua",
+    "districtId": 12
+  },
+  {
+    "id": 105,
+    "name": "Ramu",
+    "bnName": "রামু",
+    "slug": "ramu",
+    "districtId": 12
+  },
+  {
+    "id": 106,
+    "name": "Teknaf",
+    "bnName": "টেকনাফ",
+    "slug": "teknaf",
+    "districtId": 12
+  },
+  {
+    "id": 107,
+    "name": "Ukhia",
+    "bnName": "উখিয়া",
+    "slug": "ukhia",
+    "districtId": 12
+  },
+  {
+    "id": 108,
+    "name": "Chhagalnaiya",
+    "bnName": "ছাগলনাইয়া",
+    "slug": "chhagalnaiya",
+    "districtId": 13
+  },
+  {
+    "id": 109,
+    "name": "Daganbhuiyan",
+    "bnName": "দাগনভূঁইয়া",
+    "slug": "daganbhuiyan",
+    "districtId": 13
+  },
+  {
+    "id": 110,
+    "name": "Feni Sadar",
+    "bnName": "ফেনী সদর",
+    "slug": "feni_sadar",
+    "districtId": 13
+  },
+  {
+    "id": 111,
+    "name": "Fulgazi",
+    "bnName": "ফুলগাজী",
+    "slug": "fulgazi",
+    "districtId": 13
+  },
+  {
+    "id": 112,
+    "name": "Parshuram",
+    "bnName": "পরশুরাম",
+    "slug": "parshuram",
+    "districtId": 13
+  },
+  {
+    "id": 113,
+    "name": "Sonagazi",
+    "bnName": "সোনাগাজী",
+    "slug": "sonagazi",
+    "districtId": 13
+  },
+  {
+    "id": 114,
+    "name": "Dighinala",
+    "bnName": "দীঘিনালা",
+    "slug": "dighinala",
+    "districtId": 14
+  },
+  {
+    "id": 115,
+    "name": "Guimara",
+    "bnName": "গুইমারা",
+    "slug": "guimara",
+    "districtId": 14
+  },
+  {
+    "id": 116,
+    "name": "Khagrachhari Sadar",
+    "bnName": "খাগড়াছড়ি সদর",
+    "slug": "khagrachhari_sadar",
+    "districtId": 14
+  },
+  {
+    "id": 117,
+    "name": "Lakshmichhari",
+    "bnName": "লক্ষ্মীছড়ি",
+    "slug": "lakshmichhari",
+    "districtId": 14
+  },
+  {
+    "id": 118,
+    "name": "Mahalchhari",
+    "bnName": "মহালছড়ি",
+    "slug": "mahalchhari",
+    "districtId": 14
+  },
+  {
+    "id": 119,
+    "name": "Manikchhari",
+    "bnName": "মানিকছড়ি",
+    "slug": "manikchhari",
+    "districtId": 14
+  },
+  {
+    "id": 120,
+    "name": "Matiranga",
+    "bnName": "মাটিরাঙ্গা",
+    "slug": "matiranga",
+    "districtId": 14
+  },
+  {
+    "id": 121,
+    "name": "Panchhari",
+    "bnName": "পানছড়ি",
+    "slug": "panchhari",
+    "districtId": 14
+  },
+  {
+    "id": 122,
+    "name": "Ramgarh",
+    "bnName": "রামগড়",
+    "slug": "ramgarh",
+    "districtId": 14
+  },
+  {
+    "id": 123,
+    "name": "Kamalnagar",
+    "bnName": "কমলনগর",
+    "slug": "kamalnagar",
+    "districtId": 15
+  },
+  {
+    "id": 124,
+    "name": "Lakshmipur Sadar",
+    "bnName": "লক্ষ্মীপুর সদর",
+    "slug": "lakshmipur_sadar",
+    "districtId": 15
+  },
+  {
+    "id": 125,
+    "name": "Raipur",
+    "bnName": "রায়পুর",
+    "slug": "raipur",
+    "districtId": 15
+  },
+  {
+    "id": 126,
+    "name": "Ramganj",
+    "bnName": "রামগঞ্জ",
+    "slug": "ramganj",
+    "districtId": 15
+  },
+  {
+    "id": 127,
+    "name": "Ramgati",
+    "bnName": "রামগতি",
+    "slug": "ramgati",
+    "districtId": 15
+  },
+  {
+    "id": 128,
+    "name": "Begumganj",
+    "bnName": "বেগমগঞ্জ",
+    "slug": "begumganj",
+    "districtId": 16
+  },
+  {
+    "id": 129,
+    "name": "Chatkhil",
+    "bnName": "চাটখিল",
+    "slug": "chatkhil",
+    "districtId": 16
+  },
+  {
+    "id": 130,
+    "name": "Companiganj",
+    "bnName": "কোম্পানীগঞ্জ",
+    "slug": "companiganj_noakhali",
+    "districtId": 16
+  },
+  {
+    "id": 131,
+    "name": "Hatiya",
+    "bnName": "হাতিয়া",
+    "slug": "hatiya",
+    "districtId": 16
+  },
+  {
+    "id": 132,
+    "name": "Kabirhat",
+    "bnName": "কবিরহাট",
+    "slug": "kabirhat",
+    "districtId": 16
+  },
+  {
+    "id": 133,
+    "name": "Noakhali Sadar",
+    "bnName": "নোয়াখালী সদর",
+    "slug": "noakhali_sadar",
+    "districtId": 16
+  },
+  {
+    "id": 134,
+    "name": "Senbagh",
+    "bnName": "সেনবাগ",
+    "slug": "senbagh",
+    "districtId": 16
+  },
+  {
+    "id": 135,
+    "name": "Sonaimuri",
+    "bnName": "সোনাইমুড়ী",
+    "slug": "sonaimuri",
+    "districtId": 16
+  },
+  {
+    "id": 136,
+    "name": "Subarnachar",
+    "bnName": "সুবর্ণচর",
+    "slug": "subarnachar",
+    "districtId": 16
+  },
+  {
+    "id": 137,
+    "name": "Bagaichhari",
+    "bnName": "বাঘাইছড়ি",
+    "slug": "bagaichhari",
+    "districtId": 17
+  },
+  {
+    "id": 138,
+    "name": "Barkal",
+    "bnName": "বরকল",
+    "slug": "barkal",
+    "districtId": 17
+  },
+  {
+    "id": 139,
+    "name": "Belaichhari",
+    "bnName": "বিলাইছড়ি",
+    "slug": "belaichhari",
+    "districtId": 17
+  },
+  {
+    "id": 140,
+    "name": "Juraichhari",
+    "bnName": "জুরাছড়ি",
+    "slug": "juraichhari",
+    "districtId": 17
+  },
+  {
+    "id": 141,
+    "name": "Kaptai",
+    "bnName": "কাপ্তাই",
+    "slug": "kaptai",
+    "districtId": 17
+  },
+  {
+    "id": 142,
+    "name": "Kawkhali",
+    "bnName": "কাউখালী",
+    "slug": "kawkhali_rangamati",
+    "districtId": 17
+  },
+  {
+    "id": 143,
+    "name": "Langadu",
+    "bnName": "লংগদু",
+    "slug": "langadu",
+    "districtId": 17
+  },
+  {
+    "id": 144,
+    "name": "Naniyachar",
+    "bnName": "নানিয়ারচর",
+    "slug": "naniyachar",
+    "districtId": 17
+  },
+  {
+    "id": 145,
+    "name": "Rajasthali",
+    "bnName": "রাজস্থলী",
+    "slug": "rajasthali",
+    "districtId": 17
+  },
+  {
+    "id": 146,
+    "name": "Rangamati Sadar",
+    "bnName": "রাঙ্গামাটি সদর",
+    "slug": "rangamati_sadar",
+    "districtId": 17
+  },
+  {
+    "id": 147,
+    "name": "Dhamrai",
+    "bnName": "ধামরাই",
+    "slug": "dhamrai",
+    "districtId": 18
+  },
+  {
+    "id": 148,
+    "name": "Dohar",
+    "bnName": "দোহার",
+    "slug": "dohar",
+    "districtId": 18
+  },
+  {
+    "id": 149,
+    "name": "Keraniganj",
+    "bnName": "কেরানীগঞ্জ",
+    "slug": "keraniganj",
+    "districtId": 18
+  },
+  {
+    "id": 150,
+    "name": "Nawabganj",
+    "bnName": "নবাবগঞ্জ",
+    "slug": "nawabganj_dhaka",
+    "districtId": 18
+  },
+  {
+    "id": 151,
+    "name": "Savar",
+    "bnName": "সাভার",
+    "slug": "savar",
+    "districtId": 18
+  },
+  {
+    "id": 152,
+    "name": "Alfadanga",
+    "bnName": "আলফাডাঙ্গা",
+    "slug": "alfadanga",
+    "districtId": 19
+  },
+  {
+    "id": 153,
+    "name": "Bhanga",
+    "bnName": "ভাঙ্গা",
+    "slug": "bhanga",
+    "districtId": 19
+  },
+  {
+    "id": 154,
+    "name": "Boalmari",
+    "bnName": "বোয়ালমারী",
+    "slug": "boalmari",
+    "districtId": 19
+  },
+  {
+    "id": 155,
+    "name": "Charbhadrasan",
+    "bnName": "চরভদ্রাসন",
+    "slug": "charbhadrasan",
+    "districtId": 19
+  },
+  {
+    "id": 156,
+    "name": "Faridpur Sadar",
+    "bnName": "ফরিদপুর সদর",
+    "slug": "faridpur_sadar",
+    "districtId": 19
+  },
+  {
+    "id": 157,
+    "name": "Madhukhali",
+    "bnName": "মধুখালী",
+    "slug": "madhukhali",
+    "districtId": 19
+  },
+  {
+    "id": 158,
+    "name": "Nagarkanda",
+    "bnName": "নগরকান্দা",
+    "slug": "nagarkanda",
+    "districtId": 19
+  },
+  {
+    "id": 159,
+    "name": "Sadarpur",
+    "bnName": "সদরপুর",
+    "slug": "sadarpur",
+    "districtId": 19
+  },
+  {
+    "id": 160,
+    "name": "Saltha",
+    "bnName": "সালথা",
+    "slug": "saltha",
+    "districtId": 19
+  },
+  {
+    "id": 161,
+    "name": "Gazipur Sadar",
+    "bnName": "গাজীপুর সদর",
+    "slug": "gazipur_sadar",
+    "districtId": 20
+  },
+  {
+    "id": 162,
+    "name": "Kaliakair",
+    "bnName": "কালিয়াকৈর",
+    "slug": "kaliakair",
+    "districtId": 20
+  },
+  {
+    "id": 163,
+    "name": "Kaliganj",
+    "bnName": "কালীগঞ্জ",
+    "slug": "kaliganj_gazipur",
+    "districtId": 20
+  },
+  {
+    "id": 164,
+    "name": "Kapasia",
+    "bnName": "কাপাসিয়া",
+    "slug": "kapasia",
+    "districtId": 20
+  },
+  {
+    "id": 165,
+    "name": "Sreepur",
+    "bnName": "শ্রীপুর",
+    "slug": "sreepur_gazipur",
+    "districtId": 20
+  },
+  {
+    "id": 166,
+    "name": "Gopalganj Sadar",
+    "bnName": "গোপালগঞ্জ সদর",
+    "slug": "gopalganj_sadar",
+    "districtId": 21
+  },
+  {
+    "id": 167,
+    "name": "Kashiani",
+    "bnName": "কাশিয়ানী",
+    "slug": "kashiani",
+    "districtId": 21
+  },
+  {
+    "id": 168,
+    "name": "Kotalipara",
+    "bnName": "কোটালীপাড়া",
+    "slug": "kotalipara",
+    "districtId": 21
+  },
+  {
+    "id": 169,
+    "name": "Muksudpur",
+    "bnName": "মুকসুদপুর",
+    "slug": "muksudpur",
+    "districtId": 21
+  },
+  {
+    "id": 170,
+    "name": "Tungipara",
+    "bnName": "টুঙ্গিপাড়া",
+    "slug": "tungipara",
+    "districtId": 21
+  },
+  {
+    "id": 171,
+    "name": "Austagram",
+    "bnName": "অষ্টগ্রাম",
+    "slug": "austagram",
+    "districtId": 22
+  },
+  {
+    "id": 172,
+    "name": "Bajitpur",
+    "bnName": "বাজিতপুর",
+    "slug": "bajitpur",
+    "districtId": 22
+  },
+  {
+    "id": 173,
+    "name": "Bhairab",
+    "bnName": "ভৈরব",
+    "slug": "bhairab",
+    "districtId": 22
+  },
+  {
+    "id": 174,
+    "name": "Hossainpur",
+    "bnName": "হোসেনপুর",
+    "slug": "hossainpur",
+    "districtId": 22
+  },
+  {
+    "id": 175,
+    "name": "Itna",
+    "bnName": "ইটনা",
+    "slug": "itna",
+    "districtId": 22
+  },
+  {
+    "id": 176,
+    "name": "Karimganj",
+    "bnName": "করিমগঞ্জ",
+    "slug": "karimganj",
+    "districtId": 22
+  },
+  {
+    "id": 177,
+    "name": "Katiadi",
+    "bnName": "কটিয়াদী",
+    "slug": "katiadi",
+    "districtId": 22
+  },
+  {
+    "id": 178,
+    "name": "Kishoreganj Sadar",
+    "bnName": "কিশোরগঞ্জ সদর",
+    "slug": "kishoreganj_sadar",
+    "districtId": 22
+  },
+  {
+    "id": 179,
+    "name": "Kuliarchar",
+    "bnName": "কুলিয়ারচর",
+    "slug": "kuliarchar",
+    "districtId": 22
+  },
+  {
+    "id": 180,
+    "name": "Mithamain",
+    "bnName": "মিঠামইন",
+    "slug": "mithamain",
+    "districtId": 22
+  },
+  {
+    "id": 181,
+    "name": "Nikli",
+    "bnName": "নিকলী",
+    "slug": "nikli",
+    "districtId": 22
+  },
+  {
+    "id": 182,
+    "name": "Pakundia",
+    "bnName": "পাকুন্দিয়া",
+    "slug": "pakundia",
+    "districtId": 22
+  },
+  {
+    "id": 183,
+    "name": "Tarail",
+    "bnName": "তাড়াইল",
+    "slug": "tarail",
+    "districtId": 22
+  },
+  {
+    "id": 184,
+    "name": "Dasar",
+    "bnName": "ডাসার",
+    "slug": "dasar",
+    "districtId": 23
+  },
+  {
+    "id": 185,
+    "name": "Kalkini",
+    "bnName": "কালকিনি",
+    "slug": "kalkini",
+    "districtId": 23
+  },
+  {
+    "id": 186,
+    "name": "Madaripur Sadar",
+    "bnName": "মাদারীপুর সদর",
+    "slug": "madaripur_sadar",
+    "districtId": 23
+  },
+  {
+    "id": 187,
+    "name": "Rajoir",
+    "bnName": "রাজৈর",
+    "slug": "rajoir",
+    "districtId": 23
+  },
+  {
+    "id": 188,
+    "name": "Shibchar",
+    "bnName": "শিবচর",
+    "slug": "shibchar",
+    "districtId": 23
+  },
+  {
+    "id": 189,
+    "name": "Daulatpur",
+    "bnName": "দৌলতপুর",
+    "slug": "daulatpur_manikganj",
+    "districtId": 24
+  },
+  {
+    "id": 190,
+    "name": "Ghior",
+    "bnName": "ঘিওর",
+    "slug": "ghior",
+    "districtId": 24
+  },
+  {
+    "id": 191,
+    "name": "Harirampur",
+    "bnName": "হরিরামপুর",
+    "slug": "harirampur",
+    "districtId": 24
+  },
+  {
+    "id": 192,
+    "name": "Manikganj Sadar",
+    "bnName": "মানিকগঞ্জ সদর",
+    "slug": "manikganj_sadar",
+    "districtId": 24
+  },
+  {
+    "id": 193,
+    "name": "Saturia",
+    "bnName": "সাটুরিয়া",
+    "slug": "saturia",
+    "districtId": 24
+  },
+  {
+    "id": 194,
+    "name": "Shivalaya",
+    "bnName": "শিবালয়",
+    "slug": "shivalaya",
+    "districtId": 24
+  },
+  {
+    "id": 195,
+    "name": "Singair",
+    "bnName": "সিংগাইর",
+    "slug": "singair",
+    "districtId": 24
+  },
+  {
+    "id": 196,
+    "name": "Gazaria",
+    "bnName": "গজারিয়া",
+    "slug": "gazaria",
+    "districtId": 25
+  },
+  {
+    "id": 197,
+    "name": "Lohajang",
+    "bnName": "লৌহজং",
+    "slug": "lohajang",
+    "districtId": 25
+  },
+  {
+    "id": 198,
+    "name": "Munshiganj Sadar",
+    "bnName": "মুন্সিগঞ্জ সদর",
+    "slug": "munshiganj_sadar",
+    "districtId": 25
+  },
+  {
+    "id": 199,
+    "name": "Sirajdikhan",
+    "bnName": "সিরাজদিখান",
+    "slug": "sirajdikhan",
+    "districtId": 25
+  },
+  {
+    "id": 200,
+    "name": "Sreenagar",
+    "bnName": "শ্রীনগর",
+    "slug": "sreenagar",
+    "districtId": 25
+  },
+  {
+    "id": 201,
+    "name": "Tongibari",
+    "bnName": "টংগিবাড়ী",
+    "slug": "tongibari",
+    "districtId": 25
+  },
+  {
+    "id": 202,
+    "name": "Araihazar",
+    "bnName": "আড়াইহাজার",
+    "slug": "araihazar",
+    "districtId": 26
+  },
+  {
+    "id": 203,
+    "name": "Bandar",
+    "bnName": "বন্দর",
+    "slug": "bandar",
+    "districtId": 26
+  },
+  {
+    "id": 204,
+    "name": "Narayanganj Sadar",
+    "bnName": "নারায়ণগঞ্জ সদর",
+    "slug": "narayanganj_sadar",
+    "districtId": 26
+  },
+  {
+    "id": 205,
+    "name": "Rupganj",
+    "bnName": "রূপগঞ্জ",
+    "slug": "rupganj",
+    "districtId": 26
+  },
+  {
+    "id": 206,
+    "name": "Sonargaon",
+    "bnName": "সোনারগাঁও",
+    "slug": "sonargaon",
+    "districtId": 26
+  },
+  {
+    "id": 207,
+    "name": "Belabo",
+    "bnName": "বেলাবো",
+    "slug": "belabo",
+    "districtId": 27
+  },
+  {
+    "id": 208,
+    "name": "Monohardi",
+    "bnName": "মনোহরদী",
+    "slug": "monohardi",
+    "districtId": 27
+  },
+  {
+    "id": 209,
+    "name": "Narsingdi Sadar",
+    "bnName": "নরসিংদী সদর",
+    "slug": "narsingdi_sadar",
+    "districtId": 27
+  },
+  {
+    "id": 210,
+    "name": "Palash",
+    "bnName": "পলাশ",
+    "slug": "palash",
+    "districtId": 27
+  },
+  {
+    "id": 211,
+    "name": "Raipura",
+    "bnName": "রায়পুরা",
+    "slug": "raipura",
+    "districtId": 27
+  },
+  {
+    "id": 212,
+    "name": "Shibpur",
+    "bnName": "শিবপুর",
+    "slug": "shibpur",
+    "districtId": 27
+  },
+  {
+    "id": 213,
+    "name": "Baliakandi",
+    "bnName": "বালিয়াকান্দি",
+    "slug": "baliakandi",
+    "districtId": 28
+  },
+  {
+    "id": 214,
+    "name": "Goalandaghat",
+    "bnName": "গোয়ালন্দঘাট",
+    "slug": "goalandaghat",
+    "districtId": 28
+  },
+  {
+    "id": 215,
+    "name": "Kalukhali",
+    "bnName": "কালুখালী",
+    "slug": "kalukhali",
+    "districtId": 28
+  },
+  {
+    "id": 216,
+    "name": "Pangsha",
+    "bnName": "পাংশা",
+    "slug": "pangsha",
+    "districtId": 28
+  },
+  {
+    "id": 217,
+    "name": "Rajbari Sadar",
+    "bnName": "রাজবাড়ী সদর",
+    "slug": "rajbari_sadar",
+    "districtId": 28
+  },
+  {
+    "id": 218,
+    "name": "Bhedarganj",
+    "bnName": "ভেদরগঞ্জ",
+    "slug": "bhedarganj",
+    "districtId": 29
+  },
+  {
+    "id": 219,
+    "name": "Damudya",
+    "bnName": "ডামুড্যা",
+    "slug": "damudya",
+    "districtId": 29
+  },
+  {
+    "id": 220,
+    "name": "Gosairhat",
+    "bnName": "গোসাইরহাট",
+    "slug": "gosairhat",
+    "districtId": 29
+  },
+  {
+    "id": 221,
+    "name": "Naria",
+    "bnName": "নড়িয়া",
+    "slug": "naria",
+    "districtId": 29
+  },
+  {
+    "id": 222,
+    "name": "Shariatpur Sadar",
+    "bnName": "শরীয়তপুর সদর",
+    "slug": "shariatpur_sadar",
+    "districtId": 29
+  },
+  {
+    "id": 223,
+    "name": "Zajira",
+    "bnName": "জাজিরা",
+    "slug": "zajira",
+    "districtId": 29
+  },
+  {
+    "id": 224,
+    "name": "Basail",
+    "bnName": "বাসাইল",
+    "slug": "basail",
+    "districtId": 30
+  },
+  {
+    "id": 225,
+    "name": "Bhuapur",
+    "bnName": "ভুয়াপুর",
+    "slug": "bhuapur",
+    "districtId": 30
+  },
+  {
+    "id": 226,
+    "name": "Delduar",
+    "bnName": "দেলদুয়ার",
+    "slug": "delduar",
+    "districtId": 30
+  },
+  {
+    "id": 227,
+    "name": "Dhanbari",
+    "bnName": "ধনবাড়ী",
+    "slug": "dhanbari",
+    "districtId": 30
+  },
+  {
+    "id": 228,
+    "name": "Ghatail",
+    "bnName": "ঘাটাইল",
+    "slug": "ghatail",
+    "districtId": 30
+  },
+  {
+    "id": 229,
+    "name": "Gopalpur",
+    "bnName": "গোপালপুর",
+    "slug": "gopalpur_tangail",
+    "districtId": 30
+  },
+  {
+    "id": 230,
+    "name": "Kalihati",
+    "bnName": "কালিহাতী",
+    "slug": "kalihati",
+    "districtId": 30
+  },
+  {
+    "id": 231,
+    "name": "Madhupur",
+    "bnName": "মধুপুর",
+    "slug": "madhupur",
+    "districtId": 30
+  },
+  {
+    "id": 232,
+    "name": "Mirzapur",
+    "bnName": "মির্জাপুর",
+    "slug": "mirzapur",
+    "districtId": 30
+  },
+  {
+    "id": 233,
+    "name": "Nagarpur",
+    "bnName": "নাগরপুর",
+    "slug": "nagarpur",
+    "districtId": 30
+  },
+  {
+    "id": 234,
+    "name": "Sakhipur",
+    "bnName": "সখিপুর",
+    "slug": "sakhipur",
+    "districtId": 30
+  },
+  {
+    "id": 235,
+    "name": "Tangail Sadar",
+    "bnName": "টাঙ্গাইল সদর",
+    "slug": "tangail_sadar",
+    "districtId": 30
+  },
+  {
+    "id": 236,
+    "name": "Bagerhat Sadar",
+    "bnName": "বাগেরহাট সদর",
+    "slug": "bagerhat_sadar",
+    "districtId": 31
+  },
+  {
+    "id": 237,
+    "name": "Chitalmari",
+    "bnName": "চিতলমারী",
+    "slug": "chitalmari",
+    "districtId": 31
+  },
+  {
+    "id": 238,
+    "name": "Fakirhat",
+    "bnName": "ফকিরহাট",
+    "slug": "fakirhat",
+    "districtId": 31
+  },
+  {
+    "id": 239,
+    "name": "Kachua",
+    "bnName": "কচুয়া",
+    "slug": "kachua_bagerhat",
+    "districtId": 31
+  },
+  {
+    "id": 240,
+    "name": "Mollahat",
+    "bnName": "মোল্লাহাট",
+    "slug": "mollahat",
+    "districtId": 31
+  },
+  {
+    "id": 241,
+    "name": "Mongla",
+    "bnName": "মোংলা",
+    "slug": "mongla",
+    "districtId": 31
+  },
+  {
+    "id": 242,
+    "name": "Morrelganj",
+    "bnName": "মোড়েলগঞ্জ",
+    "slug": "morrelganj",
+    "districtId": 31
+  },
+  {
+    "id": 243,
+    "name": "Rampal",
+    "bnName": "রামপাল",
+    "slug": "rampal",
+    "districtId": 31
+  },
+  {
+    "id": 244,
+    "name": "Sarankhola",
+    "bnName": "শরণখোলা",
+    "slug": "sarankhola",
+    "districtId": 31
+  },
+  {
+    "id": 245,
+    "name": "Alamdanga",
+    "bnName": "আলমডাঙ্গা",
+    "slug": "alamdanga",
+    "districtId": 32
+  },
+  {
+    "id": 246,
+    "name": "Chuadanga Sadar",
+    "bnName": "চুয়াডাঙ্গা সদর",
+    "slug": "chuadanga_sadar",
+    "districtId": 32
+  },
+  {
+    "id": 247,
+    "name": "Damurhuda",
+    "bnName": "দামুড়হুদা",
+    "slug": "damurhuda",
+    "districtId": 32
+  },
+  {
+    "id": 248,
+    "name": "Jibannagar",
+    "bnName": "জীবননগর",
+    "slug": "jibannagar",
+    "districtId": 32
+  },
+  {
+    "id": 249,
+    "name": "Abhaynagar",
+    "bnName": "অভয়নগর",
+    "slug": "abhaynagar",
+    "districtId": 33
+  },
+  {
+    "id": 250,
+    "name": "Bagherpara",
+    "bnName": "বাঘারপাড়া",
+    "slug": "bagherpara",
+    "districtId": 33
+  },
+  {
+    "id": 251,
+    "name": "Chaugachha",
+    "bnName": "চৌগাছা",
+    "slug": "chaugachha",
+    "districtId": 33
+  },
+  {
+    "id": 252,
+    "name": "Jashore Sadar",
+    "bnName": "যশোর সদর",
+    "slug": "jashore_sadar",
+    "districtId": 33
+  },
+  {
+    "id": 253,
+    "name": "Jhikargachha",
+    "bnName": "ঝিকরগাছা",
+    "slug": "jhikargachha",
+    "districtId": 33
+  },
+  {
+    "id": 254,
+    "name": "Keshabpur",
+    "bnName": "কেশবপুর",
+    "slug": "keshabpur",
+    "districtId": 33
+  },
+  {
+    "id": 255,
+    "name": "Manirampur",
+    "bnName": "মণিরামপুর",
+    "slug": "manirampur",
+    "districtId": 33
+  },
+  {
+    "id": 256,
+    "name": "Sharsha",
+    "bnName": "শার্শা",
+    "slug": "sharsha",
+    "districtId": 33
+  },
+  {
+    "id": 257,
+    "name": "Harinakunda",
+    "bnName": "হরিণাকুন্ডু",
+    "slug": "harinakunda",
+    "districtId": 34
+  },
+  {
+    "id": 258,
+    "name": "Jhenaidah Sadar",
+    "bnName": "ঝিনাইদহ সদর",
+    "slug": "jhenaidah_sadar",
+    "districtId": 34
+  },
+  {
+    "id": 259,
+    "name": "Kaliganj",
+    "bnName": "কালীগঞ্জ",
+    "slug": "kaliganj_jhenaidah",
+    "districtId": 34
+  },
+  {
+    "id": 260,
+    "name": "Kotchandpur",
+    "bnName": "কোটচাঁদপুর",
+    "slug": "kotchandpur",
+    "districtId": 34
+  },
+  {
+    "id": 261,
+    "name": "Maheshpur",
+    "bnName": "মহেশপুর",
+    "slug": "maheshpur",
+    "districtId": 34
+  },
+  {
+    "id": 262,
+    "name": "Shailkupa",
+    "bnName": "শৈলকুপা",
+    "slug": "shailkupa",
+    "districtId": 34
+  },
+  {
+    "id": 263,
+    "name": "Batiaghata",
+    "bnName": "বটিয়াঘাটা",
+    "slug": "batiaghata",
+    "districtId": 35
+  },
+  {
+    "id": 264,
+    "name": "Dacope",
+    "bnName": "দাকোপ",
+    "slug": "dacope",
+    "districtId": 35
+  },
+  {
+    "id": 265,
+    "name": "Dighalia",
+    "bnName": "দিঘলিয়া",
+    "slug": "dighalia",
+    "districtId": 35
+  },
+  {
+    "id": 266,
+    "name": "Dumuria",
+    "bnName": "ডুমুরিয়া",
+    "slug": "dumuria",
+    "districtId": 35
+  },
+  {
+    "id": 267,
+    "name": "Koyra",
+    "bnName": "কয়রা",
+    "slug": "koyra",
+    "districtId": 35
+  },
+  {
+    "id": 268,
+    "name": "Paikgachha",
+    "bnName": "পাইকগাছা",
+    "slug": "paikgachha",
+    "districtId": 35
+  },
+  {
+    "id": 269,
+    "name": "Phultala",
+    "bnName": "ফুলতলা",
+    "slug": "phultala",
+    "districtId": 35
+  },
+  {
+    "id": 270,
+    "name": "Rupsha",
+    "bnName": "রূপসা",
+    "slug": "rupsha",
+    "districtId": 35
+  },
+  {
+    "id": 271,
+    "name": "Terokhada",
+    "bnName": "তেরখাদা",
+    "slug": "terokhada",
+    "districtId": 35
+  },
+  {
+    "id": 272,
+    "name": "Bheramara",
+    "bnName": "ভেড়ামারা",
+    "slug": "bheramara",
+    "districtId": 36
+  },
+  {
+    "id": 273,
+    "name": "Daulatpur",
+    "bnName": "দৌলতপুর",
+    "slug": "daulatpur_kushtia",
+    "districtId": 36
+  },
+  {
+    "id": 274,
+    "name": "Khoksa",
+    "bnName": "খোকসা",
+    "slug": "khoksa",
+    "districtId": 36
+  },
+  {
+    "id": 275,
+    "name": "Kumarkhali",
+    "bnName": "কুমারখালী",
+    "slug": "kumarkhali",
+    "districtId": 36
+  },
+  {
+    "id": 276,
+    "name": "Kushtia Sadar",
+    "bnName": "কুষ্টিয়া সদর",
+    "slug": "kushtia_sadar",
+    "districtId": 36
+  },
+  {
+    "id": 277,
+    "name": "Mirpur",
+    "bnName": "মিরপুর",
+    "slug": "mirpur_kushtia",
+    "districtId": 36
+  },
+  {
+    "id": 278,
+    "name": "Magura Sadar",
+    "bnName": "মাগুরা সদর",
+    "slug": "magura_sadar",
+    "districtId": 37
+  },
+  {
+    "id": 279,
+    "name": "Mohammadpur",
+    "bnName": "মহম্মদপুর",
+    "slug": "mohammadpur",
+    "districtId": 37
+  },
+  {
+    "id": 280,
+    "name": "Shalikha",
+    "bnName": "শালিখা",
+    "slug": "shalikha",
+    "districtId": 37
+  },
+  {
+    "id": 281,
+    "name": "Sreepur",
+    "bnName": "শ্রীপুর",
+    "slug": "sreepur_magura",
+    "districtId": 37
+  },
+  {
+    "id": 282,
+    "name": "Gangni",
+    "bnName": "গাংনী",
+    "slug": "gangni",
+    "districtId": 38
+  },
+  {
+    "id": 283,
+    "name": "Meherpur Sadar",
+    "bnName": "মেহেরপুর সদর",
+    "slug": "meherpur_sadar",
+    "districtId": 38
+  },
+  {
+    "id": 284,
+    "name": "Mujibnagar",
+    "bnName": "মুজিবনগর",
+    "slug": "mujibnagar",
+    "districtId": 38
+  },
+  {
+    "id": 285,
+    "name": "Kalia",
+    "bnName": "কালিয়া",
+    "slug": "kalia",
+    "districtId": 39
+  },
+  {
+    "id": 286,
+    "name": "Lohagara",
+    "bnName": "লোহাগড়া",
+    "slug": "lohagara_narail",
+    "districtId": 39
+  },
+  {
+    "id": 287,
+    "name": "Narail Sadar",
+    "bnName": "নড়াইল সদর",
+    "slug": "narail_sadar",
+    "districtId": 39
+  },
+  {
+    "id": 288,
+    "name": "Assasuni",
+    "bnName": "আশাশুনি",
+    "slug": "assasuni",
+    "districtId": 40
+  },
+  {
+    "id": 289,
+    "name": "Debhata",
+    "bnName": "দেবহাটা",
+    "slug": "debhata",
+    "districtId": 40
+  },
+  {
+    "id": 290,
+    "name": "Kalaroa",
+    "bnName": "কলারোয়া",
+    "slug": "kalaroa",
+    "districtId": 40
+  },
+  {
+    "id": 291,
+    "name": "Kaliganj",
+    "bnName": "কালীগঞ্জ",
+    "slug": "kaliganj_satkhira",
+    "districtId": 40
+  },
+  {
+    "id": 292,
+    "name": "Satkhira Sadar",
+    "bnName": "সাতক্ষীরা সদর",
+    "slug": "satkhira_sadar",
+    "districtId": 40
+  },
+  {
+    "id": 293,
+    "name": "Shyamnagar",
+    "bnName": "শ্যামনগর",
+    "slug": "shyamnagar",
+    "districtId": 40
+  },
+  {
+    "id": 294,
+    "name": "Tala",
+    "bnName": "তালা",
+    "slug": "tala",
+    "districtId": 40
+  },
+  {
+    "id": 295,
+    "name": "Baksiganj",
+    "bnName": "বকশীগঞ্জ",
+    "slug": "baksiganj",
+    "districtId": 41
+  },
+  {
+    "id": 296,
+    "name": "Dewanganj",
+    "bnName": "দেওয়ানগঞ্জ",
+    "slug": "dewanganj",
+    "districtId": 41
+  },
+  {
+    "id": 297,
+    "name": "Islampur",
+    "bnName": "ইসলামপুর",
+    "slug": "islampur",
+    "districtId": 41
+  },
+  {
+    "id": 298,
+    "name": "Jamalpur Sadar",
+    "bnName": "জামালপুর সদর",
+    "slug": "jamalpur_sadar",
+    "districtId": 41
+  },
+  {
+    "id": 299,
+    "name": "Madarganj",
+    "bnName": "মাদারগঞ্জ",
+    "slug": "madarganj",
+    "districtId": 41
+  },
+  {
+    "id": 300,
+    "name": "Melandaha",
+    "bnName": "মেলান্দহ",
+    "slug": "melandaha",
+    "districtId": 41
+  },
+  {
+    "id": 301,
+    "name": "Sarishabari",
+    "bnName": "সরিষাবাড়ী",
+    "slug": "sarishabari",
+    "districtId": 41
+  },
+  {
+    "id": 302,
+    "name": "Bhaluka",
+    "bnName": "ভালুকা",
+    "slug": "bhaluka",
+    "districtId": 42
+  },
+  {
+    "id": 303,
+    "name": "Dhobaura",
+    "bnName": "ধোবাউড়া",
+    "slug": "dhobaura",
+    "districtId": 42
+  },
+  {
+    "id": 304,
+    "name": "Fulbaria",
+    "bnName": "ফুলবাড়িয়া",
+    "slug": "fulbaria",
+    "districtId": 42
+  },
+  {
+    "id": 305,
+    "name": "Gafargaon",
+    "bnName": "গফরগাঁও",
+    "slug": "gafargaon",
+    "districtId": 42
+  },
+  {
+    "id": 306,
+    "name": "Gauripur",
+    "bnName": "গৌরীপুর",
+    "slug": "gauripur",
+    "districtId": 42
+  },
+  {
+    "id": 307,
+    "name": "Haluaghat",
+    "bnName": "হালুয়াঘাট",
+    "slug": "haluaghat",
+    "districtId": 42
+  },
+  {
+    "id": 308,
+    "name": "Ishwarganj",
+    "bnName": "ঈশ্বরগঞ্জ",
+    "slug": "ishwarganj",
+    "districtId": 42
+  },
+  {
+    "id": 309,
+    "name": "Muktagachha",
+    "bnName": "মুক্তাগাছা",
+    "slug": "muktagachha",
+    "districtId": 42
+  },
+  {
+    "id": 310,
+    "name": "Mymensingh Sadar",
+    "bnName": "ময়মনসিংহ সদর",
+    "slug": "mymensingh_sadar",
+    "districtId": 42
+  },
+  {
+    "id": 311,
+    "name": "Nandail",
+    "bnName": "নান্দাইল",
+    "slug": "nandail",
+    "districtId": 42
+  },
+  {
+    "id": 312,
+    "name": "Phulpur",
+    "bnName": "ফুলপুর",
+    "slug": "phulpur",
+    "districtId": 42
+  },
+  {
+    "id": 313,
+    "name": "Tara Khanda",
+    "bnName": "তারাকান্দা",
+    "slug": "tara_khanda",
+    "districtId": 42
+  },
+  {
+    "id": 314,
+    "name": "Trishal",
+    "bnName": "ত্রিশাল",
+    "slug": "trishal",
+    "districtId": 42
+  },
+  {
+    "id": 315,
+    "name": "Atpara",
+    "bnName": "আটপাড়া",
+    "slug": "atpara",
+    "districtId": 43
+  },
+  {
+    "id": 316,
+    "name": "Barhatta",
+    "bnName": "বারহাট্টা",
+    "slug": "barhatta",
+    "districtId": 43
+  },
+  {
+    "id": 317,
+    "name": "Durgapur",
+    "bnName": "দুর্গাপুর",
+    "slug": "durgapur_netrokona",
+    "districtId": 43
+  },
+  {
+    "id": 318,
+    "name": "Kalmakanda",
+    "bnName": "কলমাকান্দা",
+    "slug": "kalmakanda",
+    "districtId": 43
+  },
+  {
+    "id": 319,
+    "name": "Kendua",
+    "bnName": "কেন্দুয়া",
+    "slug": "kendua",
+    "districtId": 43
+  },
+  {
+    "id": 320,
+    "name": "Khaliajuri",
+    "bnName": "খালিয়াজুরী",
+    "slug": "khaliajuri",
+    "districtId": 43
+  },
+  {
+    "id": 321,
+    "name": "Madan",
+    "bnName": "মদন",
+    "slug": "madan",
+    "districtId": 43
+  },
+  {
+    "id": 322,
+    "name": "Mohanganj",
+    "bnName": "মোহনগঞ্জ",
+    "slug": "mohanganj",
+    "districtId": 43
+  },
+  {
+    "id": 323,
+    "name": "Netrokona Sadar",
+    "bnName": "নেত্রকোনা সদর",
+    "slug": "netrokona_sadar",
+    "districtId": 43
+  },
+  {
+    "id": 324,
+    "name": "Purbadhala",
+    "bnName": "পূর্বধলা",
+    "slug": "purbadhala",
+    "districtId": 43
+  },
+  {
+    "id": 325,
+    "name": "Jhenaigati",
+    "bnName": "ঝিনাইগাতী",
+    "slug": "jhenaigati",
+    "districtId": 44
+  },
+  {
+    "id": 326,
+    "name": "Nakla",
+    "bnName": "নকলা",
+    "slug": "nakla",
+    "districtId": 44
+  },
+  {
+    "id": 327,
+    "name": "Nalitabari",
+    "bnName": "নালিতাবাড়ী",
+    "slug": "nalitabari",
+    "districtId": 44
+  },
+  {
+    "id": 328,
+    "name": "Sherpur Sadar",
+    "bnName": "শেরপুর সদর",
+    "slug": "sherpur_sadar",
+    "districtId": 44
+  },
+  {
+    "id": 329,
+    "name": "Sreebardi",
+    "bnName": "শ্রীবরদী",
+    "slug": "sreebardi",
+    "districtId": 44
+  },
+  {
+    "id": 330,
+    "name": "Adamdighi",
+    "bnName": "আদমদীঘি",
+    "slug": "adamdighi",
+    "districtId": 45
+  },
+  {
+    "id": 331,
+    "name": "Bogura Sadar",
+    "bnName": "বগুড়া সদর",
+    "slug": "bogura_sadar",
+    "districtId": 45
+  },
+  {
+    "id": 332,
+    "name": "Dhunat",
+    "bnName": "ধুনট",
+    "slug": "dhunat",
+    "districtId": 45
+  },
+  {
+    "id": 333,
+    "name": "Dhupchanchia",
+    "bnName": "দুপচাঁচিয়া",
+    "slug": "dhupchanchia",
+    "districtId": 45
+  },
+  {
+    "id": 334,
+    "name": "Gabtali",
+    "bnName": "গাবতলী",
+    "slug": "gabtali",
+    "districtId": 45
+  },
+  {
+    "id": 335,
+    "name": "Kahaloo",
+    "bnName": "কাহালু",
+    "slug": "kahaloo",
+    "districtId": 45
+  },
+  {
+    "id": 336,
+    "name": "Nandigram",
+    "bnName": "নন্দীগ্রাম",
+    "slug": "nandigram",
+    "districtId": 45
+  },
+  {
+    "id": 337,
+    "name": "Sariakandi",
+    "bnName": "সারিয়াকান্দি",
+    "slug": "sariakandi",
+    "districtId": 45
+  },
+  {
+    "id": 338,
+    "name": "Shajahanpur",
+    "bnName": "শাজাহানপুর",
+    "slug": "shajahanpur",
+    "districtId": 45
+  },
+  {
+    "id": 339,
+    "name": "Sherpur",
+    "bnName": "শেরপুর",
+    "slug": "sherpur_bogura",
+    "districtId": 45
+  },
+  {
+    "id": 340,
+    "name": "Shibganj",
+    "bnName": "শিবগঞ্জ",
+    "slug": "shibganj_bogura",
+    "districtId": 45
+  },
+  {
+    "id": 341,
+    "name": "Sonatola",
+    "bnName": "সোনাতলা",
+    "slug": "sonatola",
+    "districtId": 45
+  },
+  {
+    "id": 342,
+    "name": "Bholahat",
+    "bnName": "ভোলাহাট",
+    "slug": "bholahat",
+    "districtId": 46
+  },
+  {
+    "id": 343,
+    "name": "Chapainawabganj Sadar",
+    "bnName": "চাঁপাইনবাবগঞ্জ সদর",
+    "slug": "chapainawabganj_sadar",
+    "districtId": 46
+  },
+  {
+    "id": 344,
+    "name": "Gomastapur",
+    "bnName": "গোমস্তাপুর",
+    "slug": "gomastapur",
+    "districtId": 46
+  },
+  {
+    "id": 345,
+    "name": "Nachole",
+    "bnName": "নাচোল",
+    "slug": "nachole",
+    "districtId": 46
+  },
+  {
+    "id": 346,
+    "name": "Shibganj",
+    "bnName": "শিবগঞ্জ",
+    "slug": "shibganj_chapainawabganj",
+    "districtId": 46
+  },
+  {
+    "id": 347,
+    "name": "Akkelpur",
+    "bnName": "আক্কেলপুর",
+    "slug": "akkelpur",
+    "districtId": 47
+  },
+  {
+    "id": 348,
+    "name": "Joypurhat Sadar",
+    "bnName": "জয়পুরহাট সদর",
+    "slug": "joypurhat_sadar",
+    "districtId": 47
+  },
+  {
+    "id": 349,
+    "name": "Kalai",
+    "bnName": "কালাই",
+    "slug": "kalai",
+    "districtId": 47
+  },
+  {
+    "id": 350,
+    "name": "Khetlal",
+    "bnName": "ক্ষেতলাল",
+    "slug": "khetlal",
+    "districtId": 47
+  },
+  {
+    "id": 351,
+    "name": "Panchbibi",
+    "bnName": "পাঁচবিবি",
+    "slug": "panchbibi",
+    "districtId": 47
+  },
+  {
+    "id": 352,
+    "name": "Atrai",
+    "bnName": "আত্রাই",
+    "slug": "atrai",
+    "districtId": 48
+  },
+  {
+    "id": 353,
+    "name": "Badalgachhi",
+    "bnName": "বদলগাছী",
+    "slug": "badalgachhi",
+    "districtId": 48
+  },
+  {
+    "id": 354,
+    "name": "Dhamoirhat",
+    "bnName": "ধামইরহাট",
+    "slug": "dhamoirhat",
+    "districtId": 48
+  },
+  {
+    "id": 355,
+    "name": "Manda",
+    "bnName": "মান্দা",
+    "slug": "manda",
+    "districtId": 48
+  },
+  {
+    "id": 356,
+    "name": "Mohadevpur",
+    "bnName": "মহাদেবপুর",
+    "slug": "mohadevpur",
+    "districtId": 48
+  },
+  {
+    "id": 357,
+    "name": "Naogaon Sadar",
+    "bnName": "নওগাঁ সদর",
+    "slug": "naogaon_sadar",
+    "districtId": 48
+  },
+  {
+    "id": 358,
+    "name": "Niamatpur",
+    "bnName": "নিয়ামতপুর",
+    "slug": "niamatpur",
+    "districtId": 48
+  },
+  {
+    "id": 359,
+    "name": "Patnitala",
+    "bnName": "পত্নীতলা",
+    "slug": "patnitala",
+    "districtId": 48
+  },
+  {
+    "id": 360,
+    "name": "Porsha",
+    "bnName": "পোরশা",
+    "slug": "porsha",
+    "districtId": 48
+  },
+  {
+    "id": 361,
+    "name": "Raninagar",
+    "bnName": "রাণীনগর",
+    "slug": "raninagar",
+    "districtId": 48
+  },
+  {
+    "id": 362,
+    "name": "Sapahar",
+    "bnName": "সাপাহার",
+    "slug": "sapahar",
+    "districtId": 48
+  },
+  {
+    "id": 363,
+    "name": "Bagatipara",
+    "bnName": "বাগাতিপাড়া",
+    "slug": "bagatipara",
+    "districtId": 49
+  },
+  {
+    "id": 364,
+    "name": "Baraigram",
+    "bnName": "বড়াইগ্রাম",
+    "slug": "baraigram",
+    "districtId": 49
+  },
+  {
+    "id": 365,
+    "name": "Gurudaspur",
+    "bnName": "গুরুদাসপুর",
+    "slug": "gurudaspur",
+    "districtId": 49
+  },
+  {
+    "id": 366,
+    "name": "Lalpur",
+    "bnName": "লালপুর",
+    "slug": "lalpur",
+    "districtId": 49
+  },
+  {
+    "id": 367,
+    "name": "Naldanga",
+    "bnName": "নলডাঙ্গা",
+    "slug": "naldanga",
+    "districtId": 49
+  },
+  {
+    "id": 368,
+    "name": "Natore Sadar",
+    "bnName": "নাটোর সদর",
+    "slug": "natore_sadar",
+    "districtId": 49
+  },
+  {
+    "id": 369,
+    "name": "Singra",
+    "bnName": "সিংড়া",
+    "slug": "singra",
+    "districtId": 49
+  },
+  {
+    "id": 370,
+    "name": "Atgharia",
+    "bnName": "আটঘরিয়া",
+    "slug": "atgharia",
+    "districtId": 50
+  },
+  {
+    "id": 371,
+    "name": "Bera",
+    "bnName": "বেড়া",
+    "slug": "bera",
+    "districtId": 50
+  },
+  {
+    "id": 372,
+    "name": "Bhangura",
+    "bnName": "ভাঙ্গুড়া",
+    "slug": "bhangura",
+    "districtId": 50
+  },
+  {
+    "id": 373,
+    "name": "Chatmohar",
+    "bnName": "চাটমোহর",
+    "slug": "chatmohar",
+    "districtId": 50
+  },
+  {
+    "id": 374,
+    "name": "Faridpur",
+    "bnName": "ফরিদপুর",
+    "slug": "faridpur_pabna",
+    "districtId": 50
+  },
+  {
+    "id": 375,
+    "name": "Ishwardi",
+    "bnName": "ঈশ্বরদী",
+    "slug": "ishwardi",
+    "districtId": 50
+  },
+  {
+    "id": 376,
+    "name": "Pabna Sadar",
+    "bnName": "পাবনা সদর",
+    "slug": "pabna_sadar",
+    "districtId": 50
+  },
+  {
+    "id": 377,
+    "name": "Santhia",
+    "bnName": "সাঁথিয়া",
+    "slug": "santhia",
+    "districtId": 50
+  },
+  {
+    "id": 378,
+    "name": "Sujanagar",
+    "bnName": "সুজানগর",
+    "slug": "sujanagar",
+    "districtId": 50
+  },
+  {
+    "id": 379,
+    "name": "Bagha",
+    "bnName": "বাঘা",
+    "slug": "bagha",
+    "districtId": 51
+  },
+  {
+    "id": 380,
+    "name": "Bagmara",
+    "bnName": "বাগমারা",
+    "slug": "bagmara",
+    "districtId": 51
+  },
+  {
+    "id": 381,
+    "name": "Charghat",
+    "bnName": "চারঘাট",
+    "slug": "charghat",
+    "districtId": 51
+  },
+  {
+    "id": 382,
+    "name": "Durgapur",
+    "bnName": "দুর্গাপুর",
+    "slug": "durgapur_rajshahi",
+    "districtId": 51
+  },
+  {
+    "id": 383,
+    "name": "Godagari",
+    "bnName": "গোদাগাড়ী",
+    "slug": "godagari",
+    "districtId": 51
+  },
+  {
+    "id": 384,
+    "name": "Mohanpur",
+    "bnName": "মোহনপুর",
+    "slug": "mohanpur",
+    "districtId": 51
+  },
+  {
+    "id": 385,
+    "name": "Paba",
+    "bnName": "পবা",
+    "slug": "paba",
+    "districtId": 51
+  },
+  {
+    "id": 386,
+    "name": "Puthia",
+    "bnName": "পুঠিয়া",
+    "slug": "puthia",
+    "districtId": 51
+  },
+  {
+    "id": 387,
+    "name": "Tanore",
+    "bnName": "তানোর",
+    "slug": "tanore",
+    "districtId": 51
+  },
+  {
+    "id": 388,
+    "name": "Belkuchi",
+    "bnName": "বেলকুচি",
+    "slug": "belkuchi",
+    "districtId": 52
+  },
+  {
+    "id": 389,
+    "name": "Chauhali",
+    "bnName": "চৌহালি",
+    "slug": "chauhali",
+    "districtId": 52
+  },
+  {
+    "id": 390,
+    "name": "Kamarkhanda",
+    "bnName": "কামারখন্দ",
+    "slug": "kamarkhanda",
+    "districtId": 52
+  },
+  {
+    "id": 391,
+    "name": "Kazipur",
+    "bnName": "কাজীপুর",
+    "slug": "kazipur",
+    "districtId": 52
+  },
+  {
+    "id": 392,
+    "name": "Raiganj",
+    "bnName": "রায়গঞ্জ",
+    "slug": "raiganj",
+    "districtId": 52
+  },
+  {
+    "id": 393,
+    "name": "Shahjadpur",
+    "bnName": "শাহজাদপুর",
+    "slug": "shahjadpur",
+    "districtId": 52
+  },
+  {
+    "id": 394,
+    "name": "Sirajganj Sadar",
+    "bnName": "সিরাজগঞ্জ সদর",
+    "slug": "sirajganj_sadar",
+    "districtId": 52
+  },
+  {
+    "id": 395,
+    "name": "Tarash",
+    "bnName": "তাড়াশ",
+    "slug": "tarash",
+    "districtId": 52
+  },
+  {
+    "id": 396,
+    "name": "Ullahpara",
+    "bnName": "উল্লাপাড়া",
+    "slug": "ullahpara",
+    "districtId": 52
+  },
+  {
+    "id": 397,
+    "name": "Birampur",
+    "bnName": "বিরামপুর",
+    "slug": "birampur",
+    "districtId": 53
+  },
+  {
+    "id": 398,
+    "name": "Birganj",
+    "bnName": "বীরগঞ্জ",
+    "slug": "birganj",
+    "districtId": 53
+  },
+  {
+    "id": 399,
+    "name": "Biral",
+    "bnName": "বিরল",
+    "slug": "biral",
+    "districtId": 53
+  },
+  {
+    "id": 400,
+    "name": "Bochaganj",
+    "bnName": "বোচাগঞ্জ",
+    "slug": "bochaganj",
+    "districtId": 53
+  },
+  {
+    "id": 401,
+    "name": "Chirirbandar",
+    "bnName": "চিরিরবন্দর",
+    "slug": "chirirbandar",
+    "districtId": 53
+  },
+  {
+    "id": 402,
+    "name": "Dinajpur Sadar",
+    "bnName": "দিনাজপুর সদর",
+    "slug": "dinajpur_sadar",
+    "districtId": 53
+  },
+  {
+    "id": 403,
+    "name": "Ghoraghat",
+    "bnName": "ঘোড়াঘাট",
+    "slug": "ghoraghat",
+    "districtId": 53
+  },
+  {
+    "id": 404,
+    "name": "Hakimpur",
+    "bnName": "হাকিমপুর",
+    "slug": "hakimpur",
+    "districtId": 53
+  },
+  {
+    "id": 405,
+    "name": "Kaharole",
+    "bnName": "কাহারোল",
+    "slug": "kaharole",
+    "districtId": 53
+  },
+  {
+    "id": 406,
+    "name": "Khansama",
+    "bnName": "খানসামা",
+    "slug": "khansama",
+    "districtId": 53
+  },
+  {
+    "id": 407,
+    "name": "Nawabganj",
+    "bnName": "নবাবগঞ্জ",
+    "slug": "nawabganj_dinajpur",
+    "districtId": 53
+  },
+  {
+    "id": 408,
+    "name": "Parbatipur",
+    "bnName": "পার্বতীপুর",
+    "slug": "parbatipur",
+    "districtId": 53
+  },
+  {
+    "id": 409,
+    "name": "Phulbari",
+    "bnName": "ফুলবাড়ী",
+    "slug": "phulbari_dinajpur",
+    "districtId": 53
+  },
+  {
+    "id": 410,
+    "name": "Gaibandha Sadar",
+    "bnName": "গাইবান্ধা সদর",
+    "slug": "gaibandha_sadar",
+    "districtId": 54
+  },
+  {
+    "id": 411,
+    "name": "Gobindaganj",
+    "bnName": "গোবিন্দগঞ্জ",
+    "slug": "gobindaganj",
+    "districtId": 54
+  },
+  {
+    "id": 412,
+    "name": "Palashbari",
+    "bnName": "পলাশবাড়ী",
+    "slug": "palashbari",
+    "districtId": 54
+  },
+  {
+    "id": 413,
+    "name": "Phulchhari",
+    "bnName": "ফুলছড়ি",
+    "slug": "phulchhari",
+    "districtId": 54
+  },
+  {
+    "id": 414,
+    "name": "Sadullapur",
+    "bnName": "সাদুল্লাপুর",
+    "slug": "sadullapur",
+    "districtId": 54
+  },
+  {
+    "id": 415,
+    "name": "Sughatta",
+    "bnName": "সুন্দরগঞ্জ",
+    "slug": "sughatta",
+    "districtId": 54
+  },
+  {
+    "id": 416,
+    "name": "Sundarganj",
+    "bnName": "সুন্দরগঞ্জ",
+    "slug": "sundarganj",
+    "districtId": 54
+  },
+  {
+    "id": 417,
+    "name": "Bhurungamari",
+    "bnName": "ভুরুঙ্গামারী",
+    "slug": "bhurungamari",
+    "districtId": 55
+  },
+  {
+    "id": 418,
+    "name": "Char Rajibpur",
+    "bnName": "চর রাজিবপুর",
+    "slug": "char_rajibpur",
+    "districtId": 55
+  },
+  {
+    "id": 419,
+    "name": "Chilmari",
+    "bnName": "চিলমারী",
+    "slug": "chilmari",
+    "districtId": 55
+  },
+  {
+    "id": 420,
+    "name": "Kurigram Sadar",
+    "bnName": "কুড়িগ্রাম সদর",
+    "slug": "kurigram_sadar",
+    "districtId": 55
+  },
+  {
+    "id": 421,
+    "name": "Nageshwari",
+    "bnName": "নাগেশ্বরী",
+    "slug": "nageshwari",
+    "districtId": 55
+  },
+  {
+    "id": 422,
+    "name": "Phulbari",
+    "bnName": "ফুলবাড়ী",
+    "slug": "phulbari_kurigram",
+    "districtId": 55
+  },
+  {
+    "id": 423,
+    "name": "Rajarhat",
+    "bnName": "রাজারহাট",
+    "slug": "rajarhat_kurigram",
+    "districtId": 55
+  },
+  {
+    "id": 424,
+    "name": "Raomari",
+    "bnName": "রৌমারী",
+    "slug": "raomari",
+    "districtId": 55
+  },
+  {
+    "id": 425,
+    "name": "Ulipur",
+    "bnName": "উলিপুর",
+    "slug": "ulipur",
+    "districtId": 55
+  },
+  {
+    "id": 426,
+    "name": "Aditmari",
+    "bnName": "আদিতমারী",
+    "slug": "aditmari",
+    "districtId": 56
+  },
+  {
+    "id": 427,
+    "name": "Hatibandha",
+    "bnName": "হাতীবান্ধা",
+    "slug": "hatibandha",
+    "districtId": 56
+  },
+  {
+    "id": 428,
+    "name": "Kaliganj",
+    "bnName": "কালীগঞ্জ",
+    "slug": "kaliganj_lalmonirhat",
+    "districtId": 56
+  },
+  {
+    "id": 429,
+    "name": "Lalmonirhat Sadar",
+    "bnName": "লালমনিরহাট সদর",
+    "slug": "lalmonirhat_sadar",
+    "districtId": 56
+  },
+  {
+    "id": 430,
+    "name": "Patgram",
+    "bnName": "পাটগ্রাম",
+    "slug": "patgram",
+    "districtId": 56
+  },
+  {
+    "id": 431,
+    "name": "Dimla",
+    "bnName": "ডিমলা",
+    "slug": "dimla",
+    "districtId": 57
+  },
+  {
+    "id": 432,
+    "name": "Domar",
+    "bnName": "ডোমার",
+    "slug": "domar",
+    "districtId": 57
+  },
+  {
+    "id": 433,
+    "name": "Jaldhaka",
+    "bnName": "জলঢাকা",
+    "slug": "jaldhaka",
+    "districtId": 57
+  },
+  {
+    "id": 434,
+    "name": "Kishoreganj",
+    "bnName": "কিশোরগঞ্জ",
+    "slug": "kishoreganj_nilphamari",
+    "districtId": 57
+  },
+  {
+    "id": 435,
+    "name": "Nilphamari Sadar",
+    "bnName": "নীলফামারী সদর",
+    "slug": "nilphamari_sadar",
+    "districtId": 57
+  },
+  {
+    "id": 436,
+    "name": "Saidpur",
+    "bnName": "সৈয়দপুর",
+    "slug": "saidpur",
+    "districtId": 57
+  },
+  {
+    "id": 437,
+    "name": "Atwari",
+    "bnName": "আটোয়ারী",
+    "slug": "atwari",
+    "districtId": 58
+  },
+  {
+    "id": 438,
+    "name": "Boda",
+    "bnName": "বোদা",
+    "slug": "boda",
+    "districtId": 58
+  },
+  {
+    "id": 439,
+    "name": "Debiganj",
+    "bnName": "দেবীগঞ্জ",
+    "slug": "debiganj",
+    "districtId": 58
+  },
+  {
+    "id": 440,
+    "name": "Panchagarh Sadar",
+    "bnName": "পঞ্চগড় সদর",
+    "slug": "panchagarh_sadar",
+    "districtId": 58
+  },
+  {
+    "id": 441,
+    "name": "Tetulia",
+    "bnName": "তেতুলিয়া",
+    "slug": "tetulia",
+    "districtId": 58
+  },
+  {
+    "id": 442,
+    "name": "Badarganj",
+    "bnName": "বদরগঞ্জ",
+    "slug": "badarganj",
+    "districtId": 59
+  },
+  {
+    "id": 443,
+    "name": "Gangachhara",
+    "bnName": "গঙ্গাছড়া",
+    "slug": "gangachhara",
+    "districtId": 59
+  },
+  {
+    "id": 444,
+    "name": "Kaunia",
+    "bnName": "কাউনিয়া",
+    "slug": "kaunia",
+    "districtId": 59
+  },
+  {
+    "id": 445,
+    "name": "Mithapukur",
+    "bnName": "মিঠাপুকুর",
+    "slug": "mithapukur",
+    "districtId": 59
+  },
+  {
+    "id": 446,
+    "name": "Pirgachha",
+    "bnName": "পীরগাছা",
+    "slug": "pirgachha",
+    "districtId": 59
+  },
+  {
+    "id": 447,
+    "name": "Pirganj",
+    "bnName": "পীরগঞ্জ",
+    "slug": "pirganj_rangpur",
+    "districtId": 59
+  },
+  {
+    "id": 448,
+    "name": "Rangpur Sadar",
+    "bnName": "রংপুর সদর",
+    "slug": "rangpur_sadar",
+    "districtId": 59
+  },
+  {
+    "id": 449,
+    "name": "Taraganj",
+    "bnName": "তারাগঞ্জ",
+    "slug": "taraganj",
+    "districtId": 59
+  },
+  {
+    "id": 450,
+    "name": "Baliadangi",
+    "bnName": "বালিয়াডাঙ্গী",
+    "slug": "baliadangi",
+    "districtId": 60
+  },
+  {
+    "id": 451,
+    "name": "Haripur",
+    "bnName": "হরিপুর",
+    "slug": "haripur",
+    "districtId": 60
+  },
+  {
+    "id": 452,
+    "name": "Pirganj",
+    "bnName": "পীরগঞ্জ",
+    "slug": "pirganj_thakurgaon",
+    "districtId": 60
+  },
+  {
+    "id": 453,
+    "name": "Ranisankail",
+    "bnName": "রাণীশংকৈল",
+    "slug": "ranisankail",
+    "districtId": 60
+  },
+  {
+    "id": 454,
+    "name": "Thakurgaon Sadar",
+    "bnName": "ঠাকুরগাঁও সদর",
+    "slug": "thakurgaon_sadar",
+    "districtId": 60
+  },
+  {
+    "id": 455,
+    "name": "Ajmiriganj",
+    "bnName": "আজমিরীগঞ্জ",
+    "slug": "ajmiriganj",
+    "districtId": 61
+  },
+  {
+    "id": 456,
+    "name": "Bahubal",
+    "bnName": "বাহুবল",
+    "slug": "bahubal",
+    "districtId": 61
+  },
+  {
+    "id": 457,
+    "name": "Baniyachong",
+    "bnName": "বানিয়াচং",
+    "slug": "baniyachong",
+    "districtId": 61
+  },
+  {
+    "id": 458,
+    "name": "Chunarughat",
+    "bnName": "চুনারুঘাট",
+    "slug": "chunarughat",
+    "districtId": 61
+  },
+  {
+    "id": 459,
+    "name": "Habiganj Sadar",
+    "bnName": "হবিগঞ্জ সদর",
+    "slug": "habiganj_sadar",
+    "districtId": 61
+  },
+  {
+    "id": 460,
+    "name": "Lakhai",
+    "bnName": "লাখাই",
+    "slug": "lakhai",
+    "districtId": 61
+  },
+  {
+    "id": 461,
+    "name": "Madhabpur",
+    "bnName": "মাধবপুর",
+    "slug": "madhabpur",
+    "districtId": 61
+  },
+  {
+    "id": 462,
+    "name": "Nabiganj",
+    "bnName": "নবীগঞ্জ",
+    "slug": "nabiganj",
+    "districtId": 61
+  },
+  {
+    "id": 463,
+    "name": "Shayestaganj",
+    "bnName": "শায়েস্তাগঞ্জ",
+    "slug": "shayestaganj",
+    "districtId": 61
+  },
+  {
+    "id": 464,
+    "name": "Barlekha",
+    "bnName": "বড়লেখা",
+    "slug": "barlekha",
+    "districtId": 62
+  },
+  {
+    "id": 465,
+    "name": "Juri",
+    "bnName": "জুড়ী",
+    "slug": "juri",
+    "districtId": 62
+  },
+  {
+    "id": 466,
+    "name": "Kamalganj",
+    "bnName": "কমলগঞ্জ",
+    "slug": "kamalganj",
+    "districtId": 62
+  },
+  {
+    "id": 467,
+    "name": "Kulaura",
+    "bnName": "কুলাউড়া",
+    "slug": "kulaura",
+    "districtId": 62
+  },
+  {
+    "id": 468,
+    "name": "Moulvibazar Sadar",
+    "bnName": "মৌলভীবাজার সদর",
+    "slug": "moulvibazar_sadar",
+    "districtId": 62
+  },
+  {
+    "id": 469,
+    "name": "Rajnagar",
+    "bnName": "রাজনগর",
+    "slug": "rajnagar",
+    "districtId": 62
+  },
+  {
+    "id": 470,
+    "name": "Sreemangal",
+    "bnName": "শ্রীমঙ্গল",
+    "slug": "sreemangal",
+    "districtId": 62
+  },
+  {
+    "id": 471,
+    "name": "Bishwamvarpur",
+    "bnName": "বিশ্বম্ভরপুর",
+    "slug": "bishwamvarpur",
+    "districtId": 63
+  },
+  {
+    "id": 472,
+    "name": "Chhatak",
+    "bnName": "ছাতক",
+    "slug": "chhatak",
+    "districtId": 63
+  },
+  {
+    "id": 473,
+    "name": "Derai",
+    "bnName": "দিরাই",
+    "slug": "derai",
+    "districtId": 63
+  },
+  {
+    "id": 474,
+    "name": "Dharamapasha",
+    "bnName": "ধর্মপাশা",
+    "slug": "dharamapasha",
+    "districtId": 63
+  },
+  {
+    "id": 475,
+    "name": "Dowarabazar",
+    "bnName": "দোয়ারাবাজার",
+    "slug": "dowarabazar",
+    "districtId": 63
+  },
+  {
+    "id": 476,
+    "name": "Jagannathpur",
+    "bnName": "জগন্নাথপুর",
+    "slug": "jagannathpur",
+    "districtId": 63
+  },
+  {
+    "id": 477,
+    "name": "Jamalganj",
+    "bnName": "জামালগঞ্জ",
+    "slug": "jamalganj",
+    "districtId": 63
+  },
+  {
+    "id": 478,
+    "name": "Madhyanagar",
+    "bnName": "মধ্যনগর",
+    "slug": "madhyanagar",
+    "districtId": 63
+  },
+  {
+    "id": 479,
+    "name": "Shantiganj",
+    "bnName": "শান্তিগঞ্জ",
+    "slug": "shantiganj",
+    "districtId": 63
+  },
+  {
+    "id": 480,
+    "name": "Sullah",
+    "bnName": "সুল্লা",
+    "slug": "sullah",
+    "districtId": 63
+  },
+  {
+    "id": 481,
+    "name": "Sunamganj Sadar",
+    "bnName": "সুনামগঞ্জ সদর",
+    "slug": "sunamganj_sadar",
+    "districtId": 63
+  },
+  {
+    "id": 482,
+    "name": "Tahirpur",
+    "bnName": "তাহিরপুর",
+    "slug": "tahirpur",
+    "districtId": 63
+  },
+  {
+    "id": 483,
+    "name": "Balaganj",
+    "bnName": "বালাগঞ্জ",
+    "slug": "balaganj",
+    "districtId": 64
+  },
+  {
+    "id": 484,
+    "name": "Beanibazar",
+    "bnName": "বিয়ানীবাজার",
+    "slug": "beanibazar",
+    "districtId": 64
+  },
+  {
+    "id": 485,
+    "name": "Bishwanath",
+    "bnName": "বিশ্বনাথ",
+    "slug": "bishwanath",
+    "districtId": 64
+  },
+  {
+    "id": 486,
+    "name": "Companiganj",
+    "bnName": "কোম্পানীগঞ্জ",
+    "slug": "companiganj_sylhet",
+    "districtId": 64
+  },
+  {
+    "id": 487,
+    "name": "Dakshin Surma",
+    "bnName": "দক্ষিণ সুরমা",
+    "slug": "dakshin_surma",
+    "districtId": 64
+  },
+  {
+    "id": 488,
+    "name": "Fenchuganj",
+    "bnName": "ফেঞ্চুগঞ্জ",
+    "slug": "fenchuganj",
+    "districtId": 64
+  },
+  {
+    "id": 489,
+    "name": "Golapganj",
+    "bnName": "গোলাপগঞ্জ",
+    "slug": "golapganj",
+    "districtId": 64
+  },
+  {
+    "id": 490,
+    "name": "Gowainghat",
+    "bnName": "গোয়াইনঘাট",
+    "slug": "gowainghat",
+    "districtId": 64
+  },
+  {
+    "id": 491,
+    "name": "Jaintiapur",
+    "bnName": "জৈন্তাপুর",
+    "slug": "jaintiapur",
+    "districtId": 64
+  },
+  {
+    "id": 492,
+    "name": "Kanaighat",
+    "bnName": "কানাইঘাট",
+    "slug": "kanaighat",
+    "districtId": 64
+  },
+  {
+    "id": 493,
+    "name": "Osmani Nagar",
+    "bnName": "ওসমানী নগর",
+    "slug": "osmani_nagar",
+    "districtId": 64
+  },
+  {
+    "id": 494,
+    "name": "Sylhet Sadar",
+    "bnName": "সিলেট সদর",
+    "slug": "sylhet_sadar",
+    "districtId": 64
+  },
+  {
+    "id": 495,
+    "name": "Zakiganj",
+    "bnName": "জকিগঞ্জ",
+    "slug": "zakiganj",
+    "districtId": 64
+  }
+]

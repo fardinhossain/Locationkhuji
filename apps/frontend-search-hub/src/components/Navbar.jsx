@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   MapPin, 
   Home, 
@@ -190,7 +190,7 @@ export default function Navbar() {
           {/* Language Toggle */}
           <button 
             onClick={toggleLang}
-            className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full border border-gray-700 hover:border-gray-500 transition-colors bg-navy-800/50"
+            className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-full border border-gray-700 hover:border-gray-500 transition-colors bg-navy-800/50"
           >
             <span className={`text-xs sm:text-sm ${lang === 'en' ? 'text-teal-400 font-bold' : 'text-gray-400'}`}>EN</span>
             {lang === 'en' ? 
@@ -203,7 +203,7 @@ export default function Navbar() {
           {/* Theme */}
           <button
             onClick={toggle}
-            className="text-gray-400 hover:text-teal-400 transition-colors flex flex-col items-center"
+            className="hidden sm:flex text-gray-400 hover:text-teal-400 transition-colors flex flex-col items-center"
             aria-label="Toggle map theme"
             title={theme === "light" ? "Switch to Dark Map" : "Switch to Light Map"}
           >
@@ -271,34 +271,77 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="lg:hidden border-t border-white/5 bg-navy-900/95 backdrop-blur-xl">
-          <div className="px-4 py-4 space-y-2">
-            {CATS.map((c) => {
-              const Icon = c.icon;
-              return (
-                <button
-                  key={c.key}
-                  onClick={() => {
-                    if (!user) { nav("/login?next=/map"); setMobileOpen(false); return; }
-                    setCategory(c.key); nav("/map"); setMobileOpen(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
+      {/* Mobile menu collapsible navigation drawer */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="lg:hidden border-t border-white/5 bg-navy-900/95 backdrop-blur-xl overflow-hidden"
+          >
+            <div className="px-4 py-5 space-y-4">
+              
+              {/* Mobile-only Settings Row (collapses Language and Theme to prevent header overflow) */}
+              <div className="grid grid-cols-2 gap-3 pb-2">
+                {/* Language Switch */}
+                <button 
+                  onClick={toggleLang}
+                  className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-white/10 bg-navy-800/40 text-white hover:bg-navy-700/40 transition-colors"
                 >
-                  <Icon size={18} className="text-teal-400" /> {t(c.labelKey)}
+                  <span className="text-[11px] uppercase tracking-wider text-gray-400 font-bold">Language</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-xs ${lang === 'en' ? 'text-teal-400 font-bold' : 'text-gray-400'}`}>EN</span>
+                    <span className={`text-xs ${lang === 'bn' ? 'text-teal-400 font-bold font-bengali' : 'text-gray-400 font-bengali'}`}>বাংলা</span>
+                  </div>
                 </button>
-              );
-            })}
-            {!user && (
-              <div className="pt-4 flex flex-col gap-2">
-                <Button variant="outline" className="w-full border-gray-700 text-gray-300" onClick={() => { nav("/login"); setMobileOpen(false); }}>{t('login')}</Button>
-                <Button className="w-full bg-teal-500 text-navy-900 font-bold" onClick={() => { nav("/register"); setMobileOpen(false); }}>{t('register')}</Button>
+
+                {/* Theme Toggle */}
+                <button
+                  onClick={toggle}
+                  className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-white/10 bg-navy-800/40 text-white hover:bg-navy-700/40 transition-colors"
+                >
+                  <span className="text-[11px] uppercase tracking-wider text-gray-400 font-bold">Map Theme</span>
+                  <div className="text-teal-400">
+                    {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+                  </div>
+                </button>
               </div>
-            )}
-          </div>
-        </div>
-      )}
+
+              {/* Navigation Items */}
+              <div className="space-y-1.5">
+                {CATS.map((c) => {
+                  const Icon = c.icon;
+                  return (
+                    <button
+                      key={c.key}
+                      onClick={() => {
+                        if (!user) { nav("/login?next=/map"); setMobileOpen(false); return; }
+                        setCategory(c.key); nav("/map"); setMobileOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-300 hover:text-white hover:bg-white/5 transition-colors touch-target"
+                    >
+                      <Icon size={18} className="text-teal-400" /> {t(c.labelKey)}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {!user && (
+                <div className="pt-2 flex flex-col gap-2.5">
+                  <Button variant="outline" className="w-full border-white/10 text-gray-300 py-6 rounded-xl hover:bg-white/5" onClick={() => { nav("/login"); setMobileOpen(false); }}>
+                    {t('login')}
+                  </Button>
+                  <Button className="w-full bg-teal-500 text-navy-900 font-bold py-6 rounded-xl shadow-[0_0_15px_rgba(0,209,178,0.45)]" onClick={() => { nav("/register"); setMobileOpen(false); }}>
+                    {t('register')}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 }

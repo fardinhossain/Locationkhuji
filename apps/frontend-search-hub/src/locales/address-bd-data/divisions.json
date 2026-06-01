@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "name": "Dhaka",
+    "bnName": "ঢাকা",
+    "slug": "dhaka",
+    "coordinates": { "latitude": 23.8103, "longitude": 90.4125 },
+    "area": 20593,
+    "population": 44215890,
+    "literacy": 70.5
+  },
+  {
+    "id": 2,
+    "name": "Chattogram",
+    "bnName": "চট্টগ্রাম",
+    "slug": "chattogram",
+    "coordinates": { "latitude": 22.3569, "longitude": 91.7832 },
+    "area": 33909,
+    "population": 28423019,
+    "literacy": 59.1
+  },
+  {
+    "id": 3,
+    "name": "Rajshahi",
+    "bnName": "রাজশাহী",
+    "slug": "rajshahi",
+    "coordinates": { "latitude": 24.3636, "longitude": 88.6241 },
+    "area": 18197,
+    "population": 18484858,
+    "literacy": 54.7
+  },
+  {
+    "id": 4,
+    "name": "Khulna",
+    "bnName": "খুলনা",
+    "slug": "khulna",
+    "coordinates": { "latitude": 22.8456, "longitude": 89.5403 },
+    "area": 22285,
+    "population": 15687759,
+    "literacy": 57.4
+  },
+  {
+    "id": 5,
+    "name": "Barishal",
+    "bnName": "বরিশাল",
+    "slug": "barishal",
+    "coordinates": { "latitude": 22.701, "longitude": 90.3535 },
+    "area": 13297,
+    "population": 8147822,
+    "literacy": 60.8
+  },
+  {
+    "id": 6,
+    "name": "Sylhet",
+    "bnName": "সিলেট",
+    "slug": "sylhet",
+    "coordinates": { "latitude": 24.8949, "longitude": 91.8687 },
+    "area": 12596,
+    "population": 9910219,
+    "literacy": 50.2
+  },
+  {
+    "id": 7,
+    "name": "Rangpur",
+    "bnName": "রংপুর",
+    "slug": "rangpur",
+    "coordinates": { "latitude": 25.7439, "longitude": 89.2752 },
+    "area": 16317,
+    "population": 15787758,
+    "literacy": 51.6
+  },
+  {
+    "id": 8,
+    "name": "Mymensingh",
+    "bnName": "ময়মনসিংহ",
+    "slug": "mymensingh",
+    "coordinates": { "latitude": 24.7471, "longitude": 90.4203 },
+    "area": 10584,
+    "population": 11370000,
+    "literacy": 52.1
+  }
+]

@@ -121,7 +121,7 @@ function MapClicker({ onClick, confirmBeforeClick, onConfirmClick, t }) {
   );
 }
 
-function MapUpdater({ center, radius, isNationwide }) {
+function MapUpdater({ center, radius, isNationwide, focusTrigger }) {
   const map = useMap();
   useEffect(() => {
     if (isNationwide) {
@@ -149,7 +149,7 @@ function MapUpdater({ center, radius, isNationwide }) {
         map.flyTo(center, 13, { duration: 1.5 });
       }
     }
-  }, [center, radius, map, isNationwide]);
+  }, [center, radius, map, isNationwide, focusTrigger]);
   return null;
 }
 
@@ -171,7 +171,7 @@ const isValidCoords = (arr) => {
   return true;
 };
 
-export default function MapView({ center, listings = [], userLocation, radius = 1, onClickMap, height = "100%", interactive = true, confirmBeforeClick = false, onConfirmClick, isNationwide = false }) {
+export default function MapView({ center, listings = [], userLocation, radius = 1, onClickMap, height = "100%", interactive = true, confirmBeforeClick = false, onConfirmClick, isNationwide = false, focusTrigger = 0 }) {
   const [mapId] = React.useState(() => `map-${Math.random().toString(36).slice(2)}`);
 
   const validCenter = React.useMemo(() => {
@@ -233,7 +233,7 @@ export default function MapView({ center, listings = [], userLocation, radius = 
         />
         <BangladeshMask />
         {onClickMap && <MapClicker onClick={onClickMap} confirmBeforeClick={confirmBeforeClick} onConfirmClick={onConfirmClick} t={t} />}
-        <MapUpdater center={validCenter} radius={radius} isNationwide={isNationwide} />
+        <MapUpdater center={validCenter} radius={radius} isNationwide={isNationwide} focusTrigger={focusTrigger} />
         
         {/* Search Radius Visualization - only show when user has selected a location and NOT nationwide */}
         {validCenter && radius > 0 && !isNationwide &&

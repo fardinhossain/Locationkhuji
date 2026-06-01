@@ -12,7 +12,7 @@ const HeroSection = () => {
   const { t } = useTranslation();
 
   return (
-    <section className="relative w-full min-h-[calc(100vh-80px)] lg:h-[calc(100vh-80px)] lg:max-h-[860px] flex flex-col lg:flex-row px-6 lg:px-12 pb-8 pt-4 sm:pt-6 lg:pt-8 overflow-hidden">
+    <section className="hero-section relative w-full min-h-[calc(100vh-80px)] lg:h-[calc(100vh-80px)] lg:max-h-[860px] flex flex-col lg:flex-row px-6 lg:px-12 pb-8 pt-4 sm:pt-6 lg:pt-8 overflow-hidden">
 
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none">
@@ -21,15 +21,15 @@ const HeroSection = () => {
       </div>
 
       {/* ── Left Content Area (47%) ─────────────────────────────────────────── */}
-      <div className="w-full lg:w-[47%] flex flex-col justify-between relative z-10 lg:pr-4 xl:pr-6">
+      <div className="hero-left w-full lg:w-[47%] flex flex-col justify-between relative z-10 lg:pr-2 xl:pr-4">
 
         {/* Top group: badge → title → description → search → buttons */}
-        <div className="flex flex-col">
+        <div className="hero-content-group flex flex-col">
 
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="inline-flex items-center px-4 py-1.5 rounded-full border border-teal-500/30 bg-teal-500/5 text-teal-400 text-xs font-medium mb-5 backdrop-blur-sm self-start"
+            className="hero-badge inline-flex items-center px-4 py-1.5 rounded-full border border-teal-500/30 bg-teal-500/5 text-teal-400 text-xs font-medium mb-5 backdrop-blur-sm self-start"
           >
             {t('hero.badge')}
           </motion.div>
@@ -38,7 +38,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-[32px] sm:text-[38px] md:text-[48px] xl:text-[54px] font-bold leading-[1.15] tracking-tight mb-4 sm:mb-5 text-white"
+            className="hero-heading text-clamp-hero-title font-bold leading-[1.15] tracking-tight mb-4 sm:mb-5 text-white"
           >
             <span className="block glow-text-teal opacity-95">{t('hero.titleLine1')}</span>
             <span className="block text-teal-500">{t('hero.titleLine2')}</span>
@@ -48,7 +48,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-gray-400 text-sm sm:text-[15px] max-w-[460px] mb-1 leading-relaxed"
+            className="hero-description text-clamp-body text-gray-400 max-w-[460px] mb-1 leading-relaxed"
           >
             {t('hero.description')}
           </motion.p>
@@ -60,18 +60,18 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mt-6"
+            className="hero-cta-group flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mt-6"
           >
             <Link
               to="/map"
-              className="bg-teal-500 hover:bg-teal-400 text-navy-900 font-bold px-6 sm:px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition-colors glow-teal-strong shadow-lg w-full sm:w-auto text-sm sm:text-base"
+              className="hero-cta-btn bg-teal-500 hover:bg-teal-400 text-navy-900 font-bold px-6 sm:px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition-colors glow-teal-strong shadow-lg w-full sm:w-auto text-sm sm:text-base"
             >
               <Map className="w-5 h-5" />
               {t('hero.openMap')}
             </Link>
             <Link
               to="/list"
-              className="bg-transparent hover:bg-white/5 border border-gray-600 text-white font-medium px-6 sm:px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition-colors w-full sm:w-auto text-sm sm:text-base"
+              className="hero-cta-btn bg-transparent hover:bg-white/5 border border-gray-600 text-white font-medium px-6 sm:px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition-colors w-full sm:w-auto text-sm sm:text-base"
             >
               <List className="w-5 h-5 text-teal-500" />
               {t('hero.viewList')}

@@ -17,35 +17,117 @@ LocationKhuji is a premium, Bangladesh-centric location discovery platform focus
 - **Frontend:** React 19, Tailwind CSS, Framer Motion, Zustand, React-Leaflet.
 - **Backend:** Node.js, Express, MongoDB (Mongoose), Firebase Auth.
 
-## ☁️ Deployment Guide (Free Tier)
+## 🚀 Production Deployment Guide (Best Approach)
 
-This project is separated into a Frontend and Backend (Monorepo Workspace) and is deployed on two different free platforms to maximize performance.
+Because LocationKhuji is an enterprise-grade monorepo featuring **Socket.io (WebSockets)**, AI proxying, and intensive mapping, deploying it requires platforms that support stable WebSocket connections and monorepo structures. 
 
-### 1. Backend (Render.com)
-1. Push this repository to your GitHub.
-2. Go to [Render.com](https://render.com) and create a new **Web Service**.
-3. Connect your GitHub repository.
-4. Render will automatically detect the `render.yaml` configuration in `apps/backend-api-gateway` and set up the build commands (`npm install`) and start commands (`npm start`).
-5. Ensure you add all your `.env` variables (MongoDB URI, Firebase credentials, Cloudinary, etc.) to the Render dashboard.
-6. Set `CORS_ORIGIN` to your future Netlify URL.
+Here are the recommended, battle-tested approaches for deploying this stack:
 
-**Keeping it awake 24/7:**
-To prevent the Render free tier from going to sleep (cold starts):
-- Create a free account at [UptimeRobot](https://uptimerobot.com).
-- Add a new "HTTP(s)" monitor.
-- Enter your Render API URL (e.g., `https://your-backend.onrender.com/api`).
-- Set the ping interval to **10 minutes**.
+### Option 1: Managed Cloud (Vercel + Railway) - *Recommended for ease*
 
-### 2. Frontend (Netlify)
-1. Go to [Netlify.com](https://netlify.com) and click **Add New Site** -> **Import an existing project** from GitHub.
-2. Select your repository.
-3. Configure the build settings:
-   - **Base directory:** Leave blank (root)
-   - **Build command:** `npm run build:hub`
-   - **Publish directory:** `apps/frontend-search-hub/build`
-4. Add the following Environment Variable in Netlify:
-   - `REACT_APP_BACKEND_URL`: `https://your-backend.onrender.com` *(Your Render URL without the /api)*
-5. Click **Deploy**. Note: SPA routing is handled by the `_redirects` file automatically included in the `public` folder.
+**1. Frontend (Vercel)**
+Vercel is the industry standard for React apps and natively supports npm workspaces out of the box.
+1. Connect your GitHub repository to [Vercel](https://vercel.com).
+2. Import the project. Vercel will automatically detect the monorepo.
+3. Configure the project:
+   - **Framework Preset:** Create React App
+   - **Root Directory:** `apps/frontend-search-hub`
+   - **Build Command:** `npm run build` (Vercel handles the workspace context)
+   - **Install Command:** `npm install`
+4. **Environment Variables:** Add `REACT_APP_BACKEND_URL` pointing to your backend production URL.
+5. Vercel handles the SPA routing (`_redirects` not required) and provides global Edge CDN caching automatically.
+
+**2. Backend (Railway.app or Render.com)**
+Railway provides excellent, native support for WebSockets (`Socket.io`) without the harsh connection dropping seen on some serverless platforms.
+1. Connect your repository to [Railway](https://railway.app).
+2. Create a new service from your GitHub repo.
+3. Configure the Root Directory to `apps/backend-api-gateway`.
+4. Add your **Environment Variables** (see checklist below).
+5. Add a custom domain. Railway handles SSL automatically.
+*Note: If using Render.com instead, simply use the `render.yaml` blueprint provided in the backend folder.*
+
+---
+
+### Option 2: Self-Hosted VPS (DigitalOcean / AWS EC2 / Hetzner) - *Best for Cost & Scale*
+
+For maximum control, cost-efficiency, and zero WebSocket timeouts, deploying to a Linux VPS using **PM2** and **Nginx** is the professional standard.
+
+**1. Server Preparation**
+```bash
+# Update server and install dependencies
+sudo apt update && sudo apt install -y nodejs npm nginx git
+sudo npm install -g pm2
+```
+
+**2. Clone & Build**
+```bash
+git clone https://github.com/your-username/LocationKhuji.git
+cd LocationKhuji
+npm install
+
+# Build the frontend workspace
+npm run build:hub
+```
+
+**3. Configure Backend with PM2**
+Create an `.env` file in `apps/backend-api-gateway`, then start the API via PM2:
+```bash
+cd apps/backend-api-gateway
+pm2 start src/server.js --name "locationkhuji-api"
+pm2 save
+pm2 startup
+```
+
+**4. Nginx Reverse Proxy & Static Hosting**
+Configure Nginx (`/etc/nginx/sites-available/locationkhuji`) to serve the compiled frontend React app and proxy the `/api` and `/socket.io` requests to the local Node.js process:
+
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+
+    # Serve Frontend (React SPA)
+    root /var/www/LocationKhuji/apps/frontend-search-hub/build;
+    index index.html;
+    location / {
+        try_files $uri /index.html;
+    }
+
+    # Proxy Backend API
+    location /api/ {
+        proxy_pass http://127.0.0.1:5000/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # Proxy Socket.io (WebSocket support)
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:5000/socket.io/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
+*Run `sudo certbot --nginx` to automatically secure your deployment with free Let's Encrypt SSL.*
+
+---
+
+### 🔑 Essential Production Environment Checklist
+
+Before taking the app live, ensure these keys are secured in your production environment (`.env`):
+
+**Backend Secrets:**
+- `PORT` (usually 5000)
+- `MONGODB_URI` (Production MongoDB Atlas cluster)
+- `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (Auth)
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` (Media)
+- `GROQ_API_KEY` or `OPENROUTER_API_KEY` (AI Intent Parsing)
+- `CORS_ORIGIN` (Your exact frontend URL, e.g., `https://locationkhuji.com`)
+
+**Frontend Secrets:**
+- `REACT_APP_BACKEND_URL` (Your exact backend URL, e.g., `https://api.locationkhuji.com`)
+- `REACT_APP_FIREBASE_API_KEY`, `REACT_APP_FIREBASE_AUTH_DOMAIN` (Client Firebase Auth)
 
 ---
 

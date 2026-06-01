@@ -60,14 +60,19 @@ const MapCard = () => {
   );
 };
 
-const MapStatRow = ({ icon, color, label, count, highlight }) => (
-  <div className={`flex items-center justify-between text-sm p-2 -mx-2 rounded-xl transition-all cursor-pointer group ${highlight ? 'bg-purple-500/10 border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)] hover:bg-purple-500/20' : 'hover:bg-white/5'}`}>
-    <div className="flex items-center gap-2.5">
-      <span className={`${color} group-hover:scale-110 transition-transform duration-300 ${highlight ? 'animate-pulse' : ''}`}>{icon}</span>
-      <span className={`${highlight ? 'text-purple-50 font-medium' : 'text-gray-400 group-hover:text-white'} transition-colors duration-300 text-xs xl:text-sm`}>{label}</span>
+const MapStatRow = ({ icon, color, label, count, highlight }) => {
+  const { i18n } = useTranslation();
+  const isBn = i18n.language === 'bn';
+
+  return (
+    <div className={`flex items-center justify-between text-sm p-2 -mx-2 rounded-xl transition-all cursor-pointer group ${highlight ? 'bg-purple-500/10 border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)] hover:bg-purple-500/20' : 'hover:bg-white/5'}`}>
+      <div className="flex items-center gap-2.5">
+        <span className={`${color} group-hover:scale-110 transition-transform duration-300 ${highlight ? 'animate-pulse' : ''}`}>{icon}</span>
+        <span className={`${highlight ? 'text-purple-50 font-medium' : 'text-gray-400 group-hover:text-white'} transition-colors duration-300 text-xs xl:text-sm`}>{label}</span>
+      </div>
+      <span className={`${isBn ? 'font-bengali font-semibold' : 'font-mono font-medium'} text-xs xl:text-sm ${color} group-hover:drop-shadow-[0_0_8px_currentColor] transition-all duration-300 ${highlight ? 'text-purple-300 drop-shadow-[0_0_5px_currentColor]' : ''}`}>{count}</span>
     </div>
-    <span className={`font-mono font-medium text-xs xl:text-sm ${color} group-hover:drop-shadow-[0_0_8px_currentColor] transition-all duration-300 ${highlight ? 'text-purple-300 drop-shadow-[0_0_5px_currentColor]' : ''}`}>{count}</span>
-  </div>
-);
+  );
+};
 
 export default MapCard;

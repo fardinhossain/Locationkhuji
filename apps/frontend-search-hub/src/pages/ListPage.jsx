@@ -35,7 +35,7 @@ export default function ListPage() {
               {t('all')}
             </button>
             {CATEGORIES.map((c) => {
-              const labels = { all: t('all'), flat: t('flatRental'), pharmacy: t('pharmacy'), hospital: t('hospital'), fashion: t('fashion') };
+              const labels = { all: t('all'), flat: t('flatRental'), pharmacy: t('pharmacy'), hospital: t('hospital'), restaurant: t('restaurant'), service: t('service') };
               return (
                 <button key={c.key} onClick={() => loc.setCategory(c.key)} data-testid={`list-cat-${c.key}`}
                   className="px-3 py-1.5 rounded-pill text-xs font-semibold transition"
@@ -48,11 +48,11 @@ export default function ListPage() {
         </div>
 
         {loading ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({length: 6}).map((_, i) => <div key={i} className="h-72 skeleton rounded-xl"/>)}
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {listings.map((l) => <ListingCard key={l.id} listing={l} />)}
           </div>
         )}

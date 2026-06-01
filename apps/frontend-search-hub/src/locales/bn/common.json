@@ -116,23 +116,23 @@
     "categoriesCount": "৫",
     "radiusDistance": "২০কিমি",
     "realtime": "রিয়েল-টাইম",
-    "listingCount": "5000+",
+    "listingCount": "৫,০০০+",
     "listingLabel": "লিস্টিং",
-    "categoryCount": "5",
+    "categoryCount": "৫",
     "categoryLabel": "ক্যাটাগরি",
-    "radiusCount": "20km",
+    "radiusCount": "২০ কিমি",
     "radiusLabel": "সার্চ রেডিয়াস",
-    "focusCount": "100%",
+    "focusCount": "১০০%",
     "focusLabel": "বাংলাদেশ ফোকাসড"
   },
   "mapCard": {
     "title": "আপনার কাছাকাছি",
     "counts": {
-      "flat": "250+",
-      "pharmacy": "300+",
-      "hospital": "120+",
-      "restaurant": "200+",
-      "service": "50+"
+      "flat": "২৫০+",
+      "pharmacy": "৩০০+",
+      "hospital": "১২০+",
+      "restaurant": "২০০+",
+      "service": "৫০+"
     }
   },
   "searchHereInstead": "এখানে খুঁজবেন?",

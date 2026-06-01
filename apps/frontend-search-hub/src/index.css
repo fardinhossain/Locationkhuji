@@ -75,6 +75,37 @@ body {
     background: linear-gradient(to bottom, transparent, #00C9A7, transparent);
     animation: trail 4s linear infinite;
   }
+
+  /* Responsive Typography System using clamp() */
+  .text-clamp-hero-title {
+    font-size: clamp(1.8rem, 4.2vw, 3.8rem) !important;
+  }
+  .text-clamp-subtitle {
+    font-size: clamp(1.1rem, 2.5vw, 1.6rem) !important;
+  }
+  .text-clamp-body {
+    font-size: clamp(0.85rem, 1.3vw, 1rem) !important;
+  }
+
+  /* Minimum touch target budget helpers */
+  .touch-target {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  /* Performance Optimization: soften glows & blur backdrops on mobile viewports */
+  @media (max-width: 767px) {
+    .neon-glow-teal, .glow-teal, .glow-teal-strong {
+      box-shadow: 0 0 8px rgba(0, 201, 167, 0.25) !important;
+    }
+    .glow-text-teal {
+      text-shadow: 0 0 5px rgba(0, 209, 178, 0.3) !important;
+    }
+    .backdrop-blur-xl {
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+    }
+  }
 }
 
 @layer base {
@@ -117,9 +148,10 @@ body {
   * { @apply border-border; box-sizing: border-box; }
 
   /* Prevent horizontal overflow */
-  html, body {
+  html, body, #root {
     overflow-x: hidden;
     max-width: 100vw;
+    width: 100%;
   }
 }
 
@@ -301,4 +333,149 @@ input, select, textarea {
   background: linear-gradient(135deg, rgba(20, 26, 33, 0.7) 0%, rgba(11, 14, 17, 0.9) 100%);
   border: 1px solid rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(12px);
+}
+
+/* Desktop Hero Layout Optimization for min-width: 1280px */
+@media (min-width: 1280px) {
+  /* Fix 6: Occupy exact remaining viewport height, eliminating empty bottom background */
+  .hero-section {
+    min-height: calc(100vh - 80px) !important;
+    height: calc(100vh - 80px) !important;
+    max-height: 900px !important;
+    padding-top: 1.5rem !important;
+    padding-bottom: 2.5rem !important;
+  }
+
+  /* Fix 1: Reduce Hero Max Width */
+  .hero-left {
+    max-width: 650px !important;
+  }
+
+  /* Fix 3: Tighten Spacing */
+  .hero-badge {
+    margin-bottom: 10px !important;
+  }
+
+  /* Fix 2: Optimize Heading Size & Spacing to prevent Bengali diacritic overlap */
+  .hero-heading {
+    font-size: clamp(3rem, 4vw, 4rem) !important;
+    line-height: 1.08 !important;
+    letter-spacing: -0.02em !important;
+    margin-bottom: 10px !important;
+  }
+  .hero-heading .glow-text-teal {
+    text-shadow: 0 0 10px rgba(0, 209, 178, 0.35) !important; /* Slightly reduced glow */
+  }
+
+  .hero-description {
+    margin-bottom: 6px !important;
+  }
+
+  /* Fix 3 & 4: Search Bar */
+  .hero-search-wrapper {
+    margin-top: 12px !important;
+  }
+  .hero-search-modes {
+    margin-bottom: 8px !important;
+  }
+  .hero-search-hint {
+    margin-bottom: 6px !important;
+  }
+  
+  /* Compact Search Input */
+  .hero-search-form {
+    height: 64px !important;
+    border-radius: 20px !important;
+    padding-inline: 20px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .hero-search-form input {
+    font-size: 14px !important; /* Slight input reduction */
+  }
+  .hero-search-btn {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    height: 48px !important; /* Compact button */
+    font-size: 14px !important;
+  }
+  .hero-search-popular {
+    margin-top: 10px !important;
+    gap: 8px !important;
+  }
+  .hero-search-popular button {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Fix 5: Compact CTA Buttons */
+  .hero-cta-group {
+    margin-top: 12px !important;
+    gap: 10px !important;
+  }
+  .hero-cta-btn {
+    height: 56px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    font-size: 14px !important;
+  }
+  
+  /* Reduce glow spread & shadow size */
+  .glow-teal-strong {
+    box-shadow: 0 0 15px rgba(0, 209, 178, 0.35) !important;
+  }
+
+  /* Fix 7: Improve Stats Spacing and Density */
+  .hero-stats-wrapper {
+    margin-top: 12px !important;
+  }
+  .hero-stats-panel {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+}
+
+/* Mobile Search Bar & Button Redesign (Fix 5: mobile search height 52px) */
+@media (max-width: 767px) {
+  .hero-search-form {
+    height: 52px !important;
+    border-radius: 9999px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 12px !important;
+    padding-right: 6px !important;
+  }
+  .hero-search-form input {
+    font-size: 13px !important;
+  }
+  .hero-search-btn {
+    height: 40px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* Tablet / Small Desktop Search Bar Tuning */
+@media (min-width: 768px) and (max-width: 1279px) {
+  .hero-search-form {
+    height: 58px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 18px !important;
+    padding-right: 8px !important;
+  }
+  .hero-search-btn {
+    height: 46px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
 }

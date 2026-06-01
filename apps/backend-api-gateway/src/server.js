@@ -15,7 +15,6 @@ const { normalizeBengaliText, CATEGORY_SYNONYMS, BUSINESS_NAMES, BENGALI_PREPOSI
 const { resolveLocationFromQuery } = require("./locationResolver");
 
 const { Server } = require("socket.io");
-const { GoogleGenAI } = require("@google/genai");
 
 const PORT = process.env.PORT || 8001;
 const MONGO_URL = process.env.MONGO_URL;
@@ -29,17 +28,18 @@ const FIREBASE_SA = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || "";
 const DEV_MODE = process.env.NODE_ENV === "development" && (!FIREBASE_SA || FIREBASE_SA.includes("your-project-id") || FIREBASE_SA.includes("MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSj"));
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-let aiClient = null;
-if (GEMINI_API_KEY && GEMINI_API_KEY !== "your_gemini_api_key_here") {
-  try {
-    aiClient = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-    console.log("Google GenAI client initialized successfully");
-  } catch (err) {
-    console.error("Failed to initialize Google GenAI client:", err.message);
-  }
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+if (OPENROUTER_API_KEY && OPENROUTER_API_KEY !== "your_openrouter_api_key_here") {
+  console.log("OpenRouter API configuration detected. DeepSeek V3 will act as the secondary fallback search engine.");
 } else {
-  console.warn("GEMINI_API_KEY is not configured. Offline smart regex fallback will be active.");
+  console.warn("⚠️ OPENROUTER_API_KEY is not configured. OpenRouter DeepSeek V3 search integration will be bypassed.");
+}
+
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+if (GROQ_API_KEY && GROQ_API_KEY !== "your_groq_api_key_here") {
+  console.log("Groq API configuration detected. Llama 3 will act as the primary search engine.");
+} else {
+  console.warn("⚠️ GROQ_API_KEY is not configured. Groq Llama 3 search integration will be bypassed.");
 }
 
 const ALLOWED_ROLES = ["user", "owner", "admin"];
@@ -1612,6 +1612,270 @@ async function geocodeLocation(query) {
 
 const aiIntentCache = new Map();
 
+async function parseWithGroq(searchQuery, parsedLat, parsedLng) {
+  if (!GROQ_API_KEY || GROQ_API_KEY === "your_groq_api_key_here") {
+    throw new Error("Groq API key is not configured");
+  }
+
+  const prompt = `
+    You are the AI Location Assistant for LocationKhuji, a map-first search platform in Bangladesh.
+    User coordinates: Latitude ${parsedLat}, Longitude ${parsedLng}.
+    Analyze the user's conversational search query: "${searchQuery}".
+    
+    Extract and output a strict JSON object with:
+    1. "category": strictly one of: "flat", "pharmacy", "hospital", "restaurant", "service", or "all" (default is "all").
+    2. "keywords": an array of descriptive search keywords extracted from the query. Keep these concise. DO NOT INCLUDE locations/streets. CRITICAL: For each keyword, provide a pipe-separated string containing the English word, its direct Bengali translation, and common Banglish synonyms (e.g., "balcony|বারান্দা|baranda", "generator|জেনারেটর", "dental|ডেন্টাল|dentist").
+    3. "isEmergency": boolean indicating if this is an urgent/emergency medical/pharmacy search (e.g. ICU, ambulance, urgent delivery, 24h).
+    4. "maxPrice": number (null if not specified) representing maximum rent or price limit mentioned in the query.
+    5. "bedrooms": number (null if not specified) representing requested bedroom count (e.g. 2 beds, 3 bedroom).
+    6. "location": string (null if not specified) representing ONLY the geographical area, neighborhood, or street name (e.g. "Mirpur 02", "Dhanmondi", "Gulshan"). CRITICAL: DO NOT include business names or fragments of business names (like "Pizza", "Burg", "KFC", "Hospital") in this field! If the user types "Pizza Burg Mirpur 02", the location MUST be strictly "Mirpur 02".
+
+    Respond ONLY in this JSON format:
+    {
+      "category": "category_name",
+      "keywords": ["keyword1", "keyword2"],
+      "isEmergency": false,
+      "maxPrice": null,
+      "bedrooms": null,
+      "location": "string"
+    }
+  `;
+
+  const response = await axios.post(
+    "https://api.groq.com/openai/v1/chat/completions",
+    {
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+      max_tokens: 1024
+    },
+    {
+      headers: {
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      timeout: 5000
+    }
+  );
+
+  const content = response.data?.choices?.[0]?.message?.content;
+  if (!content) {
+    throw new Error("Empty response content from Groq API");
+  }
+
+  return JSON.parse(content.trim());
+}
+
+async function parseWithOpenRouter(searchQuery, parsedLat, parsedLng) {
+  if (!OPENROUTER_API_KEY || OPENROUTER_API_KEY === "your_openrouter_api_key_here") {
+    throw new Error("OpenRouter API key is not configured");
+  }
+
+  const prompt = `
+    You are the AI Location Assistant for LocationKhuji, a map-first search platform in Bangladesh.
+    User coordinates: Latitude ${parsedLat}, Longitude ${parsedLng}.
+    Analyze the user's conversational search query: "${searchQuery}".
+    
+    Extract and output a strict JSON object with:
+    1. "category": strictly one of: "flat", "pharmacy", "hospital", "restaurant", "service", or "all" (default is "all").
+    2. "keywords": an array of descriptive search keywords extracted from the query. Keep these concise. DO NOT INCLUDE locations/streets. CRITICAL: For each keyword, provide a pipe-separated string containing the English word, its direct Bengali translation, and common Banglish synonyms (e.g., "balcony|বারান্দা|baranda", "generator|জেনারেটর", "dental|ডেন্টাল|dentist").
+    3. "isEmergency": boolean indicating if this is an urgent/emergency medical/pharmacy search (e.g. ICU, ambulance, urgent delivery, 24h).
+    4. "maxPrice": number (null if not specified) representing maximum rent or price limit mentioned in the query.
+    5. "bedrooms": number (null if not specified) representing requested bedroom count (e.g. 2 beds, 3 bedroom).
+    6. "location": string (null if not specified) representing ONLY the geographical area, neighborhood, or street name (e.g. "Mirpur 02", "Dhanmondi", "Gulshan"). CRITICAL: DO NOT include business names or fragments of business names (like "Pizza", "Burg", "KFC", "Hospital") in this field! If the user types "Pizza Burg Mirpur 02", the location MUST be strictly "Mirpur 02".
+
+    Respond ONLY in this JSON format:
+    {
+      "category": "category_name",
+      "keywords": ["keyword1", "keyword2"],
+      "isEmergency": false,
+      "maxPrice": null,
+      "bedrooms": null,
+      "location": "string"
+    }
+  `;
+
+  const response = await axios.post(
+    "https://openrouter.ai/api/v1/chat/completions",
+    {
+      model: "deepseek/deepseek-chat",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.1
+    },
+    {
+      headers: {
+        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      timeout: 8000
+    }
+  );
+
+  const content = response.data?.choices?.[0]?.message?.content;
+  if (!content) {
+    throw new Error("Empty response content from OpenRouter API");
+  }
+
+  return JSON.parse(content.trim());
+}
+
+async function getAIIntent(searchQuery, parsedLat, parsedLng) {
+  const lowerQuery = normalizeBengaliText(searchQuery.toLowerCase());
+  
+  // 1. Check Cache first to avoid hitting API rate limits for the same text query
+  if (aiIntentCache.has(lowerQuery)) {
+    const cached = aiIntentCache.get(lowerQuery);
+    console.log(`🧠 [AI Cache] Used cached intent for query: "${searchQuery}"`);
+    return {
+      intent: {
+        category: "all",
+        keywords: [],
+        isEmergency: false,
+        maxPrice: null,
+        bedrooms: null,
+        ...cached
+      },
+      processedByAI: true
+    };
+  }
+
+  let intent = {
+    category: "all",
+    keywords: [],
+    isEmergency: false,
+    maxPrice: null,
+    bedrooms: null,
+  };
+  let processedByAI = false;
+
+  // 2. Stage 1: Groq API (Llama 3)
+  if (GROQ_API_KEY && GROQ_API_KEY !== "your_groq_api_key_here") {
+    try {
+      console.log("[AI SEARCH] Using Groq Primary");
+      console.log(`⚡ [AI Search - Stage 1] Querying Groq (Llama 3) for: "${searchQuery}"`);
+      const parsed = await parseWithGroq(searchQuery, parsedLat, parsedLng);
+      if (parsed && typeof parsed === "object") {
+        intent.category = parsed.category || "all";
+        intent.keywords = Array.isArray(parsed.keywords) ? parsed.keywords : [];
+        intent.isEmergency = !!parsed.isEmergency;
+        intent.maxPrice = parsed.maxPrice !== undefined ? parsed.maxPrice : null;
+        intent.bedrooms = parsed.bedrooms !== undefined ? parsed.bedrooms : null;
+        if (parsed.location) {
+          intent.aiLocation = parsed.location;
+        }
+        processedByAI = true;
+        console.log("⚡ [AI Search - Stage 1] Groq successfully parsed search query.");
+      }
+    } catch (err) {
+      console.log("[AI SEARCH] Groq failed, switching to OpenRouter");
+      console.warn(`⚠️ [AI Search - Stage 1 Failed] Groq/Llama 3 parsing failed: ${err.message}.`);
+    }
+  } else {
+    console.log("[AI SEARCH] Groq failed, switching to OpenRouter");
+  }
+
+  // 3. Stage 2: OpenRouter API (DeepSeek V3 Fallback)
+  if (!processedByAI && OPENROUTER_API_KEY && OPENROUTER_API_KEY !== "your_openrouter_api_key_here") {
+    try {
+      console.log(`🧠 [AI Search - Stage 2] Querying OpenRouter DeepSeek V3 for: "${searchQuery}"`);
+      const parsed = await parseWithOpenRouter(searchQuery, parsedLat, parsedLng);
+      if (parsed && typeof parsed === "object") {
+        intent.category = parsed.category || "all";
+        intent.keywords = Array.isArray(parsed.keywords) ? parsed.keywords : [];
+        intent.isEmergency = !!parsed.isEmergency;
+        intent.maxPrice = parsed.maxPrice !== undefined ? parsed.maxPrice : null;
+        intent.bedrooms = parsed.bedrooms !== undefined ? parsed.bedrooms : null;
+        if (parsed.location) {
+          intent.aiLocation = parsed.location;
+        }
+        processedByAI = true;
+        console.log("⚡ [AI Search - Stage 2] OpenRouter successfully parsed search query.");
+      }
+    } catch (err) {
+      console.log("[AI SEARCH] OpenRouter failed, using Regex");
+      console.error("[OpenRouter Error]", err.response?.data || err.message);
+    }
+  } else if (!processedByAI) {
+    console.log("[AI SEARCH] OpenRouter failed, using Regex");
+  }
+
+  // Save to Cache if processed by AI
+  if (processedByAI) {
+    aiIntentCache.set(lowerQuery, {
+      category: intent.category,
+      keywords: [...intent.keywords],
+      isEmergency: intent.isEmergency,
+      maxPrice: intent.maxPrice,
+      bedrooms: intent.bedrooms,
+      aiLocation: intent.aiLocation
+    });
+    // Prevent memory leak
+    if (aiIntentCache.size > 1000) {
+      const firstKey = aiIntentCache.keys().next().value;
+      aiIntentCache.delete(firstKey);
+    }
+    return { intent, processedByAI: true };
+  }
+
+  // 4. Stage 3: Smart Regex Offline Engine (Fallback)
+  console.log(`🤖 [AI Search - Stage 3] Falling back to Smart Offline Regex for: "${searchQuery}"`);
+  
+  // 1. Detect Category
+  if (CATEGORY_SYNONYMS.flat.test(lowerQuery)) intent.category = "flat";
+  else if (CATEGORY_SYNONYMS.pharmacy.test(lowerQuery)) intent.category = "pharmacy";
+  else if (CATEGORY_SYNONYMS.hospital.test(lowerQuery)) intent.category = "hospital";
+  else if (CATEGORY_SYNONYMS.restaurant.test(lowerQuery)) intent.category = "restaurant";
+  else if (CATEGORY_SYNONYMS.service.test(lowerQuery)) intent.category = "service";
+
+  // 2. Detect Emergency status
+  if (/\b(emergency|urgent|critical|accident|blood|immediate|dying|oxygen|heart attack|icu|24h|24\/7)\b/i.test(lowerQuery)) {
+    intent.isEmergency = true;
+  }
+
+  // 3. Extract Price Limit (e.g. under 20k, under 20000, max 25000)
+  const kMatch = lowerQuery.match(/(?:under|below|less than|max|maximum|up to|rent)?\s*(\d+)\s*k\b/i);
+  if (kMatch) {
+    intent.maxPrice = Number(kMatch[1]) * 1000;
+  } else {
+    const numMatch = lowerQuery.match(/(?:under|below|less than|max|maximum|up to|rent)?\s*(\d{4,6})\b/i);
+    if (numMatch) {
+      intent.maxPrice = Number(numMatch[1]);
+    }
+  }
+
+  // 4. Extract Bedrooms count (e.g. 2 bed, 3 bedroom, 2basa)
+  const bedMatch = lowerQuery.match(/(\d)\s*(?:bed|bedroom|room|basa)\b/i);
+  if (bedMatch) {
+    intent.bedrooms = Number(bedMatch[1]);
+  }
+
+  // 5. Extract Keywords (clean out noise and common words)
+  const stopWords = new Set([
+    "find", "search", "me", "near", "in", "a", "the", "at", "for", "with", "under", 
+    "show", "please", "want", "need", "looking", "located", "place", "places", "spot", "spots",
+    "dhaka", "bangladesh", "of", "to", "and", "under", "taka", "tk", "bdt", "rent", "cheap", "best"
+  ]);
+  const rawWords = lowerQuery
+    .replace(/[^\w\s\u0980-\u09FF]/g, "") // support English and Bengali letters
+    .split(/\s+/);
+  
+  intent.keywords = rawWords.filter(word => word.length > 2 && !stopWords.has(word));
+
+  return { intent, processedByAI: false };
+}
+
 api.post("/listings/ai-search", async (req, res, next) => {
   try {
     const { query: searchQuery, userLat, userLng, radiusKm = 30 } = req.body || {};
@@ -1688,7 +1952,7 @@ api.post("/listings/ai-search", async (req, res, next) => {
       jatrabari: [90.4251, 23.7100],
       যাত্রাবাড়ী: [90.4251, 23.7100],
       shahbag: [90.3956, 23.7393],
-      শাহবাগ: [90.3956, 23.7393],
+      शाहबाग: [90.3956, 23.7393],
       malibagh: [90.4151, 23.7492],
       মালিবাগ: [90.4151, 23.7492],
       lalmatia: [90.3711, 23.7530],
@@ -1723,152 +1987,8 @@ api.post("/listings/ai-search", async (req, res, next) => {
       resolvedAreaName = initialLocationResult.displayName || "";
     }
 
-    let intent = {
-      category: "all",
-      keywords: [],
-      isEmergency: false,
-      maxPrice: null,
-      bedrooms: null,
-    };
-
-    let processedByAI = false;
-
-    // Check Cache first to avoid hitting API rate limits for the same text query
-    if (aiIntentCache.has(lowerQuery)) {
-      const cached = aiIntentCache.get(lowerQuery);
-      intent = { ...intent, ...cached };
-      processedByAI = true;
-      console.log(`🧠 [AI Cache] Used cached intent for query: "${searchQuery}"`);
-    } else if (aiClient) {
-      try {
-        const prompt = `
-          You are the AI Location Assistant for LocationKhuji, a map-first search platform in Bangladesh.
-          User coordinates: Latitude ${parsedLat}, Longitude ${parsedLng}.
-          Analyze the user's conversational search query: "${searchQuery}".
-          
-          Extract and output a strict JSON object with:
-          1. "category": strictly one of: "flat", "pharmacy", "hospital", "restaurant", "service", or "all" (default is "all").
-          2. "keywords": an array of descriptive search keywords extracted from the query. Keep these concise. DO NOT INCLUDE locations/streets. CRITICAL: For each keyword, provide a pipe-separated string containing the English word, its direct Bengali translation, and common Banglish synonyms (e.g., "balcony|বারান্দা|baranda", "generator|জেনারেটর", "dental|ডেন্টাল|dentist").
-          3. "isEmergency": boolean indicating if this is an urgent/emergency medical/pharmacy search (e.g. ICU, ambulance, urgent delivery, 24h).
-          4. "maxPrice": number (null if not specified) representing maximum rent or price limit mentioned in the query.
-          5. "bedrooms": number (null if not specified) representing requested bedroom count (e.g. 2 beds, 3 bedroom).
-          6. "location": string (null if not specified) representing ONLY the geographical area, neighborhood, or street name (e.g. "Mirpur 02", "Dhanmondi", "Gulshan"). CRITICAL: DO NOT include business names or fragments of business names (like "Pizza", "Burg", "KFC", "Hospital") in this field! If the user types "Pizza Burg Mirpur 02", the location MUST be strictly "Mirpur 02".
-
-          Respond ONLY in this JSON format:
-          {
-            "category": "category_name",
-            "keywords": ["keyword1", "keyword2"],
-            "isEmergency": false,
-            "maxPrice": null,
-            "bedrooms": null,
-            "location": "string"
-          }
-        `;
-
-        const response = await aiClient.models.generateContent({
-          model: "gemini-2.5-pro",
-          contents: prompt,
-          config: {
-            responseMimeType: "application/json"
-          }
-        });
-
-        const textResponse = response.text || (typeof response.text === "function" ? response.text() : "");
-        if (textResponse) {
-          const parsed = JSON.parse(textResponse.trim());
-          if (parsed && typeof parsed === "object") {
-            intent.category = parsed.category || "all";
-            intent.keywords = Array.isArray(parsed.keywords) ? parsed.keywords : [];
-            intent.isEmergency = !!parsed.isEmergency;
-            intent.maxPrice = parsed.maxPrice !== undefined ? parsed.maxPrice : null;
-            intent.bedrooms = parsed.bedrooms !== undefined ? parsed.bedrooms : null;
-            if (parsed.location) {
-              intent.aiLocation = parsed.location;
-            }
-            processedByAI = true;
-            
-            // Save to Cache to prevent identical subsequent requests (e.g. map panning)
-            aiIntentCache.set(lowerQuery, {
-              category: intent.category,
-              keywords: [...intent.keywords],
-              isEmergency: intent.isEmergency,
-              maxPrice: intent.maxPrice,
-              bedrooms: intent.bedrooms,
-              aiLocation: intent.aiLocation
-            });
-            // Prevent memory leak by capping at 1000 items
-            if (aiIntentCache.size > 1000) {
-              const firstKey = aiIntentCache.keys().next().value;
-              aiIntentCache.delete(firstKey);
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Gemini AI API call failed, falling back to smart regex:", err.message);
-      }
-    }
-
-    // 🤖 AI Location Geocoding: If AI found a strict location and we didn't already override it
-    if (processedByAI && intent.aiLocation && !overriddenLocation) {
-      const aiLocationResult = await resolveLocationFromQuery(intent.aiLocation, {
-        preferDhaka: true,
-        debug: locationDebug,
-        logPrefix: "AI-LOCATION"
-      });
-      if (aiLocationResult?.found) {
-        parsedLng = aiLocationResult.lng;
-        parsedLat = aiLocationResult.lat;
-        overriddenLocation = true;
-        resolvedAreaName = aiLocationResult.displayName || intent.aiLocation;
-      } else if (BUSINESS_NAMES.some((b) => intent.aiLocation.toLowerCase().includes(b))) {
-        console.log(`🤖 [AI Location Guard] Rejected business name extracted as location: "${intent.aiLocation}"`);
-        intent.aiLocation = null;
-      }
-    }
-
-    // Smart Fallback Engine: Active if AI failed or API key was omitted
-    if (!processedByAI) {
-      // 1. Detect Category
-      if (CATEGORY_SYNONYMS.flat.test(lowerQuery)) intent.category = "flat";
-      else if (CATEGORY_SYNONYMS.pharmacy.test(lowerQuery)) intent.category = "pharmacy";
-      else if (CATEGORY_SYNONYMS.hospital.test(lowerQuery)) intent.category = "hospital";
-      else if (CATEGORY_SYNONYMS.restaurant.test(lowerQuery)) intent.category = "restaurant";
-      else if (CATEGORY_SYNONYMS.service.test(lowerQuery)) intent.category = "service";
-
-      // 2. Detect Emergency status
-      if (/\b(emergency|urgent|critical|accident|blood|immediate|dying|oxygen|heart attack|icu|24h|24\/7)\b/i.test(lowerQuery)) {
-        intent.isEmergency = true;
-      }
-
-      // 3. Extract Price Limit (e.g. under 20k, under 20000, max 25000)
-      const kMatch = lowerQuery.match(/(?:under|below|less than|max|maximum|up to|rent)?\s*(\d+)\s*k\b/i);
-      if (kMatch) {
-        intent.maxPrice = Number(kMatch[1]) * 1000;
-      } else {
-        const numMatch = lowerQuery.match(/(?:under|below|less than|max|maximum|up to|rent)?\s*(\d{4,6})\b/i);
-        if (numMatch) {
-          intent.maxPrice = Number(numMatch[1]);
-        }
-      }
-
-      // 4. Extract Bedrooms count (e.g. 2 bed, 3 bedroom, 2basa)
-      const bedMatch = lowerQuery.match(/(\d)\s*(?:bed|bedroom|room|basa)\b/i);
-      if (bedMatch) {
-        intent.bedrooms = Number(bedMatch[1]);
-      }
-
-      // 5. Extract Keywords (clean out noise and common words)
-      const stopWords = new Set([
-        "find", "search", "me", "near", "in", "a", "the", "at", "for", "with", "under", 
-        "show", "please", "want", "need", "looking", "located", "place", "places", "spot", "spots",
-        "dhaka", "bangladesh", "of", "to", "and", "under", "taka", "tk", "bdt", "rent", "cheap", "best"
-      ]);
-      const rawWords = lowerQuery
-        .replace(/[^\w\s\u0980-\u09FF]/g, "") // support English and Bengali letters
-        .split(/\s+/);
-      
-      intent.keywords = rawWords.filter(word => word.length > 2 && !stopWords.has(word));
-    }
+    // Resolve Intent through Groq -> Gemini -> Regex waterfall helper
+    const { intent, processedByAI } = await getAIIntent(searchQuery, parsedLat, parsedLng);
 
     // If location was NOT detected and user didn't specify a radius, search nationwide
     // If location WAS detected but no explicit radius, default stays at 1km

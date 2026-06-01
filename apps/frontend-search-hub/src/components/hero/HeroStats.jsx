@@ -11,9 +11,9 @@ const HeroStats = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.6 }}
-      className="mt-6 sm:mt-8 lg:mt-4 w-full"
+      className="hero-stats-wrapper mt-6 sm:mt-8 lg:mt-4 w-full"
     >
-      <div className="cyber-panel rounded-2xl grid grid-cols-2 lg:grid-cols-4 items-center py-5 px-4 sm:px-6 gap-y-6 gap-x-4 lg:gap-1 lg:divide-x divide-transparent lg:divide-white/10">
+      <div className="hero-stats-panel cyber-panel rounded-2xl grid grid-cols-2 lg:grid-cols-4 items-center py-5 px-4 sm:px-6 gap-y-6 gap-x-4 lg:gap-1 lg:divide-x divide-transparent lg:divide-white/10">
 
         <StatItem
           icon={<BookOpen className="text-teal-500 w-6 h-6" />}
@@ -44,14 +44,19 @@ const HeroStats = () => {
   );
 };
 
-const StatItem = ({ icon, count, label }) => (
-  <div className="flex items-center gap-3 sm:gap-4 justify-start lg:pl-4 xl:pl-8 first:pl-0">
-    <div className="flex-shrink-0">{icon}</div>
-    <div>
-      <div className="text-lg sm:text-xl font-bold text-white leading-tight">{count}</div>
-      <div className="text-[11px] sm:text-xs text-gray-400 mt-0.5">{label}</div>
+const StatItem = ({ icon, count, label }) => {
+  const { i18n } = useTranslation();
+  const isBn = i18n.language === 'bn';
+
+  return (
+    <div className="flex items-center gap-3 sm:gap-4 justify-start lg:pl-4 xl:pl-8 first:pl-0">
+      <div className="flex-shrink-0">{icon}</div>
+      <div>
+        <div className={`text-lg sm:text-xl font-bold text-white leading-tight ${isBn ? 'font-bengali' : 'font-space'}`}>{count}</div>
+        <div className="text-[11px] sm:text-xs text-gray-400 mt-0.5">{label}</div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default HeroStats;
