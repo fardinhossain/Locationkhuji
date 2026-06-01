@@ -227,7 +227,7 @@ Configure your environment files based on the project templates.
 * Create `apps/backend-api-gateway/.env`
 * Create `apps/frontend-search-hub/.env`
 
-*(See the [Environment Variables](#-environment-variables) section below for keys).*
+*(Refer to the `.env.example` templates in each folder for the list of required variables).*
 
 ### 4. Run the Development Servers
 Launch both the backend and frontend servers concurrently from the root directory:
@@ -239,33 +239,6 @@ npm run dev:api
 # Start frontend development server (Port 3000)
 npm run dev:hub
 ```
-
----
-
-## 🔑 Environment Variables
-
-### Backend Environment Configuration (`apps/backend-api-gateway/.env`)
-
-| Key | Description | Example Value |
-| :--- | :--- | :--- |
-| `PORT` | Local server port | `8001` |
-| `MONGODB_URI` | MongoDB Connection URL | `mongodb+srv://...` |
-| `CORS_ORIGIN` | Allowed client URL | `http://localhost:3000` |
-| `GROQ_API_KEY` | Groq Console API Credentials | `gsk_xxxx...` |
-| `OPENROUTER_API_KEY` | OpenRouter Fallback Key | `sk-or-v1-xxxx...` |
-| `CLOUDINARY_CLOUD_NAME` | Cloudinary storage identifier | `wpauaxoh` |
-| `CLOUDINARY_API_KEY` | Cloudinary API Key | `884553658586671` |
-| `CLOUDINARY_API_SECRET` | Cloudinary API Secret | `xxxx...` |
-| `FIREBASE_PROJECT_ID` | Firebase administration project ID | `locationkhuji` |
-| `FIREBASE_SERVICE_ACCOUNT_JSON`| Firebase service account JSON | `{"type": "service_account", ...}` |
-
-### Frontend Environment Configuration (`apps/frontend-search-hub/.env`)
-
-| Key | Description | Example Value |
-| :--- | :--- | :--- |
-| `REACT_APP_BACKEND_URL` | Live backend API address | `http://localhost:8001` |
-| `REACT_APP_FIREBASE_API_KEY` | Firebase Client Web Key | `AIzaSy...` |
-| `REACT_APP_FIREBASE_PROJECT_ID` | Firebase Project Target ID | `locationkhuji` |
 
 ---
 
@@ -284,7 +257,7 @@ Warmup Ping Service ──►  UptimeRobot (Pings /api/health)
 ### Deploying Frontend (Vercel)
 1. Import the repository on Vercel.
 2. Select `apps/frontend-search-hub` as the Root Directory.
-3. Configure the environment variables shown above.
+3. Configure the environment variables based on the template files.
 4. Set Framework Preset to **Create React App**. Click **Deploy**.
 
 ### Deploying Backend (Render)
@@ -359,4 +332,4 @@ Developed with ❤️ by **Fardin** | **NovoSoft.AI**
 
 * **GitHub:** [@fardinhossain](https://github.com/fardinhossain)
 * **LinkedIn:** [Fardin Hossain](https://linkedin.com/in/fardinhossain)
-* **Email:** support@novosoft.ai
+* **Email:** fardin.hosn@gmail.com
