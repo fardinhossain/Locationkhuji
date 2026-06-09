@@ -3,10 +3,13 @@
 <div align="center">
   <h3>The AI-Powered Bangladesh-Centric Location Discovery & Real-Time Listings Engine</h3>
   <p><strong>লোকেশন খুঁজি</strong> is a premium, map-first location intelligence and discovery platform built exclusively for the geographic limits of Bangladesh. Combining natural language AI search, strict geospatial boundaries, and real-time synchronization, it provides a stunning, high-performance user experience.</p>
+  
+  <h4>🌐 Live Website: <a href="https://locationkhuji.vercel.app/" target="_blank">locationkhuji.vercel.app</a></h4>
 </div>
 
 <div align="center">
 
+[![Live Website](https://img.shields.io/badge/Live%20Website-locationkhuji.vercel.app-00C9A7?logo=vercel&logoColor=white&style=for-the-badge)](https://locationkhuji.vercel.app/)
 [![React 19](https://img.shields.io/badge/React-19.0-61DAFB?logo=react&logoColor=black&style=for-the-badge)](#)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white&style=for-the-badge)](#)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white&style=for-the-badge)](#)
@@ -21,8 +24,8 @@
 > [!NOTE]
 > ### 📋 CSE471 System Analysis & Design Project Report
 > The comprehensive design, system analysis, and implementation report for **LocationKhuji** is available:
-> * 📄 **[View Report in Browser](https://drive.google.com/file/d/1F9mZ7EcJphTSpmtqAS3iPsx6TbwoYZSt/view?usp=sharing)** (Google Drive Viewer)
-> * 💾 **[Download PDF Report](https://drive.google.com/uc?export=download&id=1F9mZ7EcJphTSpmtqAS3iPsx6TbwoYZSt)** (Direct PDF Download)
+> * 📄 **[View Report in Browser](https://drive.google.com/file/d/1vaAr_X8p2cJOpsuKNHi4ZEeqAvbeIfjf/view?usp=sharing)** (Google Drive Viewer)
+> * 💾 **[Download PDF Report](https://drive.google.com/uc?export=download&id=1vaAr_X8p2cJOpsuKNHi4ZEeqAvbeIfjf)** (Direct PDF Download)
 
 ---
 
