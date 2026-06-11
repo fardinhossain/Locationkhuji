@@ -24,8 +24,8 @@
 > [!NOTE]
 > ### 📋 CSE471 System Analysis & Design Project Report
 > The comprehensive design, system analysis, and implementation report for **LocationKhuji** is available:
-> * 📄 **[View Report in Browser](https://drive.google.com/file/d/1oh5UtG91STEOipzh9eciXzOhzUbvChIx/view?usp=sharing)** (Google Drive PDF Viewer)
-> * 💾 **[Download PDF Report](https://drive.google.com/uc?export=download&id=1oh5UtG91STEOipzh9eciXzOhzUbvChIx)** (Direct PDF Download)
+> * 📄 **[View Report in Browser](https://drive.google.com/file/d/1KajfrM1vySMRoBWvHrpRHbStUvjSR0fq/view?usp=sharing)** (Google Drive PDF Viewer)
+> * 💾 **[Download PDF Report](https://drive.google.com/uc?export=download&id=1KajfrM1vySMRoBWvHrpRHbStUvjSR0fq)** (Direct PDF Download)
 
 ---
 
