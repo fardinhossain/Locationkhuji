@@ -142,20 +142,18 @@ export default function Navbar() {
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 h-16 sm:h-20 flex items-center justify-between gap-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3 sm:gap-4 shrink-0 group">
-          <div className="relative flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 shrink-0">
-            {/* Outer animated ring */}
-            <div className="absolute inset-0 rounded-full bg-teal-500/20 group-hover:animate-ping transition-all" style={{ animationDuration: '3s' }}></div>
-            {/* Inner glowing circle */}
-            <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-[0_0_15px_rgba(0,209,178,0.4)] group-hover:shadow-[0_0_25px_rgba(0,209,178,0.7)] transition-all duration-500 z-10">
-              <div className="absolute inset-0 bg-white/20 rounded-full blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <MapPin className="text-black w-4 h-4 sm:w-5 sm:h-5 relative z-10" strokeWidth={2.5} />
+          <div className="relative flex items-center justify-center w-11 h-11 sm:w-14 sm:h-14 shrink-0">
+            <div className="absolute inset-0 rounded-full border border-teal-300/25 bg-teal-400/10 shadow-[0_0_24px_rgba(45,212,191,0.2)] transition-all duration-300 group-hover:border-teal-200/50 group-hover:bg-teal-400/15" />
+            <div className="relative flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-teal-200/40 bg-[#071314] text-teal-200 shadow-[inset_0_0_14px_rgba(45,212,191,0.18),0_0_18px_rgba(45,212,191,0.28)] transition-all duration-300 group-hover:scale-105 group-hover:text-white">
+              <MapPin className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.4} />
             </div>
           </div>
-          <div className="flex flex-col leading-none">
-            <span className="text-xl sm:text-2xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-gray-400 group-hover:to-white transition-all duration-500">
-              Location<span className="text-teal-400 drop-shadow-[0_0_8px_rgba(0,209,178,0.5)]">Khuji</span>
+          <div className="flex flex-col leading-none min-w-0">
+            <span className="text-xl sm:text-2xl font-black text-white transition-colors duration-300 group-hover:text-teal-50">
+              Location<span className="text-teal-300 group-hover:text-teal-200">Khuji</span>
             </span>
-            <span className={`text-[10px] sm:text-[11px] text-gray-400 font-medium whitespace-nowrap mt-1 group-hover:text-gray-300 transition-colors ${lang === 'bn' ? 'font-bengali' : 'uppercase tracking-[0.15em] opacity-80'}`}>
+            <span className={`mt-1 flex items-center gap-2 text-[10px] sm:text-[11px] text-slate-300/85 font-semibold whitespace-nowrap transition-colors group-hover:text-slate-100 ${lang === 'bn' ? 'font-bengali' : 'uppercase'}`}>
+              <span className="hidden sm:block h-px w-5 rounded-full bg-teal-300/70" />
               {t('tagline')}
             </span>
           </div>
@@ -345,4 +343,3 @@ export default function Navbar() {
     </motion.header>
   );
 }
-
