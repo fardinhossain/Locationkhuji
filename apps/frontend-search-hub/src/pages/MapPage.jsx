@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { cn, bnNumber } from "../lib/utils";
-import { FiMapPin, FiNavigation, FiSearch, FiSliders, FiX, FiList } from "react-icons/fi";
+import { FiMapPin, FiNavigation, FiSearch, FiSliders, FiX, FiList, FiPlus } from "react-icons/fi";
 import { Sparkles, Compass } from "lucide-react";
 import Navbar from "../components/Navbar";
 import MapView from "../components/MapView";
 import { ListingCard } from "../components/ListingCard";
-import { useLangStore, useLocationStore, useSearchModeStore } from "../store";
+import { useLangStore, useLocationStore, useSearchModeStore, useAuthStore } from "../store";
 import { CATEGORIES, POPULAR_AREAS } from "../lib/constants";
 import { CATEGORY_SYNONYMS, splitQueryIntoLocationAndKeyword, BDLocationEngine } from "shared-config";
 import { api } from "../lib/api";
@@ -31,6 +31,8 @@ export default function MapPage() {
   const loc = useLocationStore();
   const { mode: searchMode, setMode: setSearchMode } = useSearchModeStore();
   const [params, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [manualAddress, setManualAddress] = useState("");
@@ -626,6 +628,26 @@ export default function MapPage() {
                <FiNavigation size={20} />
              </Button>
           </div>
+
+           {/* Add Your Business floating button */}
+           <button
+             onClick={() => {
+               if (!user) {
+                 toast.error(lang === 'bn' ? 'আপনার ব্যবসা পিন করতে লগইন করুন।' : 'Please login to pin your business on the map.');
+                 navigate('/login?next=/owner/listings/add');
+                 return;
+               }
+               if (user.role !== 'owner' && user.role !== 'admin') {
+                 toast.error(lang === 'bn' ? 'শুধুমাত্র ব্যবসার মালিকরা লিস্টিং যোগ করতে পারেন।' : 'Only registered business owners can add listings.');
+                 return;
+               }
+               navigate('/owner/listings/add');
+             }}
+             title="Pin your business on the map"
+             className="absolute bottom-24 left-4 z-[50] flex items-center gap-2 px-5 py-3 bg-primary text-white font-bold rounded-full shadow-teal hover:bg-primary-dark transition-all text-sm active:scale-95"
+           >
+             <FiPlus size={16} /> {lang === 'bn' ? 'ব্যবসা যোগ করুন' : 'Add Your Business'}
+           </button>
         </div>
 
         <aside className="hidden md:flex w-[420px] shrink-0 border-l border-border bg-card flex-col overflow-hidden relative z-10 shadow-2xl">

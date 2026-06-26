@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { FiMapPin, FiPhone, FiMail, FiNavigation, FiBookmark, FiShare2, FiFlag, FiTrash2, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiMapPin, FiPhone, FiMail, FiNavigation, FiBookmark, FiShare2, FiFlag, FiTrash2, FiChevronLeft, FiChevronRight, FiLock } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import { toast } from "sonner";
 import Navbar from "../components/Navbar";
@@ -62,7 +62,11 @@ export default function ListingDetailPage() {
   };
 
   const toggleSave = async () => {
-    if (!user) return toast.error("Please login");
+    if (!user) {
+      toast.error("Please login to save places.");
+      navigate(`/login?next=/listing/${id}`);
+      return;
+    }
     try {
       const r = await api.post(`/listings/${id}/save`);
       const newSaved = r.data.saved
@@ -168,8 +172,8 @@ export default function ListingDetailPage() {
             </div>
             
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button data-testid="save-listing-btn" variant={isSaved ? "default" : "outline"} onClick={toggleSave} className={`gap-2 h-11 px-6 rounded-pill ${isSaved ? 'bg-primary text-white hover:bg-primary-dark shadow-teal' : ''}`}>
-                <FiBookmark fill={isSaved ? "currentColor" : "none"} /> {isSaved ? t('saved') : t('save')}
+              <Button data-testid="save-listing-btn" variant={isSaved ? "default" : "outline"} onClick={toggleSave} title={!user ? "Login to save this place" : undefined} className={`gap-2 h-11 px-6 rounded-pill ${isSaved ? 'bg-primary text-white hover:bg-primary-dark shadow-teal' : ''} ${!user ? 'opacity-70' : ''}`}>
+                {!user ? <FiLock size={14} /> : <FiBookmark fill={isSaved ? "currentColor" : "none"} />} {!user ? 'Login to Save' : (isSaved ? t('saved') : t('save'))}
               </Button>
               <Button variant="outline" className="gap-2 h-11 px-6 rounded-pill" onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success("Link copied"); }}>
                 <FiShare2/> Share
@@ -254,7 +258,21 @@ export default function ListingDetailPage() {
               <div className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">{reviews.length} total</div>
             </div>
 
-            {user && user.role !== "admin" && listing.owner?.id !== user.id && !myReview && (
+            {!user ? (
+              <div
+                className="mb-8 p-6 rounded-2xl border border-primary/20 bg-primary/5 flex flex-col items-center gap-3 text-center cursor-pointer hover:bg-primary/10 transition"
+                onClick={() => navigate(`/login?next=/listing/${id}`)}
+              >
+                <div className="text-2xl">⭐</div>
+                <p className="font-bold text-[var(--text-primary)]">Share your experience</p>
+                <p className="text-sm text-[var(--text-secondary)]">
+                  Login or create a free account to write a review
+                </p>
+                <button className="mt-2 px-6 py-2 bg-primary text-white text-sm font-bold rounded-full hover:bg-primary-dark transition shadow-teal">
+                  Login to Review
+                </button>
+              </div>
+            ) : user.role !== "admin" && listing.owner?.id !== user.id && !myReview ? (
               <form onSubmit={submit} className="mb-8 p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-light)]" data-testid="review-form">
                 <div className="font-bold text-sm mb-4 uppercase tracking-wider text-[var(--text-tertiary)]">{t('writeReview')}</div>
                 <StarPicker value={rating} onChange={setRating} />
@@ -266,8 +284,9 @@ export default function ListingDetailPage() {
                   </Button>
                 </div>
               </form>
-            )}
-            {myReview && <div className="mb-8 p-4 text-center rounded-xl bg-primary/5 border border-primary/20 text-primary font-bold text-sm">✓ You've already reviewed this place</div>}
+            ) : myReview ? (
+              <div className="mb-8 p-4 text-center rounded-xl bg-primary/5 border border-primary/20 text-primary font-bold text-sm">✓ You've already reviewed this place</div>
+            ) : null}
 
             <div className="space-y-4">
               {reviews.map((r) => (
@@ -308,20 +327,57 @@ export default function ListingDetailPage() {
             </div>
             
             <div className="space-y-3 relative">
-              {listing.contact?.phone && (
-                <a href={`tel:${listing.contact.phone}`} data-testid="contact-call" className="flex items-center justify-center gap-3 h-12 rounded-full bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-all shadow-teal">
-                  <FiPhone size={16} /> {t('callNow')}
-                </a>
-              )}
-              {listing.contact?.whatsapp && (
-                <a href={`https://wa.me/${listing.contact.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 h-12 rounded-full bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-600 transition-all shadow-lg">
-                  <FaWhatsapp size={18} /> {t('whatsapp')}
-                </a>
-              )}
-              {listing.contact?.email && (
-                <a href={`mailto:${listing.contact.email}`} className="flex items-center justify-center gap-3 h-12 rounded-full border-2 border-[var(--border-light)] text-[var(--text-primary)] font-bold text-sm hover:bg-[var(--bg-elevated)] transition-all">
-                  <FiMail size={16} /> Send Email
-                </a>
+              {user ? (
+                <>
+                  {listing.contact?.phone && (
+                    <a href={`tel:${listing.contact.phone}`} data-testid="contact-call" className="flex items-center justify-center gap-3 h-12 rounded-full bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-all shadow-teal">
+                      <FiPhone size={16} /> {t('callNow')} — {listing.contact.phone}
+                    </a>
+                  )}
+                  {listing.contact?.whatsapp && (
+                    <a href={`https://wa.me/${listing.contact.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 h-12 rounded-full bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-600 transition-all shadow-lg">
+                      <FaWhatsapp size={18} /> {t('whatsapp')} — {listing.contact.whatsapp}
+                    </a>
+                  )}
+                  {listing.contact?.email && (
+                    <a href={`mailto:${listing.contact.email}`} className="flex items-center justify-center gap-3 h-12 rounded-full border-2 border-[var(--border-light)] text-[var(--text-primary)] font-bold text-sm hover:bg-[var(--bg-elevated)] transition-all">
+                      <FiMail size={16} /> {listing.contact.email}
+                    </a>
+                  )}
+                  {!listing.contact?.phone && !listing.contact?.whatsapp && !listing.contact?.email && (
+                    <p className="text-sm text-[var(--text-tertiary)] italic text-center py-4">No contact info provided</p>
+                  )}
+                </>
+              ) : (
+                /* GUEST: Show blurred placeholders + lock overlay */
+                <div className="relative">
+                  {/* Blurred fake contact buttons */}
+                  <div className="space-y-3 select-none pointer-events-none">
+                    <div className="flex items-center justify-center gap-3 h-12 rounded-full bg-primary/70 text-white font-bold text-sm blur-[6px]">
+                      <FiPhone size={16} /> +880 1X XX XXX XXX
+                    </div>
+                    <div className="flex items-center justify-center gap-3 h-12 rounded-full bg-emerald-500/70 text-white font-bold text-sm blur-[6px]">
+                      <FaWhatsapp size={18} /> +880 1X XX XXX XXX
+                    </div>
+                    <div className="flex items-center justify-center gap-3 h-12 rounded-full border-2 border-[var(--border-light)] font-bold text-sm blur-[6px]">
+                      <FiMail size={16} /> owner@example.com
+                    </div>
+                  </div>
+
+                  {/* Lock overlay */}
+                  <div
+                    className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-[var(--bg-surface)]/80 backdrop-blur-sm border border-primary/30 cursor-pointer gap-3"
+                    onClick={() => navigate(`/login?next=/listing/${id}`)}
+                  >
+                    <div className="text-3xl">🔒</div>
+                    <p className="text-sm font-bold text-[var(--text-primary)] text-center px-4">
+                      Login to see contact details
+                    </p>
+                    <button className="mt-1 px-5 py-2 bg-primary text-white text-xs font-bold rounded-full hover:bg-primary-dark transition shadow-teal">
+                      Login / Register
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>

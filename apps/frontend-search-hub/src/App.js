@@ -26,9 +26,9 @@ function App() {
       <Toaster position="top-right" richColors />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
-        <Route path="/list" element={<ProtectedRoute><ListPage /></ProtectedRoute>} />
-        <Route path="/listing/:id" element={<ProtectedRoute><ListingDetailPage /></ProtectedRoute>} />
+        <Route path="/map" element={<MapPage />} />
+        <Route path="/list" element={<ListPage />} />
+        <Route path="/listing/:id" element={<ListingDetailPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
@@ -36,7 +36,7 @@ function App() {
         <Route path="/user/saved" element={<ProtectedRoute roles={["user"]}><SavedPage /></ProtectedRoute>} />
 
         <Route path="/owner/dashboard" element={<ProtectedRoute roles={["owner"]}><OwnerDashboard /></ProtectedRoute>} />
-        <Route path="/owner/listings/add" element={<ProtectedRoute roles={["owner"]}><AddListingPage /></ProtectedRoute>} />
+        <Route path="/owner/listings/add" element={<ProtectedRoute roles={["owner", "admin"]}><AddListingPage /></ProtectedRoute>} />
         <Route path="/owner/listings/:id/edit" element={<ProtectedRoute roles={["owner", "admin"]}><EditListingPage /></ProtectedRoute>} />
 
         <Route path="/admin/dashboard" element={<ProtectedRoute roles={["admin"]}><AdminDashboard /></ProtectedRoute>} />

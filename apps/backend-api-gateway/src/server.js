@@ -37,6 +37,11 @@ const APP_NAME = "locationkhuji";
 const FIREBASE_SA = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || "";
 const DEV_MODE = process.env.NODE_ENV === "development" && (!FIREBASE_SA || FIREBASE_SA.includes("your-project-id") || FIREBASE_SA.includes("MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSj"));
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const LEGACY_TEST_ACCOUNT_EMAILS = [
+  "admin@locationkhuji.com",
+  "owner@locationkhuji.com",
+  "user@locationkhuji.com",
+];
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 if (OPENROUTER_API_KEY && OPENROUTER_API_KEY !== "your_openrouter_api_key_here") {
@@ -111,6 +116,18 @@ function ownerInfo(user) {
 function parseRole(value) {
   if (!value) return "user";
   return String(value).toLowerCase();
+}
+
+function configuredAdminEmail() {
+  return (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+}
+
+function configuredAdminPassword() {
+  return (process.env.ADMIN_PASSWORD || "").trim();
+}
+
+function configuredAdminName() {
+  return (process.env.ADMIN_NAME || "LocationKhuji Admin").trim();
 }
 
 function extractToken(req) {
@@ -501,7 +518,7 @@ async function requireAuth(req, res, next) {
 
     // Dev mode bypass - use "dev-test-token" or "dev-test-token-${email}" to bypass Firebase auth in development
     if (DEV_MODE && token && (token === "dev-test-token" || token.startsWith("dev-test-token-"))) {
-      let email = "admin@locationkhuji.com";
+      let email = configuredAdminEmail();
       if (token.startsWith("dev-test-token-")) {
         email = token.slice("dev-test-token-".length);
       }
@@ -547,6 +564,58 @@ function requireRoles(...roles) {
     if (!roles.includes(req.user.role)) return next(apiError(403, "Forbidden"));
     return next();
   };
+}
+
+// Optional auth - attaches req.user if valid token present, but does NOT reject unauthenticated requests
+async function optionalAuth(req, res, next) {
+  try {
+    const token = extractToken(req);
+    if (!token) {
+      req.user = null;
+      return next();
+    }
+
+    // Dev mode bypass
+    if (DEV_MODE && token && (token === "dev-test-token" || token.startsWith("dev-test-token-"))) {
+      let email = configuredAdminEmail();
+      if (token.startsWith("dev-test-token-")) {
+        email = token.slice("dev-test-token-".length);
+      }
+      const devUser = await User.findOne({ email }).lean();
+      if (devUser) {
+        req.auth = { uid: devUser.id };
+        req.user = toPlain(devUser);
+        return next();
+      }
+    }
+
+    // Check if Firebase is initialized
+    if (admin.apps.length === 0) {
+      req.user = null;
+      return next();
+    }
+
+    const decoded = await admin.auth().verifyIdToken(token);
+    const firebaseUser = await admin.auth().getUser(decoded.uid);
+    const mongoUser = await ensureMongoUser(firebaseUser, {
+      name: firebaseUser.displayName,
+      email: firebaseUser.email,
+      role: firebaseUser.customClaims?.role,
+    });
+
+    if (!mongoUser.is_active) {
+      req.user = null;
+      return next();
+    }
+
+    req.auth = decoded;
+    req.firebaseUser = firebaseUser;
+    req.user = toPlain(mongoUser);
+    next();
+  } catch {
+    req.user = null;
+    next();
+  }
 }
 
 function validateListingBody(body) {
@@ -775,13 +844,17 @@ async function upsertFirebaseUser({ email, password, name, role }) {
   let firebaseUser;
   try {
     firebaseUser = await admin.auth().getUserByEmail(email);
-    await admin.auth().updateUser(firebaseUser.uid, {
-      password,
+    const update = {
       displayName: name,
       emailVerified: true,
-    });
+    };
+    if (password) update.password = password;
+    await admin.auth().updateUser(firebaseUser.uid, update);
   } catch (error) {
     if (error.code !== "auth/user-not-found") throw error;
+    if (!password) {
+      throw new Error("Admin user does not exist in Firebase. Set ADMIN_PASSWORD once to create it, then remove it.");
+    }
     firebaseUser = await admin.auth().createUser({
       email,
       password,
@@ -794,8 +867,11 @@ async function upsertFirebaseUser({ email, password, name, role }) {
 }
 
 async function upsertMongoSeedUser({ firebaseUser, email, name, role }) {
-  const existing = await User.findOne({ id: firebaseUser.uid });
+  const existing = await User.findOne({
+    $or: [{ id: firebaseUser.uid }, { email }],
+  });
   if (existing) {
+    existing.id = firebaseUser.uid;
     existing.name = name;
     existing.email = email;
     existing.role = role;
@@ -819,23 +895,46 @@ async function upsertMongoSeedUser({ firebaseUser, email, name, role }) {
   });
 }
 
+async function removeLegacyTestAccounts() {
+  const adminEmail = configuredAdminEmail();
+  const legacyEmails = LEGACY_TEST_ACCOUNT_EMAILS.filter((email) => email !== adminEmail);
+  if (legacyEmails.length === 0) return;
+
+  const mongoResult = await User.deleteMany({ email: { $in: legacyEmails } });
+  if (mongoResult.deletedCount > 0) {
+    console.log(`Removed ${mongoResult.deletedCount} legacy test account(s) from MongoDB`);
+  }
+
+  if (admin.apps.length === 0) return;
+
+  for (const email of legacyEmails) {
+    try {
+      const firebaseUser = await admin.auth().getUserByEmail(email);
+      await admin.auth().deleteUser(firebaseUser.uid);
+      console.log(`Removed legacy Firebase test account: ${email}`);
+    } catch (error) {
+      if (error.code !== "auth/user-not-found") {
+        console.warn(`Could not remove legacy Firebase test account ${email}: ${error.message}`);
+      }
+    }
+  }
+}
+
 async function seedAuthUsers() {
   if (admin.apps.length === 0) {
     console.warn("Skipping seed users - Firebase not initialized");
     return;
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL || "admin@locationkhuji.com";
-  const adminPassword = process.env.ADMIN_PASSWORD || "Admin@123";
-  const demoUserEmail = process.env.DEMO_USER_EMAIL || "user@locationkhuji.com";
-  const demoUserPassword = process.env.DEMO_USER_PASSWORD || "User@123";
-  const demoOwnerEmail = process.env.DEMO_OWNER_EMAIL || "owner@locationkhuji.com";
-  const demoOwnerPassword = process.env.DEMO_OWNER_PASSWORD || "Owner@123";
+  const adminEmail = configuredAdminEmail();
+  const adminPassword = configuredAdminPassword();
+  if (!adminEmail) {
+    console.warn("Skipping admin seed - set ADMIN_EMAIL");
+    return;
+  }
 
   const seeds = [
-    { email: adminEmail, password: adminPassword, name: "Admin", role: "admin" },
-    { email: demoUserEmail, password: demoUserPassword, name: "Demo User", role: "user" },
-    { email: demoOwnerEmail, password: demoOwnerPassword, name: "Demo Owner", role: "owner" },
+    { email: adminEmail, password: adminPassword, name: configuredAdminName(), role: "admin" },
   ];
 
   for (const seed of seeds) {
@@ -850,14 +949,14 @@ async function seedAuthUsers() {
 
 async function seedDevUsers() {
   if (!DEV_MODE) return;
-  const adminEmail = "admin@locationkhuji.com";
-  const demoUserEmail = "user@locationkhuji.com";
-  const demoOwnerEmail = "owner@locationkhuji.com";
+  const adminEmail = configuredAdminEmail();
+  if (!adminEmail) {
+    console.warn("Skipping dev admin seed - set ADMIN_EMAIL");
+    return;
+  }
 
   const seeds = [
-    { id: "dev-admin-001", email: adminEmail, name: "Admin", role: "admin" },
-    { id: "dev-user-001", email: demoUserEmail, name: "Demo User", role: "user" },
-    { id: "dev-owner-001", email: demoOwnerEmail, name: "Demo Owner", role: "owner" },
+    { id: "dev-admin-001", email: adminEmail, name: configuredAdminName(), role: "admin" },
   ];
 
   for (const seed of seeds) {
@@ -881,7 +980,7 @@ async function seedDevUsers() {
       // Ignore duplicate errors
     }
   }
-  console.log("Dev users ready for testing");
+  console.log("Dev admin ready");
 }
 
 async function seedListingsIfNeeded() {
@@ -1053,13 +1152,9 @@ api.post("/auth/login", async (req, res, next) => {
     if (DEV_MODE) {
       const devUser = await User.findOne({ email: normalizedEmail }).lean();
       if (devUser) {
-        const defaultPasswords = {
-          "admin@locationkhuji.com": "Admin@123",
-          "user@locationkhuji.com": "User@123",
-          "owner@locationkhuji.com": "Owner@123"
-        };
-        const expected = defaultPasswords[normalizedEmail];
-        if (expected && expected === password) {
+        const adminEmail = configuredAdminEmail();
+        const adminPassword = configuredAdminPassword();
+        if (adminPassword && devUser.role === "admin" && normalizedEmail === adminEmail && adminPassword === password) {
           const mockToken = `dev-test-token-${normalizedEmail}`;
           sendAuthCookies(res, mockToken, "dev-refresh-token");
           return res.json({ access_token: mockToken, user: serializeUser(devUser) });
@@ -2371,13 +2466,23 @@ api.get("/listings/my", requireAuth, requireRoles("owner", "admin"), async (req,
   }
 });
 
-api.get("/listings/:lid", async (req, res, next) => {
+api.get("/listings/:lid", optionalAuth, async (req, res, next) => {
   try {
     const listing = await Listing.findOne({ id: req.params.lid }).lean();
     if (!listing) throw apiError(404, "Not found");
     const owner = await User.findOne({ id: listing.owner_id }).lean();
     const out = listingToOut(listing);
     out.owner = ownerInfo(owner);
+
+    // Strip contact info for unauthenticated (guest) requests
+    if (!req.user) {
+      out.contact = {
+        phone: null,
+        whatsapp: null,
+        email: null,
+      };
+    }
+
     res.json(out);
   } catch (error) {
     next(error.status ? error : apiError(404, "Not found"));
@@ -2688,6 +2793,7 @@ async function initialize() {
   }
 
   await mongoose.connect(MONGO_URL, { dbName: DB_NAME });
+  await removeLegacyTestAccounts();
   await seedDevUsers();
   await seedAuthUsers();
   await seedListingsIfNeeded();

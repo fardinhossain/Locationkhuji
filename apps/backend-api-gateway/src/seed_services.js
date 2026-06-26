@@ -4,6 +4,7 @@ require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 const { BDLocationEngine } = require("../../packages/shared-config");
 
 const MONGO_URI = process.env.MONGO_URL || process.env.MONGO_URI || "mongodb://127.0.0.1:27017/locationkhuji";
+const DEFAULT_OWNER_ID = (process.env.ADMIN_EMAIL || "nidx02@gmail.com").trim().toLowerCase();
 
 const listingSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
@@ -96,7 +97,7 @@ async function seedServices() {
         title: `${svcTemplate.t} - ${areaTemplate.name}`,
         description: svcTemplate.desc,
         category: "service",
-        owner_id: "owner@locationkhuji.com",
+        owner_id: DEFAULT_OWNER_ID,
         address: `${Math.floor(Math.random() * 100) + 1} Main Road, ${areaTemplate.name}`,
         area: derivedArea,
         thana: resolvedGeo?.thana || null,

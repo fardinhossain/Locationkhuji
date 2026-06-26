@@ -363,32 +363,8 @@ export function LoginPage() {
 
           </div>
 
-          {forgotStep === 0 && (
-            <div className="mt-8 text-center text-xs text-[var(--text-tertiary)]" data-testid="demo-credentials">
-              <div className="font-bold uppercase tracking-widest mb-4 opacity-50">Quick Demo Access</div>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { label: "Admin", email: "admin@locationkhuji.com", password: "Admin@123", color: "#EF4444" },
-                  { label: "Owner", email: "owner@locationkhuji.com", password: "Owner@123", color: "#00C9A7" },
-                  { label: "User", email: "user@locationkhuji.com", password: "User@123", color: "#6366F1" },
-                ].map((d) => (
-                  <button
-                    key={d.label}
-                    type="button"
-                    data-testid={`demo-${d.label.toLowerCase()}`}
-                    onClick={() => setForm({ email: d.email, password: d.password })}
-                    className="flex flex-col items-center p-2 rounded-lg border border-[var(--border-light)] hover:border-primary hover:bg-[var(--bg-elevated)] transition"
-                  >
-                    <span className="w-2 h-2 rounded-full mb-1" style={{ background: d.color }} />
-                    <span className="font-bold text-[10px]">{d.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
   );
 }
-

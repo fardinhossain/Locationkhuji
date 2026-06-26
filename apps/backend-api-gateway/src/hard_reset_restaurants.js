@@ -4,6 +4,7 @@ require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 const axios = require("axios");
 
 const MONGO_URI = process.env.MONGO_URL || process.env.MONGO_URI || "mongodb://127.0.0.1:27017/locationkhuji";
+const DEFAULT_OWNER_ID = (process.env.ADMIN_EMAIL || "nidx02@gmail.com").trim().toLowerCase();
 
 const listingSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
@@ -72,7 +73,7 @@ async function hardResetRestaurants() {
         title: name,
         description: `${name} is a local dining establishment offering delicious meals.`,
         category: "restaurant",
-        owner_id: "admin@locationkhuji.com",
+        owner_id: DEFAULT_OWNER_ID,
         images: ["https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800"],
         address: tags["addr:full"] || tags["addr:street"] || `${name}, Dhaka`,
         area: tags["addr:suburb"] || "",

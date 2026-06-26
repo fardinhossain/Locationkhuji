@@ -8,6 +8,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node src/server.js --seed-only",
+    "make-admin": "node src/make_admin.js",
     "seed:full": "node src/seed_osm_full.js"
   },
   "engines": {
