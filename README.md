@@ -356,7 +356,6 @@ Spec-driven development and the Six-File Methodology helped make the project eas
 
 - Live Website: https://locationkhuji.vercel.app/
 - Full Project Report: https://drive.google.com/drive/folders/1hj7SDbcYCkZraekOtuhhIyLr23nQg0Nj?usp=sharing
-- Local Report PDF: [`2023100000569_CSE472_Locationkhuji_Report.pdf`](./2023100000569_CSE472_Locationkhuji_Report.pdf)
 
 ---
 
