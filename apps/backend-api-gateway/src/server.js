@@ -1183,6 +1183,48 @@ api.post("/auth/login", async (req, res, next) => {
   }
 });
 
+api.post("/auth/google", async (req, res, next) => {
+  try {
+    const { idToken } = req.body || {};
+    if (!idToken) throw apiError(400, "Missing Google ID token");
+    if (admin.apps.length === 0) {
+      throw apiError(503, "Firebase not configured - set FIREBASE_SERVICE_ACCOUNT_JSON");
+    }
+
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    const firebaseUser = await admin.auth().getUser(decoded.uid);
+    const normalizedEmail = String(firebaseUser.email || "").toLowerCase();
+    if (!normalizedEmail) throw apiError(400, "Google account email is required");
+
+    const existingUser = await User.findOne({
+      $or: [{ id: firebaseUser.uid }, { email: normalizedEmail }],
+    });
+    const role = existingUser?.role || firebaseUser.customClaims?.role || "user";
+
+    if (firebaseUser.customClaims?.role !== role) {
+      await admin.auth().setCustomUserClaims(firebaseUser.uid, {
+        ...(firebaseUser.customClaims || {}),
+        role,
+      });
+    }
+
+    const user = await ensureMongoUser(firebaseUser, {
+      name: firebaseUser.displayName,
+      email: normalizedEmail,
+      role,
+      avatar: firebaseUser.photoURL,
+    });
+
+    if (!user.is_active) throw apiError(401, "Invalid credentials");
+
+    sendAuthCookies(res, idToken);
+    res.json({ access_token: idToken, user: serializeUser(user) });
+  } catch (error) {
+    const message = error.code === "auth/id-token-expired" ? "Google session expired" : error.message;
+    next(error.status ? error : apiError(401, message || "Google sign-in failed"));
+  }
+});
+
 api.post("/auth/logout", (_req, res) => {
   res.clearCookie("access_token", { path: "/" });
   res.clearCookie("refresh_token", { path: "/" });

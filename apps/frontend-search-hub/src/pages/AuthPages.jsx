@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FaUser, FaStore, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FcGoogle } from "react-icons/fc";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useAuthStore, useLangStore } from "../store";
 import { api } from "../lib/api";
+import { signInWithGooglePopup } from "../lib/firebase";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { useTranslation } from "react-i18next";
@@ -160,6 +162,7 @@ export function LoginPage() {
   const [params] = useSearchParams();
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
   const [forgotStep, setForgotStep] = useState(0); // 0 = login, 1 = request code, 2 = reset password
@@ -171,6 +174,14 @@ export function LoginPage() {
   const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
 
+  const continueAfterAuth = (user) => {
+    const next = params.get("next");
+    if (next) nav(next);
+    else if (user.role === "admin") nav("/admin/dashboard");
+    else if (user.role === "owner") nav("/owner/dashboard");
+    else nav("/map");
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -178,14 +189,27 @@ export function LoginPage() {
       const r = await api.post("/auth/login", form);
       setAuth(r.data.user, r.data.access_token);
       toast.success("Welcome back!");
-      const next = params.get("next");
-      if (next) nav(next);
-      else if (r.data.user.role === "admin") nav("/admin/dashboard");
-      else if (r.data.user.role === "owner") nav("/owner/dashboard");
-      else nav("/map");
+      continueAfterAuth(r.data.user);
     } catch (err) {
       toast.error("Invalid credentials");
     } finally { setLoading(false); }
+  };
+
+  const continueWithGoogle = async () => {
+    setGoogleLoading(true);
+    try {
+      const { idToken } = await signInWithGooglePopup();
+      const r = await api.post("/auth/google", { idToken });
+      setAuth(r.data.user, r.data.access_token);
+      toast.success("Welcome back!");
+      continueAfterAuth(r.data.user);
+    } catch (err) {
+      if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
+      const msg = err.response?.data?.detail || err.message || "Google sign-in failed";
+      toast.error(typeof msg === "string" ? msg : "Google sign-in failed");
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   const requestResetCode = async (e) => {
@@ -295,6 +319,23 @@ export function LoginPage() {
                     {loading ? "..." : t('login')}
                   </Button>
                 </form>
+
+                <div className="my-6 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-[var(--border-light)]" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">or</span>
+                  <div className="h-px flex-1 bg-[var(--border-light)]" />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={loading || googleLoading}
+                  onClick={continueWithGoogle}
+                  className="w-full h-12 rounded-lg border-[var(--border-light)] bg-[var(--bg-elevated)] text-[var(--text-primary)] font-bold hover:bg-[var(--bg-base)] gap-3"
+                >
+                  <FcGoogle size={22} />
+                  {googleLoading ? "Connecting..." : "Continue with Google"}
+                </Button>
 
                 <div className="text-center mt-6 text-sm text-[var(--text-secondary)]">
                   {t('noAccount')} <Link to="/register" className="text-primary font-bold hover:underline">{t('register')}</Link>
