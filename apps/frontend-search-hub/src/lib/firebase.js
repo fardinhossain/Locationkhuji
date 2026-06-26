@@ -33,5 +33,5 @@ googleProvider.setCustomParameters({ prompt: "select_account" });
 export async function signInWithGooglePopup() {
   const result = await signInWithPopup(getFirebaseAuth(), googleProvider);
   const idToken = await result.user.getIdToken();
-  return { idToken, firebaseUser: result.user };
+  return { idToken, refreshToken: result.user.refreshToken, firebaseUser: result.user };
 }

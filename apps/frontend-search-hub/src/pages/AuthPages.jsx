@@ -11,6 +11,14 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { useTranslation } from "react-i18next";
 
+function googleAuthErrorMessage(err) {
+  if (err?.code === "auth/unauthorized-domain") {
+    const host = window.location.hostname;
+    return `Google sign-in is not enabled for ${host}. Add this domain in Firebase Console > Authentication > Settings > Authorized domains.`;
+  }
+  return err?.response?.data?.detail || err?.message || "Google sign-in failed";
+}
+
 export function RegisterPage() {
   const { lang } = useLangStore();
   const { t } = useTranslation();
@@ -20,8 +28,15 @@ export function RegisterPage() {
   const [role, setRole] = useState(null);
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const continueAfterRegister = (user) => {
+    if (user.role === "admin") nav("/admin/dashboard");
+    else if (user.role === "owner") nav("/owner/dashboard");
+    else nav("/map");
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -30,12 +45,29 @@ export function RegisterPage() {
     try {
       const r = await api.post("/auth/register", { name: form.name, email: form.email, password: form.password, role });
       setAuth(r.data.user, r.data.access_token);
-      toast.success("Welcome!");
-      nav(role === "owner" ? "/owner/dashboard" : "/map");
+      toast.success("Welcome! Check your email for the 6-digit verification code.");
+      continueAfterRegister(r.data.user);
     } catch (err) {
       const d = err.response?.data?.detail;
       toast.error(typeof d === "string" ? d : "Registration failed");
     } finally { setLoading(false); }
+  };
+
+  const continueWithGoogle = async () => {
+    if (!role) return toast.error("Please choose your account type first");
+    setGoogleLoading(true);
+    try {
+      const { idToken, refreshToken } = await signInWithGooglePopup();
+      const r = await api.post("/auth/google", { idToken, refreshToken, role });
+      setAuth(r.data.user, r.data.access_token);
+      toast.success("Welcome! Check your email for the 6-digit verification code.");
+      continueAfterRegister(r.data.user);
+    } catch (err) {
+      if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
+      toast.error(googleAuthErrorMessage(err));
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   return (
@@ -143,6 +175,21 @@ export function RegisterPage() {
               <Button data-testid="register-submit" type="submit" disabled={loading} className="mt-5 w-full h-12 rounded-pill bg-primary text-white">
                 {loading ? "..." : t('register')}
               </Button>
+              <div className="my-5 flex items-center gap-3">
+                <div className="h-px flex-1 bg-[var(--border-light)]" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">or</span>
+                <div className="h-px flex-1 bg-[var(--border-light)]" />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={loading || googleLoading}
+                onClick={continueWithGoogle}
+                className="w-full h-12 rounded-lg border-[var(--border-light)] bg-[var(--bg-elevated)] text-[var(--text-primary)] font-bold hover:bg-[var(--bg-base)] gap-3"
+              >
+                <FcGoogle size={22} />
+                {googleLoading ? "Connecting..." : `Continue with Google as ${role}`}
+              </Button>
               <div className="text-center mt-4 text-sm">
                 {t('haveAccount')} <Link to="/login" className="text-primary font-semibold">{t('login')}</Link>
               </div>
@@ -198,15 +245,14 @@ export function LoginPage() {
   const continueWithGoogle = async () => {
     setGoogleLoading(true);
     try {
-      const { idToken } = await signInWithGooglePopup();
-      const r = await api.post("/auth/google", { idToken });
+      const { idToken, refreshToken } = await signInWithGooglePopup();
+      const r = await api.post("/auth/google", { idToken, refreshToken });
       setAuth(r.data.user, r.data.access_token);
-      toast.success("Welcome back!");
+      toast.success(r.data.user?.is_verified === false ? "Check your email for the 6-digit verification code." : "Welcome back!");
       continueAfterAuth(r.data.user);
     } catch (err) {
       if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
-      const msg = err.response?.data?.detail || err.message || "Google sign-in failed";
-      toast.error(typeof msg === "string" ? msg : "Google sign-in failed");
+      toast.error(googleAuthErrorMessage(err));
     } finally {
       setGoogleLoading(false);
     }

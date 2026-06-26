@@ -45,6 +45,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [resending, setResending] = React.useState(false);
   const [checking, setChecking] = React.useState(false);
+  const [verificationCode, setVerificationCode] = React.useState("");
 
   React.useEffect(() => {
     i18n.changeLanguage(lang);
@@ -70,16 +71,13 @@ export default function Navbar() {
       animate={{ y: 0, opacity: 1 }}
       className="sticky top-0 z-50 backdrop-blur-xl bg-navy-900/85 border-b border-white/5"
     >
-      {/* Verification Alert Banner */}
       {user && user.is_verified === false && (
         <div className="bg-gradient-to-r from-amber-500/15 via-teal-500/10 to-amber-500/15 border-b border-white/5 px-4 py-2 flex flex-wrap items-center justify-center gap-3 relative z-50">
-          <span className="text-xs sm:text-sm font-medium text-amber-300 flex items-center gap-1.5 font-sans animate-pulse-slow">
-            <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-            {lang === 'bn' ? 
-              "আপনার অ্যাকাউন্টটি এখনও ভেরিফাই করা হয়নি। মেইল পাননি?" : 
-              "Your account is not verified yet. Did not receive the email?"}
+          <span className="text-xs sm:text-sm font-medium text-amber-300 flex items-center gap-1.5 font-sans">
+            <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            Enter the 6-digit verification code sent to your email.
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <Button
               size="xs"
               disabled={resending || checking}
@@ -87,53 +85,49 @@ export default function Navbar() {
                 setResending(true);
                 try {
                   await api.post("/auth/resend-verification");
-                  toast.success(
-                    lang === 'bn' ? 
-                      "ভেরিফিকেশন মেইল পুনরায় পাঠানো হয়েছে! অনুগ্রহ করে ইনবক্স চেক করুন।" : 
-                      "Verification email resent successfully! Please check your inbox."
-                  );
+                  toast.success("Verification code sent successfully.");
                 } catch (err) {
-                  toast.error(err.response?.data?.detail || "Failed to resend verification email");
+                  toast.error(err.response?.data?.detail || "Failed to send verification code");
                 } finally {
                   setResending(false);
                 }
               }}
               className="bg-teal-500 hover:bg-teal-400 text-navy-900 font-extrabold text-[11px] h-7 px-3 rounded-full shadow-[0_0_10px_rgba(0,201,167,0.3)] transition-all uppercase tracking-wider shrink-0"
             >
-              {resending ? "..." : (lang === 'bn' ? "মেইল পুনরায় পাঠান" : "Resend Email")}
+              {resending ? "..." : "Send Code"}
             </Button>
-            
+            <input
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="123456"
+              inputMode="numeric"
+              maxLength={6}
+              className="h-7 w-24 rounded-full border border-white/15 bg-navy-800/60 px-3 text-center text-xs font-bold tracking-widest text-white outline-none focus:border-teal-400"
+            />
             <Button
               size="xs"
               variant="outline"
               disabled={resending || checking}
               onClick={async () => {
+                if (verificationCode.length !== 6) {
+                  toast.error("Enter the 6-digit verification code");
+                  return;
+                }
                 setChecking(true);
                 try {
-                  const r = await api.get("/auth/me");
-                  if (r.data.is_verified) {
-                    useAuthStore.getState().updateUser({ is_verified: true });
-                    toast.success(
-                      lang === 'bn' ? 
-                        "অ্যাকাউন্ট সফলভাবে ভেরিফাই করা হয়েছে! প্রিমিয়াম ফিচারে স্বাগতম।" : 
-                        "Account verified successfully! Welcome to premium features."
-                    );
-                  } else {
-                    toast.warning(
-                      lang === 'bn' ? 
-                        "আপনার ইমেইলটি এখনো ভেরিফাই করা হয়নি। অনুগ্রহ করে ইনবক্স চেক করে লিংকে ক্লিক করুন!" : 
-                        "Your email is still unverified. Please check your inbox and click the verification link first!"
-                    );
-                  }
+                  const r = await api.post("/auth/verify-email-code", { code: verificationCode });
+                  useAuthStore.getState().updateUser(r.data.user);
+                  setVerificationCode("");
+                  toast.success("Account verified successfully!");
                 } catch (err) {
-                  toast.error("Failed to refresh status");
+                  toast.error(err.response?.data?.detail || "Invalid verification code");
                 } finally {
                   setChecking(false);
                 }
               }}
               className="border-white/20 hover:border-white/40 text-white font-extrabold text-[11px] h-7 px-3 rounded-full transition-all uppercase tracking-wider shrink-0 bg-navy-800/50 hover:bg-navy-700/50"
             >
-              {checking ? "..." : (lang === 'bn' ? "স্ট্যাটাস চেক করুন" : "Check Status")}
+              {checking ? "..." : "Verify"}
             </Button>
           </div>
         </div>

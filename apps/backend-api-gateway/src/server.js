@@ -130,6 +130,10 @@ function configuredAdminName() {
   return (process.env.ADMIN_NAME || "LocationKhuji Admin").trim();
 }
 
+function createSixDigitCode() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
 function extractToken(req) {
   const auth = req.headers.authorization || "";
   if (auth.startsWith("Bearer ")) return auth.slice(7);
@@ -386,6 +390,94 @@ function buildPasswordResetHtml(name, code) {
   `;
 }
 
+function buildEmailVerificationCodeHtml(name, code) {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Verify your LocationKhuji account</title>
+      <style>
+        body {
+          background-color: #0B0E11;
+          color: #CBD5E1;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+          margin: 0;
+          padding: 40px 20px;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          background-color: #141A21;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 12px;
+          padding: 40px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .logo {
+          font-size: 28px;
+          font-weight: 800;
+          text-align: center;
+          color: #F8FAFC;
+          letter-spacing: -0.05em;
+          margin-bottom: 30px;
+        }
+        .logo span { color: #00C9A7; }
+        h1 {
+          font-size: 22px;
+          font-weight: 700;
+          color: #F8FAFC;
+          margin-top: 0;
+          margin-bottom: 20px;
+        }
+        p {
+          font-size: 16px;
+          line-height: 1.6;
+          margin-bottom: 30px;
+        }
+        .code-container {
+          text-align: center;
+          margin-bottom: 35px;
+          background-color: #1C242D;
+          border: 1px dashed rgba(0, 201, 167, 0.3);
+          border-radius: 8px;
+          padding: 20px;
+        }
+        .code {
+          font-family: monospace;
+          font-size: 36px;
+          font-weight: 800;
+          letter-spacing: 0.15em;
+          color: #00C9A7;
+        }
+        .footer {
+          font-size: 12px;
+          color: #64748B;
+          text-align: center;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          padding-top: 20px;
+          margin-top: 20px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="logo">Location<span>Khuji</span></div>
+        <h1>Hello ${name},</h1>
+        <p>Use this 6-digit verification code to verify your LocationKhuji account. This code is valid for 10 minutes:</p>
+        <div class="code-container">
+          <div class="code">${code}</div>
+        </div>
+        <p>If you did not create this account, you can safely ignore this email.</p>
+        <div class="footer">
+          This email was sent by LocationKhuji.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 
 async function firebaseSignUp(email, password) {
   if (!FIREBASE_WEB_API_KEY) throw apiError(503, "Firebase auth is not configured");
@@ -439,13 +531,10 @@ async function uploadBufferToCloudinary(buffer, filename) {
 async function ensureMongoUser(firebaseUser, fallback = {}) {
   let user = await User.findOne({ id: firebaseUser.uid });
   if (user) {
-    // Sync verification status from Firebase User
-    if (!user.is_verified && firebaseUser.emailVerified) {
-      user.is_verified = true;
-      await User.updateOne({ _id: user._id }, { is_verified: true });
-    }
     return user;
   }
+
+  const hasVerificationFallback = Object.prototype.hasOwnProperty.call(fallback, "is_verified");
 
   try {
     const created = await User.create({
@@ -457,7 +546,7 @@ async function ensureMongoUser(firebaseUser, fallback = {}) {
       phone: fallback.phone || null,
       saved_listings: [],
       is_active: true,
-      is_verified: Boolean(firebaseUser.emailVerified),
+      is_verified: hasVerificationFallback ? Boolean(fallback.is_verified) : false,
       created_at: new Date().toISOString(),
     });
     return created;
@@ -810,6 +899,17 @@ const passwordResetSchema = new mongoose.Schema(
 passwordResetSchema.index({ email: 1 });
 const PasswordReset = mongoose.model("PasswordReset", passwordResetSchema);
 
+const emailVerificationSchema = new mongoose.Schema(
+  {
+    email: { type: String, required: true },
+    code: { type: String, required: true },
+    expires_at: { type: Date, required: true },
+  },
+  { versionKey: false }
+);
+emailVerificationSchema.index({ email: 1 });
+const EmailVerification = mongoose.model("EmailVerification", emailVerificationSchema);
+
 function createFirebaseAdminApp() {
   if (admin.apps.length) return;
 
@@ -893,6 +993,44 @@ async function upsertMongoSeedUser({ firebaseUser, email, name, role }) {
     is_verified: true,
     created_at: new Date().toISOString(),
   });
+}
+
+async function createAndSendEmailVerificationCode(user) {
+  const normalizedEmail = String(user.email || "").toLowerCase();
+  if (!normalizedEmail) throw apiError(400, "Email is required");
+
+  const code = createSixDigitCode();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  await EmailVerification.findOneAndUpdate(
+    { email: normalizedEmail },
+    { code, expires_at: expiresAt },
+    { upsert: true, new: true }
+  );
+
+  console.log("\n=======================================================");
+  console.log(`📧 [Email Verification Code] Send to: ${normalizedEmail}`);
+  console.log(`🔐 Verification Code: ${code}`);
+  console.log(`⏰ Expires at: ${expiresAt.toLocaleTimeString()}`);
+  console.log("=======================================================\n");
+
+  let mailDispatched = false;
+  if (RESEND_API_KEY) {
+    try {
+      const html = buildEmailVerificationCodeHtml(user.name || "User", code);
+      await sendResendEmail(normalizedEmail, "Verify your LocationKhuji Account", html);
+      console.log(`📧 [Resend Email] Verification code dispatched successfully to: ${normalizedEmail}`);
+      mailDispatched = true;
+    } catch (resendErr) {
+      console.warn(`⚠️ [Resend Email Error] Could not dispatch verification code: ${resendErr.message}`);
+    }
+  }
+
+  if (!mailDispatched) {
+    console.log("ℹ️ [Verification Fallback] Resend email was not dispatched. Verification code is printed to the server console.");
+  }
+
+  return { code, expiresAt, mailDispatched };
 }
 
 async function removeLegacyTestAccounts() {
@@ -1090,47 +1228,14 @@ api.post("/auth/register", async (req, res, next) => {
       created_at: new Date().toISOString(),
     });
 
-    // Generate email verification link
-    let verificationLink = "";
-    try {
-      verificationLink = await admin.auth().generateEmailVerificationLink(normalizedEmail);
-      console.log("\n=======================================================");
-      console.log(`📧 [Email Verification Link] Sent to: ${normalizedEmail}`);
-      console.log(`🔗 Link: ${verificationLink}`);
-      console.log("=======================================================\n");
-    } catch (linkErr) {
-      console.warn(`⚠️ [Firebase Warning] Could not generate email verification link: ${linkErr.message}`);
-    }
+    const registerAuthResponse = await firebaseSignIn(normalizedEmail, password);
+    const verification = await createAndSendEmailVerificationCode(user);
 
-    const authResponse = await firebaseSignIn(normalizedEmail, password);
-
-    // Send real verification email via Resend or fallback to Firebase REST API
-    let mailDispatched = false;
-    if (RESEND_API_KEY) {
-      try {
-        const html = buildVerificationHtml(name, verificationLink);
-        await sendResendEmail(normalizedEmail, "Verify your LocationKhuji Account 🪐", html);
-        console.log(`📧 [Resend Email] Custom HTML verification email dispatched successfully to: ${normalizedEmail}`);
-        mailDispatched = true;
-      } catch (resendErr) {
-        console.warn(`⚠️ [Resend Email Error] Could not dispatch custom verification email: ${resendErr.message}. Falling back to Firebase...`);
-      }
-    }
-
-    if (!mailDispatched) {
-      try {
-        await firebaseSendVerificationEmail(authResponse.idToken);
-        console.log(`📧 [Firebase Email] Real verification email dispatched successfully to: ${normalizedEmail}`);
-      } catch (mailErr) {
-        console.warn(`⚠️ [Firebase Email Warning] Could not dispatch fallback verification email: ${mailErr.message}`);
-      }
-    }
-
-    sendAuthCookies(res, authResponse.idToken, authResponse.refreshToken);
-    res.json({ 
-      access_token: authResponse.idToken, 
+    sendAuthCookies(res, registerAuthResponse.idToken, registerAuthResponse.refreshToken);
+    res.json({
+      access_token: registerAuthResponse.idToken,
       user: serializeUser(user),
-      dev_verification_link: (process.env.NODE_ENV === "development" || DEV_MODE) ? verificationLink : undefined
+      dev_verification_code: (process.env.NODE_ENV === "development" || DEV_MODE) ? verification.code : undefined,
     });
   } catch (error) {
     const firebaseMessage = error.response?.data?.error?.message || error.code;
@@ -1185,7 +1290,7 @@ api.post("/auth/login", async (req, res, next) => {
 
 api.post("/auth/google", async (req, res, next) => {
   try {
-    const { idToken } = req.body || {};
+    const { idToken, refreshToken, role } = req.body || {};
     if (!idToken) throw apiError(400, "Missing Google ID token");
     if (admin.apps.length === 0) {
       throw apiError(503, "Firebase not configured - set FIREBASE_SERVICE_ACCOUNT_JSON");
@@ -1199,26 +1304,34 @@ api.post("/auth/google", async (req, res, next) => {
     const existingUser = await User.findOne({
       $or: [{ id: firebaseUser.uid }, { email: normalizedEmail }],
     });
-    const role = existingUser?.role || firebaseUser.customClaims?.role || "user";
+    const requestedRole = parseRole(role);
+    const roleToApply = existingUser?.role || firebaseUser.customClaims?.role || (["user", "owner"].includes(requestedRole) ? requestedRole : "user");
 
-    if (firebaseUser.customClaims?.role !== role) {
+    if (firebaseUser.customClaims?.role !== roleToApply) {
       await admin.auth().setCustomUserClaims(firebaseUser.uid, {
         ...(firebaseUser.customClaims || {}),
-        role,
+        role: roleToApply,
       });
     }
 
     const user = await ensureMongoUser(firebaseUser, {
       name: firebaseUser.displayName,
       email: normalizedEmail,
-      role,
+      role: roleToApply,
       avatar: firebaseUser.photoURL,
+      is_verified: false,
     });
 
     if (!user.is_active) throw apiError(401, "Invalid credentials");
 
-    sendAuthCookies(res, idToken);
-    res.json({ access_token: idToken, user: serializeUser(user) });
+    const verification = user.is_verified ? null : await createAndSendEmailVerificationCode(user);
+
+    sendAuthCookies(res, idToken, refreshToken);
+    res.json({
+      access_token: idToken,
+      user: serializeUser(user),
+      dev_verification_code: verification && (process.env.NODE_ENV === "development" || DEV_MODE) ? verification.code : undefined,
+    });
   } catch (error) {
     const message = error.code === "auth/id-token-expired" ? "Google session expired" : error.message;
     next(error.status ? error : apiError(401, message || "Google sign-in failed"));
@@ -1246,18 +1359,6 @@ api.post("/auth/refresh", async (req, res, next) => {
 });
 
 api.get("/auth/me", requireAuth, async (req, res) => {
-  try {
-    // If not verified in MongoDB yet, check Firebase's live emailVerified status
-    if (!req.user.is_verified) {
-      const firebaseUser = await admin.auth().getUser(req.user.id);
-      if (firebaseUser.emailVerified) {
-        await User.updateOne({ id: req.user.id }, { is_verified: true });
-        req.user.is_verified = true;
-      }
-    }
-  } catch (err) {
-    console.warn(`⚠️ [Firebase Sync] Could not sync emailVerified status in auth/me: ${err.message}`);
-  }
   res.json(serializeUser(req.user));
 });
 
@@ -1289,62 +1390,53 @@ api.post("/auth/verify-me-dev", requireAuth, async (req, res, next) => {
   }
 });
 
+api.post("/auth/verify-email-code", requireAuth, async (req, res, next) => {
+  try {
+    const { code } = req.body || {};
+    if (!code) throw apiError(400, "Verification code is required");
+    if (req.user.is_verified) throw apiError(400, "Email is already verified");
+
+    const normalizedEmail = String(req.user.email || "").toLowerCase();
+    const entry = await EmailVerification.findOne({ email: normalizedEmail });
+    if (!entry) throw apiError(400, "Verification code expired or not requested");
+    if (entry.expires_at < new Date()) {
+      await EmailVerification.deleteOne({ _id: entry._id });
+      throw apiError(400, "Verification code expired");
+    }
+    if (String(entry.code) !== String(code).trim()) {
+      throw apiError(400, "Invalid verification code");
+    }
+
+    try {
+      await admin.auth().updateUser(req.user.id, { emailVerified: true });
+    } catch (fbErr) {
+      console.warn(`Could not update Firebase emailVerified status: ${fbErr.message}`);
+    }
+
+    await User.updateOne({ id: req.user.id }, { is_verified: true });
+    await EmailVerification.deleteOne({ _id: entry._id });
+
+    req.user.is_verified = true;
+    res.json({ success: true, user: serializeUser(req.user) });
+  } catch (error) {
+    next(error.status ? error : apiError(400, error.message || "Failed to verify email"));
+  }
+});
+
 api.post("/auth/resend-verification", requireAuth, async (req, res, next) => {
   try {
     if (req.user.is_verified) {
       throw apiError(400, "Email is already verified");
     }
 
-    const name = req.user.name || "User";
-    const email = req.user.email;
-
-    console.log(`📧 [Resend Verification Request] Generating link for: ${email}`);
-
-    // Generate link
-    let verificationLink = "";
-    try {
-      verificationLink = await admin.auth().generateEmailVerificationLink(email);
-      console.log(`🔗 Fresh Link: ${verificationLink}`);
-    } catch (linkErr) {
-      throw apiError(400, `Could not generate email verification link: ${linkErr.message}`);
-    }
-
-    // Try sending with Resend first
-    let mailDispatched = false;
-    if (RESEND_API_KEY) {
-      try {
-        const html = buildVerificationHtml(name, verificationLink);
-        await sendResendEmail(email, "Verify your LocationKhuji Account 🪐", html);
-        console.log(`📧 [Resend Email] Custom HTML verification email resent successfully to: ${email}`);
-        mailDispatched = true;
-      } catch (resendErr) {
-        console.warn(`⚠️ [Resend Email Error] Could not resend custom verification email: ${resendErr.message}. Falling back to Firebase...`);
-      }
-    }
-
-    // Fallback to Firebase REST API
-    if (!mailDispatched) {
-      try {
-        const idToken = extractToken(req);
-        if (idToken && idToken !== "dev-test-token") {
-          await firebaseSendVerificationEmail(idToken);
-          console.log(`📧 [Firebase Email] Verification email resent successfully to: ${email}`);
-          mailDispatched = true;
-        } else {
-          console.warn("⚠️ No valid Firebase ID token found in request headers/cookies to trigger Firebase REST mailer fallback.");
-        }
-      } catch (mailErr) {
-        console.warn(`⚠️ [Firebase Email Warning] Could not resend verification email fallback: ${mailErr.message}`);
-      }
-    }
-
+    const verification = await createAndSendEmailVerificationCode(req.user);
     res.json({
       success: true,
-      message: "Verification email resent successfully.",
-      dev_verification_link: (process.env.NODE_ENV === "development" || DEV_MODE) ? verificationLink : undefined
+      message: "Verification code sent successfully.",
+      dev_verification_code: (process.env.NODE_ENV === "development" || DEV_MODE) ? verification.code : undefined,
     });
   } catch (error) {
-    next(error.status ? error : apiError(400, error.message || "Failed to resend verification email"));
+    next(error.status ? error : apiError(400, error.message || "Failed to resend verification code"));
   }
 });
 
