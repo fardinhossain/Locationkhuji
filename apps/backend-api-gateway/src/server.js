@@ -1290,7 +1290,7 @@ api.post("/auth/login", async (req, res, next) => {
 
 api.post("/auth/google", async (req, res, next) => {
   try {
-    const { idToken, refreshToken, role } = req.body || {};
+    const { idToken, refreshToken, role, mode } = req.body || {};
     if (!idToken) throw apiError(400, "Missing Google ID token");
     if (admin.apps.length === 0) {
       throw apiError(503, "Firebase not configured - set FIREBASE_SERVICE_ACCOUNT_JSON");
@@ -1305,7 +1305,18 @@ api.post("/auth/google", async (req, res, next) => {
       $or: [{ id: firebaseUser.uid }, { email: normalizedEmail }],
     });
     const requestedRole = parseRole(role);
-    const roleToApply = existingUser?.role || firebaseUser.customClaims?.role || (["user", "owner"].includes(requestedRole) ? requestedRole : "user");
+    const existingRole = existingUser?.role || firebaseUser.customClaims?.role;
+    const isRegisterMode = mode === "register";
+    const hasRequestedAccountRole = ["user", "owner"].includes(requestedRole);
+
+    if (!existingRole && !isRegisterMode) {
+      throw apiError(404, "No account found for this Google email. Please register first.");
+    }
+    if (!existingRole && !hasRequestedAccountRole) {
+      throw apiError(400, "Choose whether you are a user or owner before continuing with Google.");
+    }
+
+    const roleToApply = existingRole || requestedRole;
 
     if (firebaseUser.customClaims?.role !== roleToApply) {
       await admin.auth().setCustomUserClaims(firebaseUser.uid, {

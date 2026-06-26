@@ -58,7 +58,7 @@ export function RegisterPage() {
     setGoogleLoading(true);
     try {
       const { idToken, refreshToken } = await signInWithGooglePopup();
-      const r = await api.post("/auth/google", { idToken, refreshToken, role });
+      const r = await api.post("/auth/google", { idToken, refreshToken, role, mode: "register" });
       setAuth(r.data.user, r.data.access_token);
       toast.success("Welcome! Check your email for the 6-digit verification code.");
       continueAfterRegister(r.data.user);
@@ -246,7 +246,7 @@ export function LoginPage() {
     setGoogleLoading(true);
     try {
       const { idToken, refreshToken } = await signInWithGooglePopup();
-      const r = await api.post("/auth/google", { idToken, refreshToken });
+      const r = await api.post("/auth/google", { idToken, refreshToken, mode: "login" });
       setAuth(r.data.user, r.data.access_token);
       toast.success(r.data.user?.is_verified === false ? "Check your email for the 6-digit verification code." : "Welcome back!");
       continueAfterAuth(r.data.user);
