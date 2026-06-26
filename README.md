@@ -1,82 +1,95 @@
-# <div align="center">🪐 LocationKhuji (লোকেশন খুঁজি)</div>
+# <div align="center">LocationKhuji (লোকেশন খুঁজি)</div>
 
 <div align="center">
-  <h3>The AI-Powered Bangladesh-Centric Location Discovery & Real-Time Listings Engine</h3>
-  <p><strong>লোকেশন খুঁজি</strong> is a premium, map-first location intelligence and discovery platform built exclusively for the geographic limits of Bangladesh. Combining natural language AI search, strict geospatial boundaries, and real-time synchronization, it provides a stunning, high-performance user experience.</p>
-  
-  <h4>🌐 Live Website: <a href="https://locationkhuji.vercel.app/" target="_blank">locationkhuji.vercel.app</a></h4>
+  <h3>AI-powered, map-first location discovery for Bangladesh</h3>
+  <p>
+    <strong>LocationKhuji</strong> helps people find nearby hospitals, pharmacies, restaurants,
+    rental flats, and local services when they know what they need but not the exact place name.
+  </p>
+
+  <p>
+    <a href="https://locationkhuji.vercel.app/" target="_blank"><strong>Live Website</strong></a>
+    ·
+    <a href="https://drive.google.com/drive/folders/1hj7SDbcYCkZraekOtuhhIyLr23nQg0Nj?usp=sharing" target="_blank"><strong>Project Report</strong></a>
+  </p>
 </div>
 
 <div align="center">
 
-[![Live Website](https://img.shields.io/badge/Live%20Website-locationkhuji.vercel.app-00C9A7?logo=vercel&logoColor=white&style=for-the-badge)](https://locationkhuji.vercel.app/)
-[![React 19](https://img.shields.io/badge/React-19.0-61DAFB?logo=react&logoColor=black&style=for-the-badge)](#)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white&style=for-the-badge)](#)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white&style=for-the-badge)](#)
-[![Socket.io](https://img.shields.io/badge/Socket.io-4.0-010101?logo=socket.io&logoColor=white&style=for-the-badge)](#)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?logo=tailwind-css&logoColor=white&style=for-the-badge)](#)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](#)
-[![AI Powered](https://img.shields.io/badge/AI--Powered-Groq%20%2F%20DeepSeek-red?style=for-the-badge)](#)
-[![Deployment Status](https://img.shields.io/badge/Deploy-Production--Ready-brightgreen?style=for-the-badge)](#)
+[![Live Website](https://img.shields.io/badge/Live-locationkhuji.vercel.app-00C9A7?logo=vercel&logoColor=white&style=for-the-badge)](https://locationkhuji.vercel.app/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black&style=for-the-badge)](#tech-stack)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white&style=for-the-badge)](#tech-stack)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white&style=for-the-badge)](#tech-stack)
+[![Socket.io](https://img.shields.io/badge/Socket.io-Realtime-010101?logo=socket.io&logoColor=white&style=for-the-badge)](#tech-stack)
+[![AI Search](https://img.shields.io/badge/AI-Groq%20%2B%20OpenRouter-FF6B6B?style=for-the-badge)](#ai-search-flow)
 
 </div>
 
-> [!NOTE]
-> ### 📋 CSE471 System Analysis & Design Project Report
-> The comprehensive design, system analysis, and implementation report for **LocationKhuji** is available:
-> * 📄 **[View Report in Browser](https://drive.google.com/file/d/1eKWKuHaB3XjXhQp0hKY8dMXT8CUcLTEh/view?usp=sharing)** (Google Drive PDF Viewer)
-> * 💾 **[Download PDF Report](https://drive.google.com/uc?export=download&id=1eKWKuHaB3XjXhQp0hKY8dMXT8CUcLTEh)** (Direct PDF Download)
+---
+
+## Project Overview
+
+LocationKhuji is a full-stack location discovery platform built for Bangladesh. It combines natural language AI search, Bangladesh-only geospatial logic, interactive maps, account-based access control, and owner/admin listing management.
+
+The core idea is simple: people often need something nearby, but they do not always know the exact name of the place.
+
+Example searches:
+
+```text
+pharmacy near Mirpur 10
+2 bedroom flat in Dhanmondi under 20000
+hospital near me
+electrician nearby
+মিরপুর ১০ এ ফার্মেসি
+```
+
+LocationKhuji detects the user's intent, category, location, radius, and filters, then focuses the map around the most relevant Bangladesh location.
 
 ---
 
-## 📖 Project Overview
+## Key Features
 
-**LocationKhuji** exists to solve the challenges of location discovery in Bangladesh. Traditional mapping and listing sites are either global platforms lacking local context, or static lists of businesses with broken coordinates and outdated data. 
-
-LocationKhuji introduces:
-* **Strict Geographic Bounds:** Locked entirely within the coordinates of Bangladesh (South-West: `[20.3, 88.0]`, North-East: `[26.7, 92.7]`), preventing out-of-boundary queries.
-* **Multilingual AI Search:** Users can query the database using complex natural language phrases in English, Bengali, or mixed *Banglish* (e.g., `"মিরপুর ১০ এ ডেন্টাল হাসপাতাল"` or `"pharmacy near dhanmondi 32"`).
-* **Map-First Architecture:** A highly interactive, dark-mode Leaflet Map serves as the visual core, updating search pins, clustering locations, and adjusting radius indicators in real-time.
-* **Automatic Live Seeding:** If local MongoDB database records are empty for a specific query, the system automatically falls back to search and parse the live **OpenStreetMap Overpass API**, deduplicating and saving new listings on-the-fly, while broadcasting them via **Socket.io**.
-
----
-
-## ⚡ Key Features
-
-* 🗺️ **Premium Map-First UI/UX:** Clean, responsive, organic glassmorphism UI optimized for dark theme / OLED screens. Custom markers and cluster animations.
-* 🤖 **Waterfall AI Intent Parsing:** Under-50ms search processing using **Groq (Llama 3.3)** $\rightarrow$ falling back to **OpenRouter (DeepSeek V3)** $\rightarrow$ falling back to a robust offline local Regex Engine.
-* 🇧🇩 **Bangladesh Address Intelligence Engine:** A centralized parser using local datasets (`divisions.json`, `districts.json`, `upazilas.json`) resolving English/Bangla name variants, typos, and coordinates.
-* 📍 **Dynamic Radius Discovery:** Instantly recalculates and renders a dashed radius circle on the map centered on the resolved search coordinates (default 1 km).
-* 🔄 **Real-Time Synchronized Broadcasts:** Emits real-time `new_listing` events via **Socket.io** so active map instances immediately receive and render newly seeded listings.
-* 🎛️ **Hierarchical Filters:** Advanced location selectors (Division $\rightarrow$ District $\rightarrow$ Thana) built exclusively inside the Listings Page for targeted discovery.
-* 📷 **Cloud-Hosted Asset Pipeline:** Multer and Cloudinary integration for streaming secure listing image uploads with automatic FileRecord logging.
-* 🔒 **Dev-Mode Bypass & Guards:** Easy local onboarding with mock user generation and custom Firebase Dev JWT tokens.
-* 📱 **Mobile-First Responsiveness:** Fully adapted interface supporting fluid touch panning, clustered marker taps, and collapsible sidebars.
+- AI-powered natural language search for English, Bangla, and Banglish queries.
+- Standard search with address suggestions, category filters, and radius control.
+- Interactive Leaflet map with markers, clustering, selected radius, and location focus.
+- Bangladesh-only geospatial enforcement using local administrative datasets.
+- Guest browsing for the map, listing lists, and listing detail pages.
+- Login-gated contact information, saved listings, reports, reviews, and ratings.
+- User, Owner, and Admin role-based access control.
+- Owner dashboard for creating, editing, and removing listings.
+- Admin dashboard for user management, listing management, and platform stats.
+- Email verification using 6-digit codes.
+- Forgot-password flow using 6-digit reset codes.
+- Google sign-in and Google registration support through Firebase Auth.
+- Cloudinary image uploads with file records and secure image serving.
+- Real-time map updates through Socket.io when new listings are added or seeded.
+- OSM Overpass fallback seeding when local results need fresh nearby data.
+- Fully responsive desktop and mobile map/search experience.
 
 ---
 
-## 🖼️ Screenshots
+## Screenshots
 
 <div align="center">
-  <table border="0">
+  <table>
     <tr>
       <td width="50%">
-        <p align="center"><strong>Desktop Map Interface</strong></p>
-        <img src="./screenshots/homepage.png" alt="Desktop Map View" width="100%" />
+        <p align="center"><strong>Hero & Map-First Experience</strong></p>
+        <img src="./screenshots/homepage.png" alt="LocationKhuji homepage and map" width="100%" />
       </td>
       <td width="50%">
-        <p align="center"><strong>AI Multilingual Search</strong></p>
-        <img src="./screenshots/ai_search.png" alt="AI Search Results" width="100%" />
+        <p align="center"><strong>AI Search</strong></p>
+        <img src="./screenshots/ai_search.png" alt="AI search result view" width="100%" />
       </td>
     </tr>
     <tr>
       <td width="50%">
-        <p align="center"><strong>Listings Directory & Filters</strong></p>
-        <img src="./screenshots/listings.png" alt="Listings Directory" width="100%" />
+        <p align="center"><strong>Listings Directory</strong></p>
+        <img src="./screenshots/listings.png" alt="Listings directory with filters" width="100%" />
       </td>
       <td width="50%">
-        <p align="center"><strong>Mobile Search Layout</strong></p>
-        <img src="./screenshots/mobile_ui.png" alt="Mobile Experience" width="100%" />
+        <p align="center"><strong>Mobile Responsive UI</strong></p>
+        <img src="./screenshots/mobile_ui.png" alt="Mobile responsive LocationKhuji interface" width="100%" />
       </td>
     </tr>
   </table>
@@ -84,188 +97,273 @@ LocationKhuji introduces:
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-LocationKhuji is organized as an **npm workspaces monorepo** with decoupled backend and frontend environments:
-
-| Layer | Technologies | Key Features |
-| :--- | :--- | :--- |
-| **Frontend** | React 19, CRACO, Zustand 5, Axios, TailwindCSS 3, Framer Motion 12 | State stores, smooth CSS keyframes, interactive Leaflet integration, i18next translation |
-| **Backend** | Node.js (v18+), Express.js 4, Mongoose 8, Socket.io 4, Multer | GeoJSON indexes, background OSM parsing, WebSocket push triggers |
-| **AI & Geocoding** | Groq (Llama 3), OpenRouter (DeepSeek V3), OSM Nominatim | AI intent extraction, caching layers, spatial keyword resolution |
-| **Infrastructure** | Vercel, Render Free Web Services, MongoDB Atlas, Cloudinary CDN, UptimeRobot | Production hosting, database cloud clusters, keep-alive warmups |
+| Layer | Technologies |
+| :--- | :--- |
+| Frontend | React 19, CRACO, React Router 7, Zustand, Tailwind CSS, Framer Motion, React Query |
+| Maps | Leaflet, React Leaflet, React Leaflet Cluster, OSM tiles, Nominatim |
+| UI | Radix UI primitives, Lucide React, React Icons, Sonner, custom responsive components |
+| Backend | Node.js, Express.js, Mongoose, MongoDB Atlas, Socket.io |
+| Auth | Firebase Auth, Firebase Admin SDK, Google sign-in, HTTP-only auth cookies |
+| AI & Search | Groq Llama 3, OpenRouter DeepSeek V3, local regex fallback, OSM Overpass |
+| Storage | Cloudinary, Multer memory uploads |
+| Infrastructure | Vercel, Render, GitHub Actions, MongoDB Atlas |
 
 ---
 
-## 📐 System Architecture & Search Flow
-
-The backend handles incoming requests through a multi-stage search engine:
+## AI Search Flow
 
 ```text
-                  User Search Query (English / Bangla / Banglish)
-                                       │
-                                       ▼
-                       Stage 1: Local Name Normalization
-                       (Cleans grammar, maps Bengali digits)
-                                       │
-                                       ▼
-                     Stage 2: Waterfall AI Intent Parsing
-                      ┌─────────────────────────────────┐
-                      │ 1. Primary: Groq (Llama 3)      │
-                      │ 2. Fallback: OpenRouter         │
-                      │ 3. Offline: Local Regex Engine  │
-                      └────────────────┬────────────────┘
-                                       │
-                                       ▼
-                  Stage 3: Central BD Location Engine Lookup
-                (Matches Divisions, Districts, Upazilas/Thanas)
-                                       │
-                                       ▼
-                  Stage 4: MongoDB Geospatial Query ($nearSphere)
-                                       │
-                 ┌─────────────────────┴─────────────────────┐
-                 ▼ (If Listings Found)                       ▼ (If Empty Results)
-       Return Local DB Results                      Query OSM Overpass API
-                 │                                           │
-                 │                                           ▼
-                 │                                Parse & Deduplicate (100m)
-                 │                                           │
-                 │                                           ▼
-                 │                                Seed Listings to MongoDB
-                 │                                           │
-                 │                                           ▼
-                 │                                 Emit Socket.io Broadcast
-                 │                                           │
-                 └─────────────────────┬─────────────────────┘
-                                       ▼
-                            Leaflet Map Rendering
-                         (Fly-to bounds, update radius)
+User query
+  |
+  v
+Normalize English/Bangla/Banglish text
+  |
+  v
+Resolve Bangladesh location from local datasets and geocoding
+  |
+  v
+Parse intent with Groq
+  |
+  +--> fallback to OpenRouter DeepSeek V3
+  |
+  +--> fallback to local regex parser
+  |
+  v
+Build MongoDB geospatial query
+  |
+  v
+Apply category, radius, keyword, price, bedroom, and emergency filters
+  |
+  v
+Return listings and map focus data
+  |
+  v
+Fetch/seed fresh OSM Overpass data in the background
+  |
+  v
+Broadcast new listings through Socket.io
 ```
 
----
-
-## 🇧🇩 Bangladesh Location Intelligence
-
-Instead of sending every request to expensive geocoding APIs, LocationKhuji uses a custom [BDLocationEngine](file:///d:/LocationKhuji/packages/shared-config/bd-location-engine.js) mapping local configuration datasets:
-
-* **Authoritative Data Maps:** Loads [divisions.json](file:///d:/LocationKhuji/packages/shared-config/data/divisions.json), [districts.json](file:///d:/LocationKhuji/packages/shared-config/data/districts.json), and [upazilas.json](file:///d:/LocationKhuji/packages/shared-config/data/upazilas.json).
-* **Multilingual Mapping:** The engine translates names seamlessly (e.g. `Dhaka` $\leftrightarrow$ `ঢাকা`, `Chittagong` $\leftrightarrow$ `চট্টগ্রাম`) and resolves spelling deviations.
-* **Bengali Numeral Normalization:** Automatically converts Bengali integers to standard numerals (e.g. `মিরপুর ১০` $\rightarrow$ `mirpur 10`) to safeguard database queries.
-* **Geospatial Coordinate Binding:** Maps have hardcoded bounding targets matching Bangladesh's geographic bounds. If a coordinate is outside this grid, listing creation is rejected.
+The AI search endpoint returns structured data such as category, keywords, price range, bedrooms, emergency intent, detected location, search center, and radius.
 
 ---
 
-## 🤖 AI Search Pipeline
+## Bangladesh Location Intelligence
 
-When submitting an AI search, the endpoint `/api/listings/ai-search` processes intent using a strict waterfall pattern:
+LocationKhuji uses a shared Bangladesh location engine in [`packages/shared-config`](./packages/shared-config) to keep map behavior consistent across frontend and backend.
 
-1. **Groq Llama 3 API:** Attempts to parse query parameters under 50ms into a structured JSON schema containing category, keywords, price range, and location markers.
-2. **OpenRouter DeepSeek V3:** Invoked automatically if the primary Groq service encounters rate limits (HTTP 429) or is down.
-3. **Smart Offline Regex:** Parses standard structures if no network keys are present, ensuring search reliability offline.
+It supports:
 
-The returned response formats the query variables cleanly:
-```json
-{
-  "category": "flat|pharmacy|hospital|restaurant|service",
-  "keywords": ["balcony", "generator"],
-  "isEmergency": false,
-  "maxPrice": null,
-  "bedrooms": null,
-  "location": "Mirpur 10"
-}
-```
+- Division, district, upazila, and thana datasets.
+- English and Bangla location aliases.
+- Bengali numeral normalization.
+- Common Bangladesh-area matching such as Dhaka, Mirpur, Dhanmondi, Uttara, Gulshan, Sylhet, Chittagong, and more.
+- Bangladesh coordinate bounds to prevent out-of-country listing placement.
+- Dynamic radius behavior for divisions, districts, thanas, and neighborhood-level searches.
 
 ---
 
-## 📂 Folder Structure
+## User Roles
+
+| Role | Capabilities |
+| :--- | :--- |
+| Guest | Browse map, search listings, view listing details with protected contact fields hidden |
+| User | Save listings, review places, report listings, view dashboard |
+| Owner | Add listings, edit own listings, remove own listings, upload listing images, use owner dashboard |
+| Admin | Manage users, manage listings, feature listings, remove listings, view platform stats |
+
+---
+
+## API Summary
+
+| Area | Endpoints |
+| :--- | :--- |
+| Health | `GET /api/`, `GET /api/health` |
+| Auth | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/google`, `POST /api/auth/logout`, `POST /api/auth/refresh`, `GET /api/auth/me` |
+| Verification | `POST /api/auth/verify-email-code`, `POST /api/auth/resend-verification`, `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` |
+| Listings | `GET /api/listings/search`, `GET /api/listings/nearby`, `POST /api/listings/ai-search`, `GET /api/listings/:lid` |
+| Owner Listings | `POST /api/listings`, `GET /api/listings/my`, `PUT /api/listings/:lid`, `DELETE /api/listings/:lid` |
+| Engagement | `POST /api/listings/:lid/save`, `GET /api/users/me/saved`, `POST /api/listings/:lid/report`, `GET/POST /api/listings/:lid/reviews`, `DELETE /api/reviews/:rid` |
+| Files | `POST /api/uploads`, `GET /api/files/:fid` |
+| Admin | `GET /api/admin/stats`, `GET /api/admin/users`, `PUT /api/admin/users/:uid`, `GET /api/admin/listings`, `PUT /api/admin/listings/:lid/feature` |
+
+---
+
+## Monorepo Structure
 
 ```text
 LocationKhuji/
-├── package.json                 # Root npm workspaces configuration
 ├── apps/
-│   ├── backend-api-gateway/     # Node.js + Express API Monolith
-│   │   ├── package.json         # name: "locationkhuji-backend"
-│   │   ├── render.yaml          # Render service deployment setup
-│   │   └── src/
-│   │       ├── server.js        # Server initialization and routes
-│   │       ├── locationResolver.js # Geocoding fallback logic
-│   │       ├── seed_osm.js      # OpenStreetMap seeding scripts
-│   │       └── scripts/         # Database migrations and normalizers
-│   └── frontend-search-hub/     # React 19 Client SPA
-│       ├── package.json         # name: "frontend"
-│       ├── craco.config.js      # Webpack alias overrides (@/* -> src/*)
-│       ├── tailwind.config.js   # Tailwind configurations and tokens
-│       └── src/
-│           ├── App.js           # Route layout definitions
-│           ├── index.css        # Glassmorphism design tokens & styles
-│           ├── components/      # MapView, ListingCard, and UI Primitives
-│           ├── pages/           # MapPage, ListPage, DetailPage, Dashboard
-│           ├── store/           # Zustand global state (auth, map, theme)
-│           └── locales/         # i18next English and Bengali files
-└── packages/
-    └── shared-config/           # Monorepo shared libraries
-        ├── index.js             # Export entrypoint
-        ├── bd-location-engine.js# Centralized Bangladesh Location Engine
-        └── data/                # Pre-cached JSON administrative maps
+│   ├── backend-api-gateway/
+│   │   ├── src/server.js              # Express API, auth, listings, AI search, uploads
+│   │   ├── src/locationResolver.js    # Location resolution helpers
+│   │   ├── src/seed_osm.js            # OSM seeding script
+│   │   ├── src/seed_osm_full.js       # Larger OSM seeding script
+│   │   └── render.yaml                # Render deployment config
+│   └── frontend-search-hub/
+│       ├── src/App.js                 # React routes
+│       ├── src/pages/MapPage.jsx      # Standard/AI map search experience
+│       ├── src/pages/AuthPages.jsx    # Register, login, Google auth, password reset
+│       ├── src/pages/DashboardPages.jsx
+│       ├── src/components/MapView.jsx
+│       ├── src/components/ListingCard.jsx
+│       ├── src/store/index.js         # Zustand stores
+│       └── src/locales/               # English and Bangla translations
+├── packages/
+│   └── shared-config/
+│       ├── bd-location-engine.js      # Bangladesh location intelligence
+│       └── data/                      # divisions, districts, upazilas
+├── screenshots/
+├── scripts/
+│   ├── locationkhuji_showcase.mp4
+│   └── locationkhuji_showcase.srt
+└── package.json                       # npm workspaces
 ```
 
+---
 
-## 📱 Mobile Optimization
+## Local Development
 
-LocationKhuji features a responsive layout designed for mobile devices in Bangladesh:
-* **Gesture Locks:** Map scroll gestures are configured to prevent standard page scroll conflicts on smaller touch screens.
-* **Touch-Friendly Targets:** Markers cluster dynamically, expanding on click for easy selection.
-* **Responsive Sidebar:** Collapse or expand search panels to maximize screen space.
+### Prerequisites
+
+- Node.js 18+
+- npm
+- MongoDB Atlas or a local MongoDB instance
+- Firebase project with Email/Password and Google auth enabled
+- Optional: Cloudinary account for uploads
+- Optional: Groq and OpenRouter API keys for AI search
+- Optional: Resend API key for email delivery
+
+### Install
+
+```bash
+npm install
+```
+
+### Backend Environment
+
+Create `apps/backend-api-gateway/.env`:
+
+```env
+PORT=8001
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:3000
+
+MONGO_URL=your_mongodb_connection_string
+DB_NAME=locationkhuji
+
+FIREBASE_WEB_API_KEY=your_firebase_web_api_key
+FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"..."}
+
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=change_me
+ADMIN_NAME=LocationKhuji Admin
+
+GROQ_API_KEY=your_groq_api_key
+OPENROUTER_API_KEY=your_openrouter_api_key
+
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_key
+CLOUDINARY_API_SECRET=your_cloudinary_secret
+
+RESEND_API_KEY=your_resend_api_key
+LOCATION_DEBUG=false
+```
+
+### Frontend Environment
+
+Create `apps/frontend-search-hub/.env`:
+
+```env
+REACT_APP_BACKEND_URL=http://localhost:8001
+
+REACT_APP_FIREBASE_API_KEY=your_firebase_api_key
+REACT_APP_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=your_project_id
+REACT_APP_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+REACT_APP_FIREBASE_APP_ID=your_app_id
+REACT_APP_FIREBASE_MEASUREMENT_ID=your_measurement_id
+```
+
+### Run
+
+Start the backend:
+
+```bash
+npm run dev:api
+```
+
+Start the frontend:
+
+```bash
+npm run dev:hub
+```
+
+The frontend runs on `http://localhost:3000` and the backend runs on `http://localhost:8001`.
 
 ---
 
-## ⚡ Performance Optimizations
+## Useful Scripts
 
-* **List Virtualization:** The Listings sidebar uses virtual rendering, rendering only the visible items. This keeps page navigation smooth even when displaying thousands of search results.
-* **Geospatial Indexing:** The MongoDB collection features a `2dsphere` index on listing coordinates to handle spatial queries quickly.
-* **Memory Caching:** Intent requests and Nominatim geocoder queries are cached locally to reduce API wait times.
-
----
-
-## 🔒 Security
-
-* **Backend Key Isolation:** Credentials for Groq, OpenRouter, and Firebase admin keys are isolated on the backend.
-* **Strict CORS Whitelist:** The backend enforces CORS restrictions, allowing requests only from configured client domains.
-* **Firebase Token Security:** Backend endpoints verify authentication headers using Firebase Admin JWT validation.
-
----
-
-## 🗺️ Roadmap
-
-- [ ] **AI Assistant Chatbot:** Interactive map agent to help users find flats or nearby amenities using conversational prompts.
-- [ ] **Push Notification Updates:** Socket-driven updates warning users of new emergency services listing in their area.
-- [ ] **Advanced Owner Analytics:** Dashboards for business owners to track listing views and search metrics.
-- [ ] **Mobile App:** Native client app built using React Native.
+```bash
+npm run dev:hub          # start React app
+npm run dev:api          # start Express API with nodemon
+npm run build:hub        # build frontend
+npm run build:all        # build workspaces
+npm run test:all         # run workspace tests if present
+npm run make-admin --workspace=apps/backend-api-gateway -- admin@example.com
+npm run seed --workspace=apps/backend-api-gateway
+npm run seed:full --workspace=apps/backend-api-gateway
+```
 
 ---
 
-## 🤝 Contributing
+## Development Notes
 
-We welcome contributions to LocationKhuji! 
-
-1. Fork the repository.
-2. Create a new branch: `git checkout -b feature/your-feature-name`.
-3. Commit your changes: `git commit -m "feat: add some feature"`.
-4. Push to your branch: `git push origin feature/your-feature-name`.
-5. Open a Pull Request.
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- Contact details are hidden from guests on listing detail responses.
+- Listing removal is implemented as soft deactivation through `is_active: false`.
+- Reviews are restricted so owners cannot review their own listings and users cannot review the same listing twice.
+- Image uploads accept common image formats and are limited to 5 MB per file.
+- The map listens for `new_listing` Socket.io events and updates active results when the listing matches the current category and radius.
+- In development mode, verification/reset codes may be returned or printed to the server console for easier testing.
 
 ---
 
-## 👥 Authors
+## What I Learned
 
-Developed with ❤️ by **Fardin** | **NovoSoft.AI**
+This project improved my practical experience with full-stack architecture, monorepo organization, AI integration, geospatial search, authentication, role-based access control, real-time updates, and deployment.
 
-* **GitHub:** [@fardinhossain](https://github.com/fardinhossain)
-* **LinkedIn:** [Fardin Hossain](https://linkedin.com/in/fardinhossain)
-* **Email:** fardin.hosn@gmail.com
+The hardest part was keeping AI search, location detection, MongoDB geospatial queries, frontend state, and map focusing synchronized. Small changes in one layer often affected the whole search experience.
+
+Spec-driven development and the Six-File Methodology helped make the project easier to reason about by separating planning, architecture, state, backend logic, UI behavior, and testing.
+
+---
+
+## Roadmap
+
+- Conversational AI map assistant.
+- Better owner analytics for listing views and search performance.
+- Push notifications for nearby saved searches or emergency services.
+- More structured moderation workflow for reports.
+- Native mobile app exploration with React Native.
+
+---
+
+## Project Links
+
+- Live Website: https://locationkhuji.vercel.app/
+- Full Project Report: https://drive.google.com/drive/folders/1hj7SDbcYCkZraekOtuhhIyLr23nQg0Nj?usp=sharing
+- Local Report PDF: [`2023100000569_CSE472_Locationkhuji_Report.pdf`](./2023100000569_CSE472_Locationkhuji_Report.pdf)
+
+---
+
+## Author
+
+Developed by **Fardin Hossain**.
+
+- GitHub: [@fardinhossain](https://github.com/fardinhossain)
+- LinkedIn: [Fardin Hossain](https://linkedin.com/in/fardinhossain)
+- Email: fardin.hosn@gmail.com
