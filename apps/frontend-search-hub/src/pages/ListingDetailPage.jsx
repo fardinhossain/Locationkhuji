@@ -23,6 +23,13 @@ function StarPicker({ value, onChange }) {
   );
 }
 
+function canManageListing(currentUser, currentListing) {
+  return Boolean(
+    currentUser &&
+    (currentUser.role === "admin" || (currentListing?.owner?.id && currentListing.owner.id === currentUser.id))
+  );
+}
+
 export default function ListingDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -90,6 +97,10 @@ export default function ListingDetailPage() {
   };
 
   const handleRemove = async () => {
+    if (!canManageListing(user, listing)) {
+      toast.error("Only the listing owner or an admin can remove this listing.");
+      return;
+    }
     if (!window.confirm("Are you sure you want to remove this listing?")) return;
     try {
       await api.delete(`/listings/${id}`);
@@ -105,6 +116,7 @@ export default function ListingDetailPage() {
   const isSaved = user?.saved_listings?.includes(id);
   const d = listing.details || {};
   const img = listing.images?.[activeImg] ? (listing.images[activeImg].startsWith("http") ? listing.images[activeImg] : fileUrl(listing.images[activeImg])) : null;
+  const canRemoveListing = canManageListing(user, listing);
 
   const myReview = reviews.find((r) => r.user_id === user?.id);
 
@@ -186,7 +198,7 @@ export default function ListingDetailPage() {
                   <FiFlag/> Report
                 </Button>
               )}
-              {(user?.role === "admin" || listing.owner?.id === user?.id) && (
+              {canRemoveListing && (
                 <Button variant="destructive" className="gap-2 h-11 px-6 rounded-pill shadow-lg" onClick={handleRemove}>
                   <FiTrash2/> Remove from Map
                 </Button>
