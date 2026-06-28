@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -30,8 +30,22 @@ function getFirebaseAuth() {
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
 
-export async function signInWithGooglePopup() {
-  const result = await signInWithPopup(getFirebaseAuth(), googleProvider);
+/**
+ * Initiates a Google sign-in redirect. Call this to start the flow;
+ * the browser will navigate away to Google and return to the app.
+ * Store any state (role, mode) in sessionStorage before calling.
+ */
+export function signInWithGoogleRedirect() {
+  return signInWithRedirect(getFirebaseAuth(), googleProvider);
+}
+
+/**
+ * Resolves the Google redirect result after returning from Google.
+ * Returns null if no redirect result is pending.
+ */
+export async function getGoogleRedirectResult() {
+  const result = await getRedirectResult(getFirebaseAuth());
+  if (!result) return null;
   const idToken = await result.user.getIdToken();
   return { idToken, refreshToken: result.user.refreshToken, firebaseUser: result.user };
 }

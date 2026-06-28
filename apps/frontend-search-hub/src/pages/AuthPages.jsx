@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { FaUser, FaStore, FaEye, FaEyeSlash } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useAuthStore, useLangStore } from "../store";
 import { api } from "../lib/api";
-import { signInWithGooglePopup } from "../lib/firebase";
+import { signInWithGoogleRedirect, getGoogleRedirectResult } from "../lib/firebase";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { useTranslation } from "react-i18next";
@@ -55,20 +55,38 @@ export function RegisterPage() {
 
   const continueWithGoogle = async () => {
     if (!role) return toast.error("Please choose your account type first");
-    setGoogleLoading(true);
+    // Save state so we can recover it after the redirect returns
+    sessionStorage.setItem("google_auth_role", role);
+    sessionStorage.setItem("google_auth_mode", "register");
     try {
-      const { idToken, refreshToken } = await signInWithGooglePopup();
-      const r = await api.post("/auth/google", { idToken, refreshToken, role, mode: "register" });
-      setAuth(r.data.user, r.data.access_token);
-      toast.success("Welcome! Check your email for the 6-digit verification code.");
-      continueAfterRegister(r.data.user);
+      await signInWithGoogleRedirect();
     } catch (err) {
-      if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
       toast.error(googleAuthErrorMessage(err));
-    } finally {
-      setGoogleLoading(false);
     }
   };
+
+  // Handle the result after Google redirects back to the app
+  useEffect(() => {
+    const mode = sessionStorage.getItem("google_auth_mode");
+    if (mode !== "register") return;
+    const savedRole = sessionStorage.getItem("google_auth_role");
+
+    (async () => {
+      try {
+        const result = await getGoogleRedirectResult();
+        if (!result) return; // No pending redirect
+        sessionStorage.removeItem("google_auth_role");
+        sessionStorage.removeItem("google_auth_mode");
+        const { idToken, refreshToken } = result;
+        const r = await api.post("/auth/google", { idToken, refreshToken, role: savedRole, mode: "register" });
+        setAuth(r.data.user, r.data.access_token);
+        toast.success("Welcome! Check your email for the 6-digit verification code.");
+        continueAfterRegister(r.data.user);
+      } catch (err) {
+        toast.error(googleAuthErrorMessage(err));
+      }
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen flex">
@@ -243,20 +261,40 @@ export function LoginPage() {
   };
 
   const continueWithGoogle = async () => {
-    setGoogleLoading(true);
+    const next = params.get("next");
+    sessionStorage.setItem("google_auth_mode", "login");
+    if (next) sessionStorage.setItem("google_auth_next", next);
     try {
-      const { idToken, refreshToken } = await signInWithGooglePopup();
-      const r = await api.post("/auth/google", { idToken, refreshToken, mode: "login" });
-      setAuth(r.data.user, r.data.access_token);
-      toast.success(r.data.user?.is_verified === false ? "Check your email for the 6-digit verification code." : "Welcome back!");
-      continueAfterAuth(r.data.user);
+      await signInWithGoogleRedirect();
     } catch (err) {
-      if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
       toast.error(googleAuthErrorMessage(err));
-    } finally {
-      setGoogleLoading(false);
     }
   };
+
+  // Handle the result after Google redirects back to the app
+  useEffect(() => {
+    const mode = sessionStorage.getItem("google_auth_mode");
+    if (mode !== "login") return;
+
+    (async () => {
+      try {
+        const result = await getGoogleRedirectResult();
+        if (!result) return; // No pending redirect
+        sessionStorage.removeItem("google_auth_mode");
+        const savedNext = sessionStorage.getItem("google_auth_next");
+        sessionStorage.removeItem("google_auth_next");
+        const { idToken, refreshToken } = result;
+        const r = await api.post("/auth/google", { idToken, refreshToken, mode: "login" });
+        setAuth(r.data.user, r.data.access_token);
+        toast.success(r.data.user?.is_verified === false ? "Check your email for the 6-digit verification code." : "Welcome back!");
+        // Navigate to next or role-based default
+        if (savedNext) nav(savedNext);
+        else continueAfterAuth(r.data.user);
+      } catch (err) {
+        toast.error(googleAuthErrorMessage(err));
+      }
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const requestResetCode = async (e) => {
     e.preventDefault();
