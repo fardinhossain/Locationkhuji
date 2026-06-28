@@ -40,8 +40,10 @@ const HeroSection = () => {
             transition={{ delay: 0.1 }}
             className="hero-heading text-clamp-hero-title font-bold leading-[1.15] tracking-tight mb-4 sm:mb-5 text-white"
           >
-            <span className="block glow-text-teal opacity-95">{t('hero.titleLine1')}</span>
-            <span className="block text-teal-500">{t('hero.titleLine2')}</span>
+            <span className="block glow-text-teal opacity-95">{t('hero.titleLine1') || 'Find Everything'}</span>
+            <span className="block text-[#00C9A7] glow-text-teal" style={{ color: '#00C9A7' }}>
+              {t('hero.titleLine2') || 'Near You'}
+            </span>
           </motion.h1>
 
           <motion.p
@@ -64,17 +66,20 @@ const HeroSection = () => {
           >
             <Link
               to="/map"
-              className="hero-cta-btn bg-teal-500 hover:bg-teal-400 text-navy-900 font-bold px-6 sm:px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition-colors glow-teal-strong shadow-lg w-full sm:w-auto text-sm sm:text-base"
+              className="hero-cta-btn bg-[#00C9A7] hover:bg-[#00A88E] font-bold px-6 sm:px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition-colors glow-teal-strong shadow-lg w-full sm:w-auto text-sm sm:text-base"
+              style={{ backgroundColor: '#00C9A7', color: '#0B0E11' }}
             >
-              <Map className="w-5 h-5" />
-              {t('hero.openMap')}
+              <Map className="w-5 h-5 flex-shrink-0" style={{ color: '#0B0E11' }} />
+              <span className="font-bold whitespace-nowrap" style={{ color: '#0B0E11' }}>
+                {t('hero.openMap') || 'Open Map'}
+              </span>
             </Link>
             <Link
               to="/list"
               className="hero-cta-btn bg-transparent hover:bg-white/5 border border-gray-600 text-white font-medium px-6 sm:px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition-colors w-full sm:w-auto text-sm sm:text-base"
             >
-              <List className="w-5 h-5 text-teal-500" />
-              {t('hero.viewList')}
+              <List className="w-5 h-5 flex-shrink-0" style={{ color: '#00C9A7' }} />
+              <span className="whitespace-nowrap">{t('hero.viewList') || 'View List'}</span>
             </Link>
           </motion.div>
 

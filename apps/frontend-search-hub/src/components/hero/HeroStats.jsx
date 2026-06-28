@@ -13,30 +13,30 @@ const HeroStats = () => {
       transition={{ delay: 0.6 }}
       className="hero-stats-wrapper mt-6 sm:mt-8 lg:mt-4 w-full"
     >
-      <div className="hero-stats-panel cyber-panel rounded-2xl grid grid-cols-2 lg:grid-cols-4 items-center py-5 px-4 sm:px-6 gap-y-6 gap-x-4 lg:gap-1 lg:divide-x divide-transparent lg:divide-white/10">
+      <div className="hero-stats-panel cyber-panel rounded-2xl grid grid-cols-2 sm:grid-cols-4 items-center py-4 px-3 sm:px-6 gap-y-4 gap-x-2 sm:gap-x-4 sm:divide-x divide-transparent sm:divide-white/10">
 
         <StatItem
-          icon={<BookOpen className="text-teal-500 w-6 h-6" />}
-          count={t('stats.listingCount')}
-          label={t('stats.listingLabel')}
+          icon={<BookOpen className="text-[#00C9A7] w-5 h-5 sm:w-6 sm:h-6" style={{ color: '#00C9A7' }} />}
+          count={t('stats.listingsCount') || t('stats.listingCount') || '5,000+'}
+          label={t('stats.listingLabel') || 'Listings'}
         />
 
         <StatItem
-          icon={<LayoutGrid className="text-teal-500 w-6 h-6" />}
-          count={t('stats.categoryCount')}
-          label={t('stats.categoryLabel')}
+          icon={<LayoutGrid className="text-[#00C9A7] w-5 h-5 sm:w-6 sm:h-6" style={{ color: '#00C9A7' }} />}
+          count={t('stats.categoriesCount') || t('stats.categoryCount') || '4'}
+          label={t('stats.categoryLabel') || 'Categories'}
         />
 
         <StatItem
-          icon={<MapPin className="text-[#A855F7] w-6 h-6" />}
-          count={t('stats.radiusCount')}
-          label={t('stats.radiusLabel')}
+          icon={<MapPin className="text-[#A855F7] w-5 h-5 sm:w-6 sm:h-6" style={{ color: '#A855F7' }} />}
+          count={t('stats.radiusDistance') || t('stats.radiusCount') || '5km'}
+          label={t('stats.radiusLabel') || 'Search Radius'}
         />
 
         <StatItem
-          icon={<ShieldCheck className="text-[#3B82F6] w-6 h-6" />}
-          count={t('stats.focusCount')}
-          label={t('stats.focusLabel')}
+          icon={<ShieldCheck className="text-[#3B82F6] w-5 h-5 sm:w-6 sm:h-6" style={{ color: '#3B82F6' }} />}
+          count={t('stats.realtime') || t('stats.focusCount') || 'Real-time'}
+          label={t('stats.focusLabel') || 'Bangladesh Focused'}
         />
 
       </div>
@@ -49,11 +49,11 @@ const StatItem = ({ icon, count, label }) => {
   const isBn = i18n.language === 'bn';
 
   return (
-    <div className="flex items-center gap-3 sm:gap-4 justify-start lg:pl-4 xl:pl-8 first:pl-0">
+    <div className="flex items-center gap-2 sm:gap-3 justify-start sm:pl-3 lg:pl-4 first:pl-0 min-w-0">
       <div className="flex-shrink-0">{icon}</div>
-      <div>
-        <div className={`text-lg sm:text-xl font-bold text-white leading-tight ${isBn ? 'font-bengali' : 'font-space'}`}>{count}</div>
-        <div className="text-[11px] sm:text-xs text-gray-400 mt-0.5">{label}</div>
+      <div className="min-w-0 flex-1">
+        <div className={`text-base sm:text-lg lg:text-xl font-bold text-white leading-tight whitespace-nowrap ${isBn ? 'font-bengali' : 'font-space'}`}>{count}</div>
+        <div className="text-[11px] sm:text-xs text-gray-400 mt-0.5 leading-tight">{label}</div>
       </div>
     </div>
   );
